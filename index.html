@@ -5,42 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Business Automation Hub</title>
     <style>
+        /* Modernes Design-System */
         :root { 
-            --bg-color: #0f172a; 
-            --card-bg: #1e293b; 
+            --bg-color: #030712; 
+            --card-bg: #111827; 
             --text-main: #f8fafc; 
+            --text-muted: #94a3b8;
             --accent: #38bdf8; 
-            --cta-bg: #22c55e; 
+            --cta-bg: #0ea5e9; 
+            --cta-hover: #0284c7;
+            --border: #1e293b;
         }
+
+        * { box-sizing: border-box; }
+
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-main); 
+            line-height: 1.6;
             margin: 0; 
             display: flex; 
             flex-direction: column; 
             min-height: 100vh;
-            padding: 20px;
+            padding: 40px 20px;
         }
+
         .container { 
-            max-width: 800px; 
+            max-width: 600px; 
             margin: 0 auto; 
-            flex: 1; 
             width: 100%;
         }
-        h1 { text-align: center; color: var(--accent); margin-bottom: 40px; }
-        .card { background: var(--card-bg); border-radius: 12px; padding: 25px; margin-bottom: 20px; border: 1px solid #334155; }
-        .card a { color: var(--accent); text-decoration: none; font-size: 1.2rem; }
-        .card a:hover { text-decoration: underline; }
+
+        h1 { 
+            font-size: 2.5rem;
+            text-align: center; 
+            color: var(--text-main); 
+            margin-bottom: 3rem; 
+            letter-spacing: -0.05em;
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 16px; 
+            padding: 30px; 
+            margin-bottom: 20px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        h3 { margin-top: 0; color: var(--accent); }
+
+        /* Button Styling - Fokus auf Vertrauen */
+        .btn-cta {
+            display: inline-block;
+            background-color: var(--cta-bg);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            text-align: center;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        .btn-cta:hover { 
+            background-color: var(--cta-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
         
-        /* Footer Styling */
         footer { 
             text-align: center; 
-            padding: 40px 0; 
-            color: #64748b; 
-            font-size: 0.9rem;
+            padding: 60px 0 20px; 
+            color: var(--text-muted); 
+            font-size: 0.85rem;
         }
-        footer a { color: #64748b; text-decoration: none; margin: 0 10px; }
+        footer a { color: var(--text-muted); text-decoration: none; margin: 0 10px; }
         footer a:hover { color: var(--text-main); }
     </style>
 </head>
@@ -50,10 +93,9 @@
     <h1>Business Automation Hub</h1>
     
     <div class="card">
-        <h3>Meine Projekte</h3>
-        <ul>
-            <li><a href="beste-software-haga.html">Haga Software</a></li>
-        </ul>
+        <h3>Haga Software</h3>
+        <p style="color: var(--text-muted);">Erreiche mehr durch smarte Automatisierung. Unsere Empfehlung für effizientes Workflow-Management.</p>
+        <a href="#" class="btn-cta" data-link="haga">Jetzt zum Tool</a>
     </div>
 </div>
 
@@ -64,6 +106,19 @@
         <a href="datenschutz.html">Datenschutz</a>
     </div>
 </footer>
+
+<script>
+    const affiliateLinks = {
+        "haga": "https://DEIN-AFFILIATE-LINK-HIER.de"
+    };
+
+    document.querySelectorAll('.btn-cta').forEach(button => {
+        const linkKey = button.getAttribute('data-link');
+        if (affiliateLinks[linkKey]) {
+            button.href = affiliateLinks[linkKey];
+        }
+    });
+</script>
 
 </body>
 </html>

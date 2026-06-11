@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Automation Hub</title>
+    
+    <title>Business Automation Hub | Smarte Software-Lösungen</title>
+    <meta name="description" content="Entdecke die besten Tools für deine Business-Automation. Effiziente Workflow-Lösungen, um Zeit zu sparen und produktiver zu arbeiten.">
+    <meta name="keywords" content="Automation, Business Software, Workflow-Optimierung, Produktivität, Tools">
+    <meta name="author" content="Business Automation Hub">
+    
+    <meta property="og:title" content="Business Automation Hub">
+    <meta property="og:description" content="Smarte Lösungen für dein Business-Workflow.">
+    <meta property="og:type" content="website">
+
     <style>
         /* Modernes Design-System */
         :root { 
@@ -52,12 +61,10 @@
             margin-bottom: 20px; 
             border: 1px solid var(--border);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease;
         }
 
         h3 { margin-top: 0; color: var(--accent); }
 
-        /* Button Styling - Fokus auf Vertrauen */
         .btn-cta {
             display: inline-block;
             background-color: var(--cta-bg);
@@ -108,10 +115,12 @@
 </footer>
 
 <script>
+    // Affiliate-Links zentral verwalten
     const affiliateLinks = {
         "haga": "https://DEIN-AFFILIATE-LINK-HIER.de"
     };
 
+    // Automatisches Zuweisen der Links
     document.querySelectorAll('.btn-cta').forEach(button => {
         const linkKey = button.getAttribute('data-link');
         if (affiliateLinks[linkKey]) {

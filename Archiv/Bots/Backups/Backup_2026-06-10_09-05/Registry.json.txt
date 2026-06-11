@@ -1,0 +1,4 @@
+{
+  "Modul_Taschenrechner": "Kann mathematische Berechnungen durchführen.",
+  "Modul_Datenanalyse": "Kann CSV-Dateien auswerten."
+}

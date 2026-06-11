@@ -1,0 +1,18 @@
+{
+    "Modul_OrdnerCleaner": {
+        "beschreibung": "Modul f\u00fcr Modul_OrdnerCleaner",
+        "pfad": "Module/Modul_OrdnerCleaner.py"
+    },
+    "Modul_KI_Anfrage": {
+        "beschreibung": "Modul f\u00fcr Modul_KI_Anfrage",
+        "pfad": "Module/Modul_KI_Anfrage.py"
+    },
+    "Modul_SystemUpdater": {
+        "beschreibung": "Modul f\u00fcr Modul_SystemUpdater",
+        "pfad": "Module/Modul_SystemUpdater.py"
+    },
+    "Modul_Stimme": {
+        "beschreibung": "Modul f\u00fcr Modul_Stimme",
+        "pfad": "Module/Modul_Stimme.py"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "nische": "Automatisierung",
+    "tools": [
+        {
+            "name": "Make.com",
+            "link": "https://www.make.com/"
+        },
+        {
+            "name": "HubSpot CRM",
+            "link": "https://www.hubspot.de/"
+        },
+        {
+            "name": "Zapier",
+            "link": "https://zapier.com/"
+        }
+    ]
+}

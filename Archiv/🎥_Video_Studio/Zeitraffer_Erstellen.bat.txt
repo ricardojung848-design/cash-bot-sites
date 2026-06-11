@@ -1,0 +1,14 @@
+@echo off
+title DETO 176 - ZEITRAFFER STUDIO
+echo ===================================================
+echo       AUTOMATISCHER SCONTI-ZEITRAFFER (0 EURO)      
+echo ===================================================
+echo.
+echo Dieses Skript beschleunigt dein Atelier-Video um das 8-fache.
+echo Platziere dein rohes Video hier im Ordner und benenne es in "input.mp4" um.
+echo.
+echo Schneide Prozess laeuft... Bitte warten...
+ffmpeg -i input.mp4 -filter:v "setpts=0.125*PTS" -an output_zeitraffer.mp4
+echo.
+echo FERTIG! Dein TikTok-Bereites Video liegt als "output_zeitraffer.mp4" bereit.
+pause

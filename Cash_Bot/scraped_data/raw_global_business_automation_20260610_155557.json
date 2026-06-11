@@ -1,0 +1,25 @@
+{
+    "nische": "Global Business Automation",
+    "typ": "B2B-LEADS",
+    "timestamp": "20260610_155557",
+    "tools": [
+        {
+            "name": "Make.com Automation",
+            "kategorie": "Business Automation",
+            "link": "https://www.make.com/de/",
+            "lead_wert": "High"
+        },
+        {
+            "name": "HubSpot CRM",
+            "kategorie": "Fintech / B2B SaaS",
+            "link": "https://www.hubspot.de/",
+            "lead_wert": "Extreme"
+        },
+        {
+            "name": "Zapier Enterprise",
+            "kategorie": "Workflow Automation",
+            "link": "https://zapier.com/",
+            "lead_wert": "High"
+        }
+    ]
+}

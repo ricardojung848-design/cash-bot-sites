@@ -1,0 +1,13 @@
+🎤 DETO 176 – SPRACHSTEUERUNG IM ATELIER
+
+Wenn du gerade malst, Acryl an den Fingern hast oder einfach nicht tippen willst, nutzt du die eingebaute Surface-Diktierfunktion.
+
+SO FUNKTIONIERT ES IM ALLTAG:
+1. Starte deinen Agenten über die "Agent_STARTEN.bat".
+2. Klicke in das Chatfenster hinter das ">>>" Zeichen.
+3. Drücke auf deiner Tastatur gleichzeitig die Tasten:
+   [ Windows-Taste ] + [ H ]
+4. Ein kleines Mikrofonsymbol erscheint am oberen Bildschirmrand.
+5. Sprich jetzt ganz normal deinen Befehl ein (z. B.: "Schreibe einen Instagram-Post für mein neues 1,80m x 2m Gemälde").
+6. Windows übersetzt deine Stimme in Echtzeit fehlerfrei in Text.
+7. Drücke Enter – Fertig!

@@ -106,3 +106,25 @@ def generate_programmatic_pages(source_json_path):
         return git_push_content()
     except Exception as e:
         return f"❌ Fehler in der Fabrik: {str(e)}"
+        # --- BRÜCKE ZUM WORKER (Nicht löschen!) ---
+
+def check_system():
+    return "🤖 System ist online. Bereit für 'scout' oder 'fabrik'."
+
+def ki_anfrage_verarbeiten(text):
+    text_low = text.lower().strip()
+    
+    if "scout" in text_low:
+        return fetch_data_from_sheet()
+        
+    elif "fabrik" in text_low:
+        # Sucht automatisch die neueste JSON-Datei im scraped_data Ordner
+        files = [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.endswith(".json")]
+        if files:
+            neueste_datei = max(files, key=os.path.getctime)
+            return generate_programmatic_pages(neueste_datei)
+        else:
+            return "❌ Keine Daten gefunden. Bitte erst 'scout' ausführen."
+            
+    else:
+        return f"Verstanden. Du hast geschrieben: '{text}'. Nutze bitte 'scout' oder 'fabrik'."

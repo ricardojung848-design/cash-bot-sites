@@ -58,12 +58,35 @@
             background: var(--card-bg); 
             border-radius: 16px; 
             padding: 30px; 
-            margin-bottom: 20px; 
+            margin-bottom: 25px; 
             border: 1px solid var(--border);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
 
-        h3 { margin-top: 0; color: var(--accent); }
+        h2, h3 { margin-top: 0; color: var(--accent); }
+
+        /* Projekt- & Artikelliste Styling */
+        ul.links-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        ul.links-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        ul.links-list li:last-child { 
+            border-bottom: none; 
+        }
+        ul.links-list a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        ul.links-list a:hover { 
+            color: var(--accent); 
+        }
 
         .btn-cta {
             display: inline-block;
@@ -103,6 +126,14 @@
         <h3>Haga Software</h3>
         <p style="color: var(--text-muted);">Erreiche mehr durch smarte Automatisierung. Unsere Empfehlung für effizientes Workflow-Management.</p>
         <a href="#" class="btn-cta" data-link="haga">Jetzt zum Tool</a>
+    </div>
+
+    <div class="card">
+        <h2>Exklusive Experten-Ratgeber</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Tiefgehende Analysen und Praxis-Tests aus unserer Redaktion:</p>
+        
+        <ul id="project-list" class="links-list">
+        </ul>
     </div>
 </div>
 

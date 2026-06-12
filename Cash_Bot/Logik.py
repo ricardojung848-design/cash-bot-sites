@@ -244,6 +244,11 @@ def process_ki_anfrage(text: str):
 
     # Fallback
     return (
-        f"Verstanden. Du hast geschrieben: '{text}'.\n"
-        "Nutze:\n"
-        "· 'scout' → Daten
+    f"Verstanden. Du hast geschrieben: '{text}'.\n"
+    "Nutze:\n"
+    "· 'scout' → Daten holen\n"
+    "· 'fabrik' → Seiten generieren\n"
+    "· 'reel <Thema>' → Reel-Skript erzeugen\n"
+    "· 'queue' → Posting-Queue anzeigen\n"
+    "· 'post <Thema>' → Eintrag als gepostet markieren\n"
+)

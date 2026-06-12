@@ -12,6 +12,7 @@ DATA_DIR = "scraped_data"
 OUTPUT_DIR = "generated_content"
 SOCIAL_DIR = "social_media"
 CONFIG_FILE = "cashbot_config.json"
+POSTING_QUEUE_FILE = os.path.join(SOCIAL_DIR, "posting_queue.json")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -39,7 +40,7 @@ def load_config():
         "social_media": {
             "instagram_reels": True,
             "auto_store_posts": True,
-            "auto_post": True
+            "auto_post": False  # halbautomatisch: kein echtes Autoposting
         }
     }
     if not os.path.exists(CONFIG_FILE):
@@ -64,6 +65,73 @@ CONFIG = load_config()
 NISCHE = CONFIG["nische"]
 PRODUKT_TYP = CONFIG["produkt_typ"]
 SOCIAL_CFG = CONFIG["social_media"]
+
+
+# === POSTING-QUEUE HELFER ===
+def load_posting_queue():
+    if not os.path.exists(POSTING_QUEUE_FILE):
+        return []
+    try:
+        with open(POSTING_QUEUE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_posting_queue(queue):
+    try:
+        with open(POSTING_QUEUE_FILE, "w", encoding="utf-8") as f:
+            json.dump(queue, f, indent=4, ensure_ascii=False)
+    except Exception:
+        pass
+
+
+def add_to_posting_queue(script: dict, json_path: str, txt_path: str):
+    queue = load_posting_queue()
+    entry = {
+        "id": len(queue) + 1,
+        "thema": script["thema"],
+        "nische": script["nische"],
+        "produkt_typ": script["produkt_typ"],
+        "json_path": json_path,
+        "txt_path": txt_path,
+        "status": "pending",
+        "created_at": datetime.now().isoformat(),
+        "posted_at": None
+    }
+    queue.append(entry)
+    save_posting_queue(queue)
+    return entry
+
+
+def get_queue_overview():
+    queue = load_posting_queue()
+    if not queue:
+        return "📭 Posting-Queue ist leer."
+    lines = ["📋 Posting-Queue:"]
+    for item in queue:
+        lines.append(
+            f"- ID {item['id']}: {item['thema']} [{item['status']}]"
+        )
+    return "\n".join(lines)
+
+
+def mark_posted_by_thema(thema: str):
+    queue = load_posting_queue()
+    if not queue:
+        return "📭 Keine Einträge in der Posting-Queue."
+    thema_low = thema.lower().strip()
+    found = False
+    for item in queue:
+        if item["status"] == "pending" and item["thema"].lower() == thema_low:
+            item["status"] = "posted"
+            item["posted_at"] = datetime.now().isoformat()
+            found = True
+            break
+    if not found:
+        return f"❌ Kein pending-Eintrag mit Thema '{thema}' gefunden."
+    save_posting_queue(queue)
+    return f"✅ Eintrag für '{thema}' als 'posted' markiert (simulierter Post)."
 
 
 # === SEO / CONTENT ENGINE ===
@@ -137,9 +205,6 @@ def generate_seo_content(thema: str, nische: str, produkt_typ: str):
 
 # === SOCIAL MEDIA ENGINE (Hybrid-Style Instagram Reels) ===
 def sanitize_filename(text: str) -> str:
-    """
-    Entfernt alle für Windows verbotenen Zeichen aus Dateinamen.
-    """
     forbidden = '<>:"/\\|?*'
     safe = text
     for ch in forbidden:
@@ -151,9 +216,6 @@ def sanitize_filename(text: str) -> str:
 
 
 def generate_instagram_reel_script(thema: str, nische: str, produkt_typ: str):
-    """
-    Hybrid-Style: modern + seriös, mit Emojis, Hashtags und mehreren Hook-Varianten.
-    """
     base_hashtags = [
         "#automation", "#businessautomation", "#kiberatung",
         "#onlineskalierung", "#prozesse", "#cashbot"
@@ -198,9 +260,6 @@ def generate_instagram_reel_script(thema: str, nische: str, produkt_typ: str):
 
 
 def store_instagram_reel_script(script: dict):
-    """
-    Speichert das Reel-Skript als JSON und TXT im Ordner social_media.
-    """
     try:
         safe_name = sanitize_filename(script["thema"].lower().replace(" ", "-"))
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -210,11 +269,9 @@ def store_instagram_reel_script(script: dict):
         json_path = os.path.join(SOCIAL_DIR, json_filename)
         txt_path = os.path.join(SOCIAL_DIR, txt_filename)
 
-        # JSON
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(script, f, indent=4, ensure_ascii=False)
 
-        # TXT (für Copy-Paste in Instagram)
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(f"Thema: {script['thema']}\n")
             f.write(f"Nische: {script['nische']}\n")
@@ -232,16 +289,19 @@ def store_instagram_reel_script(script: dict):
             f.write("\nHashtags:\n")
             f.write(script["hashtags"] + "\n")
 
-        return f"📲 Instagram Reel-Skript gespeichert:\nJSON: {json_path}\nTXT: {txt_path}"
+        # in Posting-Queue eintragen
+        entry = add_to_posting_queue(script, json_path, txt_path)
+
+        return (
+            f"📲 Instagram Reel-Skript gespeichert:\n"
+            f"JSON: {json_path}\nTXT: {txt_path}\n"
+            f"🧾 In Posting-Queue aufgenommen als ID {entry['id']} (Status: pending)."
+        )
     except Exception as e:
         return f"❌ Fehler beim Speichern des Reel-Skripts: {e}"
 
 
 def auto_generate_social_for_thema(thema: str):
-    """
-    Erzeugt Social-Media-Content (Instagram Reel) für ein Thema,
-    wenn in der Config aktiviert.
-    """
     if not SOCIAL_CFG.get("instagram_reels", False):
         return "ℹ️ Social-Media-Generation ist deaktiviert."
 
@@ -252,10 +312,6 @@ def auto_generate_social_for_thema(thema: str):
     else:
         msg = "📲 Reel-Skript generiert (Speichern deaktiviert)."
 
-    if SOCIAL_CFG.get("auto_post", False):
-        msg += " | (Auto-Post: Externe Posting-API/Tool kann hier angebunden werden.)"
-
-    # Kurzfassung fürs Zurückschicken an Telegram
     short_preview = (
         f"🎬 Reel für Thema: {thema}\n"
         f"Hook-Beispiel: {script['hooks'][0]}\n"
@@ -476,8 +532,10 @@ def fabrik_prozess_einzeltask(thema: str):
 # --- 4. BRÜCKE ZUM WORKER ---
 def ki_anfrage_verarbeiten(text):
     text_low = text.lower().strip()
+
     if "scout" in text_low:
         return fetch_data_from_sheet()
+
     elif "fabrik" in text_low:
         files = [
             os.path.join(DATA_DIR, f)
@@ -489,17 +547,42 @@ def ki_anfrage_verarbeiten(text):
             return generate_programmatic_pages(neueste_datei)
         else:
             return "❌ Keine Daten gefunden. Bitte erst 'scout' ausführen."
-    elif "reel" in text_low:
-        thema = text.replace("reel", "").strip() or "Automation"
+
+    elif text_low.startswith("reel"):
+        thema = text.replace("reel", "", 1).strip() or "Automation"
         return auto_generate_social_for_thema(thema)
+
+    elif text_low.startswith("queue"):
+        return get_queue_overview()
+
+    elif text_low.startswith("post "):
+        thema = text[5:].strip()
+        if not thema:
+            return "❌ Bitte Thema angeben, z.B. 'post KI Automation'."
+        return mark_posted_by_thema(thema)
+
     else:
-        return f"Verstanden. Du hast geschrieben: '{text}'. Nutze bitte 'scout', 'fabrik' oder 'reel <Thema>'."
+        return (
+            f"Verstanden. Du hast geschrieben: '{text}'.\n"
+            f"Nutze:\n"
+            f"- 'scout' → Daten holen\n"
+            f"- 'fabrik' → Seiten generieren\n"
+            f"- 'reel <Thema>' → Reel-Skript erzeugen\n"
+            f"- 'queue' → Posting-Queue anzeigen\n"
+            f"- 'post <Thema>' → Eintrag als gepostet markieren (halbautomatisch)"
+        )
+
 
 def check_system():
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         os.makedirs(SOCIAL_DIR, exist_ok=True)
-        return f"✅ Systemcheck: Verzeichnisse vorhanden, Logik.py geladen. Nische: {NISCHE}, Produkt-Typ: {PRODUKT_TYP}"
+        if not os.path.exists(POSTING_QUEUE_FILE):
+            save_posting_queue([])
+        return (
+            f"✅ Systemcheck: Verzeichnisse vorhanden, Logik.py geladen. "
+            f"Nische: {NISCHE}, Produkt-Typ: {PRODUKT_TYP}"
+        )
     except Exception as e:
         return f"❌ Systemcheck-Fehler: {e}"

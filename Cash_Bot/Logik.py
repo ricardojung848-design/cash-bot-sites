@@ -39,7 +39,7 @@ def load_config():
         "social_media": {
             "instagram_reels": True,
             "auto_store_posts": True,
-            "auto_post": False
+            "auto_post": True
         }
     }
     if not os.path.exists(CONFIG_FILE):
@@ -135,34 +135,62 @@ def generate_seo_content(thema: str, nische: str, produkt_typ: str):
     }
 
 
-# === SOCIAL MEDIA ENGINE (Instagram Reels Skripte) ===
+# === SOCIAL MEDIA ENGINE (Hybrid-Style Instagram Reels) ===
+def sanitize_filename(text: str) -> str:
+    """
+    Entfernt alle für Windows verbotenen Zeichen aus Dateinamen.
+    """
+    forbidden = '<>:"/\\|?*'
+    safe = text
+    for ch in forbidden:
+        safe = safe.replace(ch, "")
+    safe = safe.strip()
+    if not safe:
+        safe = "thema"
+    return safe
+
+
 def generate_instagram_reel_script(thema: str, nische: str, produkt_typ: str):
     """
-    Erzeugt ein einfaches Skript für einen Instagram Reel:
-    Hook, Problem, Lösung, CTA – als Textblöcke.
+    Hybrid-Style: modern + seriös, mit Emojis, Hashtags und mehreren Hook-Varianten.
     """
-    hook = f"Du willst {nische.lower()} automatisieren, aber weißt nicht, wo du anfangen sollst?"
+    base_hashtags = [
+        "#automation", "#businessautomation", "#kiberatung",
+        "#onlineskalierung", "#prozesse", "#cashbot"
+    ]
+    hashtags_str = " ".join(base_hashtags)
+
+    hook_varianten = [
+        f"🔥 Du willst {nische.lower()} endlich automatisieren – aber weißt nicht, wo du anfangen sollst?",
+        f"🚀 {thema} kann dein {nische.lower()}-Game komplett verändern, wenn du es richtig einsetzt.",
+        f"⚡ Hör auf, Zeit mit Copy-Paste zu verschwenden – bau dir ein System, das für dich arbeitet."
+    ]
+
     problem = (
-        f"Die meisten {produkt_typ.lower()} verlieren Zeit mit manuellen Aufgaben, "
-        f"Excel-Listen und Copy-Paste. {thema} kann genau da ansetzen."
+        f"Die meisten {produkt_typ.lower()} hängen in manuellen Abläufen fest: Excel, E-Mails, "
+        f"Copy-Paste. Genau da setzt {thema} an."
     )
     solution = (
-        f"Stell dir vor, deine Leads, Termine und Reports laufen automatisch. "
-        f"Mit {thema} baust du dir Schritt für Schritt ein System, das für dich arbeitet."
+        f"Mit {thema} kannst du Leads, Termine und Reports automatisieren. "
+        f"Du baust dir Schritt für Schritt ein Setup, das für dich arbeitet – statt andersrum. 💻🤖"
     )
-    cta = (
-        f"Wenn du {produkt_typ.lower()} ernsthaft skalieren willst, starte mit einem kleinen "
-        f"Automation-Setup rund um {thema}. Mehr dazu auf meiner Website."
-    )
+
+    cta_varianten = [
+        f"Wenn du {produkt_typ.lower()} ernsthaft skalieren willst, fang mit einem kleinen Workflow rund um {thema} an. Mehr dazu auf deiner Website. 🔗",
+        f"Speichere dieses Reel, wenn du {nische.lower()} endlich sauber automatisieren willst – und schick es jemandem, der gerade im Chaos steckt. 📲",
+        f"Schreib dir {thema} auf deine To-Do-Liste für diese Woche – ein kleiner Automation-Schritt kann dein ganzes System verändern. ✅"
+    ]
 
     script = {
         "thema": thema,
         "nische": nische,
         "produkt_typ": produkt_typ,
-        "hook": hook,
+        "hooks": hook_varianten,
         "problem": problem,
         "solution": solution,
-        "cta": cta,
+        "cta_varianten": cta_varianten,
+        "hashtags": hashtags_str,
+        "style": "hybrid",
         "timestamp": datetime.now().isoformat()
     }
 
@@ -171,16 +199,40 @@ def generate_instagram_reel_script(thema: str, nische: str, produkt_typ: str):
 
 def store_instagram_reel_script(script: dict):
     """
-    Speichert das Reel-Skript als JSON-Datei im Ordner social_media.
+    Speichert das Reel-Skript als JSON und TXT im Ordner social_media.
     """
     try:
-        safe_name = script["thema"].lower().replace(" ", "-").replace(".", "").replace("/", "-")
+        safe_name = sanitize_filename(script["thema"].lower().replace(" ", "-"))
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"reel_{safe_name}_{ts}.json"
-        path = os.path.join(SOCIAL_DIR, filename)
-        with open(path, "w", encoding="utf-8") as f:
+        json_filename = f"reel_{safe_name}_{ts}.json"
+        txt_filename = f"reel_{safe_name}_{ts}.txt"
+
+        json_path = os.path.join(SOCIAL_DIR, json_filename)
+        txt_path = os.path.join(SOCIAL_DIR, txt_filename)
+
+        # JSON
+        with open(json_path, "w", encoding="utf-8") as f:
             json.dump(script, f, indent=4, ensure_ascii=False)
-        return f"📲 Instagram Reel-Skript gespeichert: {path}"
+
+        # TXT (für Copy-Paste in Instagram)
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write(f"Thema: {script['thema']}\n")
+            f.write(f"Nische: {script['nische']}\n")
+            f.write(f"Produkt-Typ: {script['produkt_typ']}\n\n")
+            f.write("Hooks:\n")
+            for h in script["hooks"]:
+                f.write(f"- {h}\n")
+            f.write("\nProblem:\n")
+            f.write(script["problem"] + "\n\n")
+            f.write("Lösung:\n")
+            f.write(script["solution"] + "\n\n")
+            f.write("CTA-Varianten:\n")
+            for c in script["cta_varianten"]:
+                f.write(f"- {c}\n")
+            f.write("\nHashtags:\n")
+            f.write(script["hashtags"] + "\n")
+
+        return f"📲 Instagram Reel-Skript gespeichert:\nJSON: {json_path}\nTXT: {txt_path}"
     except Exception as e:
         return f"❌ Fehler beim Speichern des Reel-Skripts: {e}"
 
@@ -200,11 +252,18 @@ def auto_generate_social_for_thema(thema: str):
     else:
         msg = "📲 Reel-Skript generiert (Speichern deaktiviert)."
 
-    # Auto-Post wäre hier ein Connector zu externer API/Tool – wir loggen nur.
     if SOCIAL_CFG.get("auto_post", False):
-        msg += " | (Auto-Post: Bitte externen Posting-Workflow anbinden.)"
+        msg += " | (Auto-Post: Externe Posting-API/Tool kann hier angebunden werden.)"
 
-    return msg
+    # Kurzfassung fürs Zurückschicken an Telegram
+    short_preview = (
+        f"🎬 Reel für Thema: {thema}\n"
+        f"Hook-Beispiel: {script['hooks'][0]}\n"
+        f"CTA-Beispiel: {script['cta_varianten'][0]}\n"
+        f"Hashtags: {script['hashtags']}"
+    )
+
+    return msg + "\n\n" + short_preview
 
 
 # --- 1. DATEN HOLEN ---

@@ -34,7 +34,7 @@ def fetch_data_from_sheet():
 
         formatted_data = {
             "nische": data_list[0].get('Nische', 'Business Automation'),
-            "tools": [{"name": row['Name'], "kategorie": row['Kategorie'], "link": row['Link']} for row in data_list if row['Name']]
+            "tools": [{"name": row['Name'], "kategorie": row['Kategorie'], "link": row['Link']} for row in data_list if row.get('Name')]
         }
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -55,7 +55,6 @@ def git_push_content():
         with open("github_token.txt", "r") as f: token = f.read().strip()
         with open("github_repo.txt", "r") as f: repo_url = f.read().strip()
         
-        # URL mit Token für Auth (Achtung: nicht in Logs zeigen!)
         auth_url = repo_url.replace("https://", f"https://{token}@")
         
         if not os.path.exists(os.path.join(OUTPUT_DIR, ".git")):
@@ -64,10 +63,12 @@ def git_push_content():
             subprocess.run(["git", "branch", "-M", "main"], cwd=OUTPUT_DIR, check=True)
 
         subprocess.run(["git", "add", "."], cwd=OUTPUT_DIR, check=True)
-        # Nur committen, wenn sich was geändert hat
         status = subprocess.run(["git", "status", "--porcelain"], cwd=OUTPUT_DIR, capture_output=True, text=True)
+        
         if status.stdout.strip():
             subprocess.run(["git", "commit", "-m", "Automated Update: " + datetime.now().strftime("%Y-%m-%d %H:%M")], cwd=OUTPUT_DIR, check=True)
+            # Sync mit dem Server, um Konflikte zu vermeiden
+            subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=OUTPUT_DIR, check=True)
             subprocess.run(["git", "push", "-u", "origin", "main"], cwd=OUTPUT_DIR, check=True)
             return "🚀 **FABRIK LIVE:** Neue Seiten sind online!"
         return "ℹ️ Keine neuen Änderungen."
@@ -96,7 +97,6 @@ def generate_programmatic_pages(source_json_path):
                 out.write(html_content)
             generated_links.append({"title": tool['name'], "url": filename})
             
-        # Index-Seite bauen
         index_html = f"""<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><style>{SHARED_CSS}</style></head>
 <body><div class="container"><h1>Business Automation Hub</h1>
 <div class="card"><ul>{"".join([f"<li><a href='{l['url']}'>{l['title']}</a></li>" for l in generated_links])}</ul></div></div></body></html>"""
@@ -106,25 +106,21 @@ def generate_programmatic_pages(source_json_path):
         return git_push_content()
     except Exception as e:
         return f"❌ Fehler in der Fabrik: {str(e)}"
-        # --- BRÜCKE ZUM WORKER (Nicht löschen!) ---
 
+# --- BRÜCKE ZUM WORKER ---
 def check_system():
     return "🤖 System ist online. Bereit für 'scout' oder 'fabrik'."
 
 def ki_anfrage_verarbeiten(text):
     text_low = text.lower().strip()
-    
     if "scout" in text_low:
         return fetch_data_from_sheet()
-        
     elif "fabrik" in text_low:
-        # Sucht automatisch die neueste JSON-Datei im scraped_data Ordner
         files = [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.endswith(".json")]
         if files:
             neueste_datei = max(files, key=os.path.getctime)
             return generate_programmatic_pages(neueste_datei)
         else:
             return "❌ Keine Daten gefunden. Bitte erst 'scout' ausführen."
-            
     else:
         return f"Verstanden. Du hast geschrieben: '{text}'. Nutze bitte 'scout' oder 'fabrik'."

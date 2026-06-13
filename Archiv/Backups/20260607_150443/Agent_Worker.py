@@ -3,6 +3,7 @@ import json
 import traceback
 import requests
 import Logik
+import os
 from datetime import datetime
 
 # === TELEGRAM BOT TOKEN LADEN ===
@@ -17,6 +18,17 @@ API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 def log(msg):
     timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
     print(f"{timestamp} {msg}")
+
+# === DEBUG: PFAD + VERSION AUSGEBEN ===
+def debug_startup_info():
+    log("=== DEBUG STARTUP INFO ===")
+    log(f"Arbeitsverzeichnis: {os.getcwd()}")
+    log(f"Geladene Logik.py: {Logik.__file__}")
+    if hasattr(Logik, "LOGIK_VERSION"):
+        log(f"Logik-Version: {Logik.LOGIK_VERSION}")
+    else:
+        log("⚠️ Logik-Version NICHT gefunden (LOGIK_VERSION fehlt)")
+    log("==========================")
 
 # === TELEGRAM SENDEN ===
 def send_message(text):
@@ -70,4 +82,5 @@ def telegram_listener():
 # === START ===
 if __name__ == "__main__":
     log("Agent Worker gestartet (optimierte Version).")
+    debug_startup_info()
     telegram_listener()

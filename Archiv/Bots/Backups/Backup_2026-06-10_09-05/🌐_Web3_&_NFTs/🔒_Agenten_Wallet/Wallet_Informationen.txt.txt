@@ -1,7 +1,0 @@
-🔒 AGENTEN-WALLET (TREZOR-ERSETZUNG - POLYGON NETZWERK)
-
-ÖFFENTLICHE WALLET-ADRESSE (Hierhin überweisen Sammler dein Geld):
-[Hier trägst du später deine Krypto-Adresse ein, z.B. von MetaMask]
-
-SICHERHEITS-NOTIZ:
-Der Agent überwacht diese Adresse völlig kostenlos über die Blockchain auf Zahlungseingänge. Transaktionen müssen von dir manuell auf dem Surface freigegeben werden.

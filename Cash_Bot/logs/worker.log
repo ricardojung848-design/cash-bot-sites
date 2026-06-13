@@ -32,3 +32,6 @@ fabrik stop | Chat: 8803409956
 [2026-06-13 16:17:35] 🤖 Agent Worker gestartet (optimierte Version).
 [2026-06-13 16:17:45] 📥 Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
 [2026-06-13 16:17:45] ❌ Fehler bei der Aufgabenverarbeitung (KI_ANFRAGE): module 'Logik' has no attribute 'ki_anfrage_verarbeiten'
+[2026-06-13 16:26:38] 🤖 Agent Worker gestartet (optimierte Version).
+[2026-06-13 16:26:58] 📥 Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-13 16:26:58] ❌ Fehler bei der Aufgabenverarbeitung (KI_ANFRAGE): module 'Logik' has no attribute 'ki_anfrage_verarbeiten'

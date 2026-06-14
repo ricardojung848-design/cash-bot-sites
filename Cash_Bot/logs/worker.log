@@ -114,3 +114,8 @@ fabrik stop | Chat: 8803409956
 [2026-06-14 18:39:09] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
 [2026-06-14 18:39:09] [ERROR] [UPDATER] Fehler beim Abrufen: HTTP Error 404: Not Found
 [2026-06-14 18:39:09] [WARN] [UPDATER] Update-Server nicht erreichbar.
+[2026-06-14 18:40:05] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 18:40:05] [INFO] [UPDATER] Prüfe auf Updates...
+[2026-06-14 18:40:05] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 18:40:05] [ERROR] [UPDATER] Fehler beim Abrufen: HTTP Error 404: Not Found
+[2026-06-14 18:40:05] [WARN] [UPDATER] Update-Server nicht erreichbar.

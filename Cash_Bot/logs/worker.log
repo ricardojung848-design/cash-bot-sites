@@ -53,3 +53,5 @@ fabrik stop | Chat: 8803409956
 [2026-06-13 17:57:53] ❌ Fehler bei der Aufgabenverarbeitung (KI_ANFRAGE): module 'Logik' has no attribute 'ki_anfrage_verarbeiten'
 [2026-06-14 16:28:47] [INFO] Agent Worker gestartet (NEUE VERSION).
 [2026-06-14 16:28:47] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 16:52:23] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 16:52:23] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py

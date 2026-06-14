@@ -129,3 +129,24 @@ fabrik stop | Chat: 8803409956
 [2026-06-14 18:52:15] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
 [2026-06-14 18:52:15] [ERROR] [UPDATER] Fehler beim Abrufen: HTTP Error 404: Not Found
 [2026-06-14 18:52:15] [WARN] [UPDATER] Update-Server nicht erreichbar.
+[2026-06-14 18:54:45] [INFO] [UPDATER] Prüfe auf Updates...
+[2026-06-14 18:54:45] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 18:54:45] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 18:54:45] [ERROR] [UPDATER] Fehler beim Abrufen: HTTP Error 404: Not Found
+[2026-06-14 18:54:45] [WARN] [UPDATER] Update-Server nicht erreichbar.
+[2026-06-14 19:04:45] [INFO] [UPDATER] Prüfe auf Updates...
+[2026-06-14 19:04:47] [INFO] [UPDATER] Update gefunden: 0.0.0 → 1.0.1
+[2026-06-14 19:04:47] [INFO] [UPDATER] Lade Agent_Worker.py...
+[2026-06-14 19:04:47] [ERROR] [UPDATER] Fehler bei Agent_Worker.py: HTTP Error 404: Not Found
+[2026-06-14 19:04:47] [INFO] [UPDATER] Lade Agent_Telegram.py...
+[2026-06-14 19:04:47] [ERROR] [UPDATER] Fehler bei Agent_Telegram.py: HTTP Error 404: Not Found
+[2026-06-14 19:04:47] [INFO] [UPDATER] Lade Logik.py...
+[2026-06-14 19:04:47] [ERROR] [UPDATER] Fehler bei Logik.py: HTTP Error 404: Not Found
+[2026-06-14 19:04:47] [INFO] [UPDATER] Update abgeschlossen. Starte Worker neu...
+[2026-06-14 19:04:50] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 19:04:50] [INFO] [UPDATER] Prüfe auf Updates...
+[2026-06-14 19:04:50] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 19:04:50] [INFO] [UPDATER] Keine Updates verfügbar.
+[2026-06-14 19:04:52] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 19:04:52] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 19:04:52] [INFO] [UPDATER] Keine Updates verfügbar.

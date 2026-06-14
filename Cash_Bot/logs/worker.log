@@ -55,3 +55,39 @@ fabrik stop | Chat: 8803409956
 [2026-06-14 16:28:47] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
 [2026-06-14 16:52:23] [INFO] Agent Worker gestartet (NEUE VERSION).
 [2026-06-14 16:52:23] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 17:34:26] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 17:34:26] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: hallo | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: /help | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:34:26] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:34:26] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-14 17:34:26] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:34:26] [ERROR] [RÜCKKANAL] Fehler beim Senden: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-14 17:45:45] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 17:45:45] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 17:45:45] [INFO] CHAT_ID gespeichert: 8803409956
+[2026-06-14 17:45:45] [INFO] Neue Aufgabe: KI_ANFRAGE | Text: fabrik start | Chat: 8803409956
+[2026-06-14 17:45:45] [INFO] KI-Anfrage wird verarbeitet...
+[2026-06-14 17:45:47] [INFO] Antwort an Telegram gesendet (Chat 8803409956).

@@ -121,10 +121,11 @@ def verarbeite_aufgabe(task: dict):
             antwort = Logik.process_ki_anfrage(text)
             send_telegram_message(chat_id, antwort)
 
-        # FABRIK (Platzhalter – aktuell deaktiviert)
+        # FABRIK
         elif befehl == "FABRIK":
-            info("FABRIK-Befehl empfangen (aktuell deaktiviert).")
-            send_telegram_message(chat_id, "🏭 Fabrik ist aktuell deaktiviert.")
+            info("FABRIK-Befehl empfangen.")
+            antwort = Logik.handle_fabrik_command(text)
+            send_telegram_message(chat_id, antwort)
 
         # UNBEKANNTER BEFEHL
         else:

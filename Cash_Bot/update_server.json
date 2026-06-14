@@ -1,0 +1,8 @@
+{
+    "latest_version": "1.0.1",
+    "files": {
+        "Agent_Worker.py": "https://raw.githubusercontent.com/ricardojung848-design/cash-bot-sites/main/Agent_Worker.py",
+        "Agent_Telegram.py": "https://raw.githubusercontent.com/ricardojung848-design/cash-bot-sites/main/Agent_Telegram.py",
+        "Logik.py": "https://raw.githubusercontent.com/ricardojung848-design/cash-bot-sites/main/Logik.py"
+    }
+}

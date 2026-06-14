@@ -1,1 +1,32 @@
-[]
+[
+    {
+        "chat_id": 8803409956,
+        "befehl": "KI_ANFRAGE",
+        "text": "fabrik start"
+    },
+    {
+        "chat_id": 8803409956,
+        "befehl": "KI_ANFRAGE",
+        "text": "fabrik start"
+    },
+    {
+        "chat_id": 8803409956,
+        "befehl": "KI_ANFRAGE",
+        "text": "hallo"
+    },
+    {
+        "chat_id": 8803409956,
+        "befehl": "KI_ANFRAGE",
+        "text": "fabrik start"
+    },
+    {
+        "chat_id": 8803409956,
+        "befehl": "KI_ANFRAGE",
+        "text": "/help"
+    },
+    {
+        "chat_id": 8803409956,
+        "befehl": "KI_ANFRAGE",
+        "text": "fabrik start"
+    }
+]

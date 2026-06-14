@@ -104,3 +104,8 @@ fabrik stop | Chat: 8803409956
 [2026-06-14 18:31:09] [ERROR] [UPDATER] Fehler beim Abrufen: HTTP Error 404: Not Found
 [2026-06-14 18:31:09] [WARN] [UPDATER] Update-Server nicht erreichbar.
 [2026-06-14 18:31:09] [INFO] Antwort an Telegram gesendet (Chat 8803409956).
+[2026-06-14 18:38:13] [INFO] [UPDATER] Prüfe auf Updates...
+[2026-06-14 18:38:13] [INFO] Agent Worker gestartet (NEUE VERSION).
+[2026-06-14 18:38:13] [INFO] Geladene Logik.py: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\Logik.py
+[2026-06-14 18:38:14] [ERROR] [UPDATER] Fehler beim Abrufen: HTTP Error 404: Not Found
+[2026-06-14 18:38:14] [WARN] [UPDATER] Update-Server nicht erreichbar.

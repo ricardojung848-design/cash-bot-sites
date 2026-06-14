@@ -1,11 +1,20 @@
 @echo off
-title DETO CashBot Starter
+cd /d "C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot"
 
-echo Starte Telegram Listener...
-start cmd /k "python Agent_Telegram.py"
+start "Telegram Listener" cmd /k ^
+"echo [Telegram] Auto-Restart aktiv... & ^
+:loop_tg & ^
+python Agent_Telegram.py & ^
+echo [Telegram] abgestuerzt - Neustart in 3 Sekunden... & ^
+timeout /t 3 & ^
+goto loop_tg"
 
-echo Starte Worker...
-start cmd /k "python Agent_Worker.py"
+start "Worker" cmd /k ^
+"echo [Worker] Auto-Restart aktiv... & ^
+:loop_worker & ^
+python Agent_Worker.py & ^
+echo [Worker] abgestuerzt - Neustart in 3 Sekunden... & ^
+timeout /t 3 & ^
+goto loop_worker"
 
-echo Beide Systeme wurden gestartet.
 pause

@@ -36,3 +36,11 @@
 [2026-06-14 18:15:20] [INFO] Nachricht empfangen: 'fabrik start' von Chat 8803409956
 [2026-06-14 18:15:20] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
 [2026-06-14 18:15:21] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-14 18:31:08] [INFO] Telegram Listener wird gestartet...
+[2026-06-14 18:31:09] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-14 18:31:09] [INFO] Nachricht empfangen: '/help' von Chat 8803409956
+[2026-06-14 18:31:09] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-14 18:31:09] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-14 18:31:09] [INFO] Nachricht empfangen: 'fabrik start' von Chat 8803409956
+[2026-06-14 18:31:09] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-14 18:31:10] [INFO] Antwort an Chat 8803409956 gesendet.

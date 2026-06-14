@@ -5,8 +5,79 @@ import datetime
 import urllib.request
 import urllib.parse
 import Logik
+import threading
+import sys
 
-# === KONFIGURATION ===
+# ============================================================
+# AUTO-UPDATER
+# ============================================================
+
+UPDATE_CONFIG = "update_config.json"
+UPDATE_URL = "https://raw.githubusercontent.com/ricardojung848-design/cash-bot-sites/main/update_server.json"
+
+
+def load_local_version():
+    if not os.path.exists(UPDATE_CONFIG):
+        return "0.0.0"
+    try:
+        with open(UPDATE_CONFIG, "r", encoding="utf-8") as f:
+            return json.load(f).get("version", "0.0.0")
+    except:
+        return "0.0.0"
+
+
+def save_local_version(version):
+    with open(UPDATE_CONFIG, "w", encoding="utf-8") as f:
+        json.dump({"version": version}, f)
+
+
+def check_for_update():
+    try:
+        with urllib.request.urlopen(UPDATE_URL, timeout=10) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        error(f"[UPDATER] Fehler beim Abrufen: {e}")
+        return None
+
+
+def download_file(url, filename):
+    urllib.request.urlretrieve(url, filename)
+
+
+def auto_update_loop():
+    while True:
+        info("[UPDATER] Prüfe auf Updates...")
+        local = load_local_version()
+        data = check_for_update()
+
+        if data:
+            latest = data.get("latest_version", local)
+            if latest != local:
+                info(f"[UPDATER] Update gefunden: {local} → {latest}")
+
+                for file, url in data.get("files", {}).items():
+                    try:
+                        info(f"[UPDATER] Lade {file}...")
+                        download_file(url, file)
+                    except Exception as e:
+                        error(f"[UPDATER] Fehler bei {file}: {e}")
+
+                save_local_version(latest)
+                info("[UPDATER] Update abgeschlossen. Starte Worker neu...")
+                time.sleep(2)
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+            else:
+                info("[UPDATER] Keine Updates verfügbar.")
+        else:
+            warn("[UPDATER] Update-Server nicht erreichbar.")
+
+        time.sleep(600)  # alle 10 Minuten prüfen
+
+
+# ============================================================
+# KONFIGURATION
+# ============================================================
+
 AUFGABEN_DATEI = "aufgaben.json"
 CHAT_ID_FILE = "last_chat_id.txt"
 TOKEN_FILE = "token.txt"
@@ -18,17 +89,18 @@ MAX_LOG_SIZE = 2 * 1024 * 1024  # 2 MB
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
-# === LOGGING-ENGINE ===
+# ============================================================
+# LOGGING
+# ============================================================
+
 def rotate_log():
-    """Rotiert die Log-Datei, wenn sie zu groß wird."""
     if os.path.exists(LOG_FILE) and os.path.getsize(LOG_FILE) > MAX_LOG_SIZE:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_name = f"worker_{timestamp}.log"
-        os.rename(LOG_FILE, os.path.join(LOG_DIR, backup_name))
+        backup = f"worker_{timestamp}.log"
+        os.rename(LOG_FILE, os.path.join(LOG_DIR, backup))
 
 
 def log(level, msg):
-    """Schreibt eine formatierte Log-Zeile mit Level."""
     rotate_log()
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{ts}] [{level}] {msg}"
@@ -46,7 +118,10 @@ def error(msg): log("ERROR", msg)
 def fatal(msg): log("FATAL", msg)
 
 
-# === TOKEN LADEN ===
+# ============================================================
+# TOKEN
+# ============================================================
+
 def get_token():
     if not os.path.exists(TOKEN_FILE):
         warn("Kein TOKEN_FILE gefunden.")
@@ -58,16 +133,17 @@ def get_token():
 BOT_TOKEN = get_token()
 
 
-# === TELEGRAM SENDEN ===
+# ============================================================
+# TELEGRAM SENDEN
+# ============================================================
+
 def send_telegram_message(chat_id, text):
     if not chat_id or not BOT_TOKEN:
         warn("Konnte keine Telegram-Nachricht senden (fehlende chat_id oder BOT_TOKEN).")
         return
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        data = urllib.parse.urlencode(
-            {"chat_id": chat_id, "text": text}
-        ).encode("utf-8")
+        data = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode("utf-8")
         req = urllib.request.Request(url, data=data)
         with urllib.request.urlopen(req, timeout=10):
             pass
@@ -76,7 +152,10 @@ def send_telegram_message(chat_id, text):
         error(f"[RÜCKKANAL] Fehler beim Senden: {e}")
 
 
-# === CHAT-ID SPEICHERN / LADEN ===
+# ============================================================
+# CHAT-ID
+# ============================================================
+
 def speichere_chat_id(chat_id):
     if not chat_id:
         return
@@ -98,7 +177,10 @@ def lade_chat_id():
         return None
 
 
-# === AUFGABEN VERARBEITEN ===
+# ============================================================
+# AUFGABEN VERARBEITEN
+# ============================================================
+
 def verarbeite_aufgabe(task: dict):
     befehl = task.get("befehl", "UNBEKANNT")
     text = task.get("text", "")
@@ -110,26 +192,21 @@ def verarbeite_aufgabe(task: dict):
     info(f"Neue Aufgabe: {befehl} | Text: {text} | Chat: {chat_id}")
 
     try:
-        # SYSTEM CHECK
         if befehl == "CHECK_SYSTEM":
-            antwort = "✅ System läuft stabil."
-            send_telegram_message(chat_id, antwort)
+            send_telegram_message(chat_id, "✅ System läuft stabil.")
 
-        # KI-ANFRAGE → NEUE FUNKTION IN LOGIK
         elif befehl == "KI_ANFRAGE":
             info("KI-Anfrage wird verarbeitet...")
             antwort = Logik.process_ki_anfrage(text)
             send_telegram_message(chat_id, antwort)
 
-        # FABRIK
         elif befehl == "FABRIK":
             info("FABRIK-Befehl empfangen.")
             antwort = Logik.handle_fabrik_command(text)
             send_telegram_message(chat_id, antwort)
 
-        # UNBEKANNTER BEFEHL
         else:
-            warn(f"Unbekannter Befehl empfangen: {befehl}")
+            warn(f"Unbekannter Befehl: {befehl}")
             send_telegram_message(chat_id, f"❓ Unbekannter Befehl: {befehl}")
 
     except Exception as e:
@@ -138,7 +215,10 @@ def verarbeite_aufgabe(task: dict):
         send_telegram_message(chat_id, f"❌ {msg}")
 
 
-# === HAUPTSCHLEIFE ===
+# ============================================================
+# HAUPTSCHLEIFE
+# ============================================================
+
 def main():
     info("Agent Worker gestartet (NEUE VERSION).")
     info(f"Geladene Logik.py: {Logik.__file__}")
@@ -162,7 +242,6 @@ def main():
                 else:
                     warn("Aufgaben-Datei enthält kein List-Format.")
 
-                # Datei leeren
                 with open(AUFGABEN_DATEI, "w", encoding="utf-8") as f:
                     json.dump([], f)
 
@@ -172,5 +251,10 @@ def main():
         time.sleep(1)
 
 
+# ============================================================
+# START
+# ============================================================
+
 if __name__ == "__main__":
+    threading.Thread(target=auto_update_loop, daemon=True).start()
     main()

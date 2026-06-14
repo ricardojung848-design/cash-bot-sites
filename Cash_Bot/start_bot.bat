@@ -1,26 +1,29 @@
 @echo off
 cd /d "C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot"
 
-:: --- Telegram Listener ---
+:: ============================
+:: TELEGRAM LISTENER
+:: ============================
 start "Telegram Listener" cmd /k ^
-"echo [Telegram] Auto-Restart aktiv... & ^
-goto loop_tg
+"echo [Telegram] Auto-Restart aktiv... & goto loop_tg"
 
 :loop_tg
 python Agent_Telegram.py
 echo [Telegram] abgestuerzt - Neustart in 3 Sekunden...
 timeout /t 3 >nul
-goto loop_tg"
+goto loop_tg
 
-:: --- Worker ---
+
+:: ============================
+:: WORKER
+:: ============================
 start "Worker" cmd /k ^
-"echo [Worker] Auto-Restart aktiv... & ^
-goto loop_worker
+"echo [Worker] Auto-Restart aktiv... & goto loop_worker"
 
 :loop_worker
 python Agent_Worker.py
 echo [Worker] abgestuerzt - Neustart in 3 Sekunden...
 timeout /t 3 >nul
-goto loop_worker"
+goto loop_worker
 
 exit

@@ -1,5 +1,5 @@
 """
-core/Logik.py – CashBot / Logik (Version B+ – Agentur-Level, Pipelines + Phase 10 Analytics)
+core/Logik.py – CashBot / Logik (Version B++ – Agentur-Level, Pipelines + Phase 10 + Phase 11 Hooks)
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from modules.fabrik_engine import FABRIK
 from modules.seo_keywords import generate_keyword_cluster
 from modules.analytics_engine import log_event
 from modules.optimizer_engine import build_evergreen_ranking, build_weekly_ranking
-
+from modules.hook_generator import generate_hook   # <<< PHASE 11 HOOK ENGINE
 
 # ---------------------------------------------------------------------------
 # Konfiguration laden
@@ -50,20 +50,13 @@ NISCHE = CONFIG["nische"]
 PRODUKT_TYP = CONFIG["produkt_typ"]
 SOCIAL_CFG = CONFIG["social_media"]
 
-
 # ---------------------------------------------------------------------------
-# Posting-Queue (JSON-basiert)
+# Posting-Queue
 # ---------------------------------------------------------------------------
 
 POSTING_QUEUE_FILE = os.path.join(SOCIAL_DIR, "posting_queue.json")
 
-
 class PostingQueue:
-    """
-    JSON-basierte Posting-Queue.
-    Status: pending | scheduled | posted | cancelled
-    """
-
     def __init__(self, path: str) -> None:
         self.path = path
         self._ensure_file()
@@ -71,14 +64,14 @@ class PostingQueue:
     def _ensure_file(self) -> None:
         queue = load_json(self.path, [])
         if not isinstance(queue, list):
-            warn_worker("Posting-Queue war beschädigt – neu initialisiert.")
+            warn_worker("Posting-Queue beschädigt – neu initialisiert.")
             queue = []
             save_json(self.path, queue)
 
     def _load(self) -> List[Dict[str, Any]]:
         queue = load_json(self.path, [])
         if not isinstance(queue, list):
-            warn_worker("Posting-Queue war beschädigt – neu initialisiert.")
+            warn_worker("Posting-Queue beschädigt – neu initialisiert.")
             queue = []
             save_json(self.path, queue)
         return queue
@@ -91,13 +84,7 @@ class PostingQueue:
             return 1
         return max(item.get("id", 0) for item in queue) + 1
 
-    def add_entry(
-        self,
-        script: Dict[str, Any],
-        json_path: str,
-        txt_path: str,
-        auto_post: bool = False,
-    ) -> Dict[str, Any]:
+    def add_entry(self, script: Dict[str, Any], json_path: str, txt_path: str, auto_post: bool = False) -> Dict[str, Any]:
         queue = self._load()
         entry = {
             "id": self._next_id(queue),
@@ -134,8 +121,8 @@ class PostingQueue:
                 item["status"] = "cancelled"
                 item["cancelled_at"] = datetime.now().isoformat()
                 self._save(queue)
-                return f"🛑 Posting mit ID {post_id} wurde abgebrochen."
-        return f"❌ Kein aktiver Eintrag mit ID {post_id} gefunden."
+                return f"🛑 Posting mit ID {post_id} abgebrochen."
+        return f"❌ Kein aktiver Eintrag mit ID {post_id}."
 
     def overview_text(self) -> str:
         queue = self._load()
@@ -146,15 +133,13 @@ class PostingQueue:
         for item in queue:
             sched = item.get("scheduled_at")
             sched_str = f"📅 {sched}" if sched else ""
-            lines.append(
-                f"- ID {item['id']}: {item['thema']} [{item['status']}] {sched_str}"
-            )
+            lines.append(f"- ID {item['id']}: {item['thema']} [{item['status']}] {sched_str}")
         return "\n".join(lines)
 
     def status_text(self) -> str:
         queue = self._load()
         if not queue:
-            return "📭 Keine Einträge in der Posting-Queue."
+            return "📭 Keine Einträge."
 
         total = len(queue)
         pending = sum(1 for x in queue if x["status"] == "pending")
@@ -171,7 +156,6 @@ class PostingQueue:
             f"• Cancelled: {cancelled}"
         )
 
-
 # ---------------------------------------------------------------------------
 # Posting-Engine
 # ---------------------------------------------------------------------------
@@ -182,7 +166,7 @@ class PostingEngine:
 
     def _perform_post(self, entry: Dict[str, Any]) -> str:
         log_worker(f"Simuliere Posting für: {entry['thema']}")
-        msg = f"💥 Simuliertes Posting veröffentlicht für: {entry['thema']}"
+        msg = f"💥 Simuliertes Posting veröffentlicht: {entry['thema']}"
         log_worker(msg)
         return msg
 
@@ -196,27 +180,25 @@ class PostingEngine:
         now = datetime.now()
 
         for entry in queue:
-            status = entry.get("status", "pending")
-
-            if status not in ("pending", "scheduled"):
+            if entry["status"] not in ("pending", "scheduled"):
                 continue
 
-            if entry.get("auto_post") is True:
-                result = self._perform_post(entry)
+            if entry.get("auto_post"):
+                self._perform_post(entry)
                 self._mark_posted(entry)
                 changed = True
                 continue
 
-            sched_str = entry.get("scheduled_at")
-            if sched_str:
+            sched = entry.get("scheduled_at")
+            if sched:
                 try:
-                    sched = datetime.fromisoformat(sched_str)
-                    if now >= sched:
-                        result = self._perform_post(entry)
+                    sched_dt = datetime.fromisoformat(sched)
+                    if now >= sched_dt:
+                        self._perform_post(entry)
                         self._mark_posted(entry)
                         changed = True
-                except Exception as e:
-                    warn_worker(f"Fehler beim Lesen von scheduled_at: {e}")
+                except:
+                    warn_worker("Fehler beim Lesen von scheduled_at")
 
         if changed:
             self.queue.save_entries(queue)
@@ -227,7 +209,7 @@ class PostingEngine:
         if t.startswith("post now"):
             parts = text.split(" ", 2)
             if len(parts) < 3:
-                return "❌ Bitte nutze: post now <Thema>"
+                return "❌ Nutze: post now <Thema>"
             thema = parts[2].strip()
             queue = self.queue.list_entries()
             for entry in queue:
@@ -235,37 +217,35 @@ class PostingEngine:
                     entry["auto_post"] = True
                     self.queue.save_entries(queue)
                     return f"🚀 Posting für '{thema}' wird sofort ausgeführt."
-            return f"❌ Kein aktiver Eintrag für '{thema}' gefunden."
+            return f"❌ Kein Eintrag für '{thema}'."
 
         if t.startswith("post schedule"):
             parts = text.split(" ", 4)
             if len(parts) < 5:
                 return "❌ Nutze: post schedule <YYYY-MM-DD> <HH:MM> <Thema>"
-            date_str = parts[2]
-            time_str = parts[3]
-            thema = parts[4]
+            date_str, time_str, thema = parts[2], parts[3], parts[4]
             try:
                 sched = datetime.fromisoformat(f"{date_str} {time_str}")
             except:
-                return "❌ Ungültiges Datum/Uhrzeit."
+                return "❌ Ungültiges Datum."
             queue = self.queue.list_entries()
             for entry in queue:
-                if entry["thema"].lower() == thema.lower() and entry["status"] in ("pending", "scheduled"):
+                if entry["thema"].lower() == thema.lower():
                     entry["scheduled_at"] = sched.isoformat()
                     entry["status"] = "scheduled"
                     self.queue.save_entries(queue)
-                    return f"📅 Posting geplant am {sched}"
-            return f"❌ Kein Eintrag für '{thema}' gefunden."
+                    return f"📅 Posting geplant: {sched}"
+            return f"❌ Kein Eintrag für '{thema}'."
 
         if t.startswith("post cancel"):
             parts = text.split(" ", 2)
             if len(parts) < 3:
                 return "❌ Nutze: post cancel <ID>"
             try:
-                post_id = int(parts[2])
+                pid = int(parts[2])
             except:
-                return "❌ ID muss eine Zahl sein."
-            return self.queue.cancel_by_id(post_id)
+                return "❌ ID muss Zahl sein."
+            return self.queue.cancel_by_id(pid)
 
         if t.startswith("post clear"):
             self.queue.clear()
@@ -279,7 +259,7 @@ class PostingEngine:
 
         return "❌ Unbekannter Post-Befehl."
 # ---------------------------------------------------------------------------
-# Reel-Engine
+# Reel-Engine (mit Phase 11 Hook-Engine)
 # ---------------------------------------------------------------------------
 
 class ReelEngine:
@@ -288,14 +268,15 @@ class ReelEngine:
 
     def generate_reel_script(self, thema: str) -> Dict[str, Any]:
         thema_clean = thema.strip()
+
         return {
             "thema": thema_clean,
             "nische": NISCHE,
             "produkt_typ": PRODUKT_TYP,
-            "hook": (
-                f"🔥 Du willst {thema_clean} endlich meistern – "
-                f"aber weißt nicht, wo du anfangen sollst?"
-            ),
+
+            # <<< PHASE 11: Auto-Learning Hook Engine
+            "hook": generate_hook(thema_clean),
+
             "content": [
                 f"{thema_clean} ist einer der schnellsten Wege, um Prozesse zu automatisieren.",
                 "Viele machen Fehler, weil sie ohne System starten.",
@@ -741,7 +722,7 @@ class PipelineEngine:
         json_path, txt_path = self.reel_engine.save_reel_script(script)
         self.queue.add_entry(script, json_path, txt_path)
 
-        # 4) Analytics (produced)
+        # 4) Analytics
         log_event(cid_social, "fabrik", {"produced": 1}, {"thema": thema})
         log_event(cid_seo, "fabrik", {"produced": 1}, {"thema": thema})
         log_event(cid_reel, "reel", {"produced": 1}, {"thema": thema})
@@ -826,7 +807,7 @@ class SchedulerEngine:
         return msg
 
     # -------------------------
-    # Tick (optional)
+    # Tick
     # -------------------------
     def tick(self) -> None:
         state = self.state_manager.load()
@@ -1132,7 +1113,7 @@ _CTX: Optional[CashBotContext] = None
 def _get_context() -> CashBotContext:
     global _CTX
     if _CTX is None:
-        log_worker("Initialisiere CashBotContext (Logik.py – Agentur-Level, Pipelines + Analytics)...")
+        log_worker("Initialisiere CashBotContext (Logik.py – Agentur-Level, Pipelines + Analytics + Hooks)...")
         _CTX = CashBotContext()
     return _CTX
 

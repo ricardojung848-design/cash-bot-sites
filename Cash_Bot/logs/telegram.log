@@ -1059,3 +1059,36 @@
 [2026-06-15 11:03:36] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
 [2026-06-15 11:03:38] [INFO] Antwort an Chat 8803409956 gesendet: 🚀 Posting für 'automation' wird sofort ausgeführt.
 [2026-06-15 11:03:38] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:10:11] [INFO] Telegram Listener wird gestartet...
+[2026-06-15 11:10:12] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 11:10:39] [INFO] Nachricht empfangen: 'reel automation' von Chat 8803409956
+[2026-06-15 11:10:39] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:10:40] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:10:40] [INFO] Antwort an Chat 8803409956 gesendet: 🎬 Reel-Skript erstellt für: automation
+📁 Gespeichert unter:
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation.json
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation.txt
+[2026-06-15 11:10:56] [INFO] Nachricht empfangen: 'post schedule 2026-06-16 10:30 automation' von Chat 8803409956
+[2026-06-15 11:10:56] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:10:56] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:10:56] [INFO] Antwort an Chat 8803409956 gesendet: ⏰ Posting für 'automation' geplant am 2026-06-16 10:30:00.
+[2026-06-15 11:11:15] [INFO] Nachricht empfangen: 'post status' von Chat 8803409956
+[2026-06-15 11:11:15] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:11:15] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:11:16] [INFO] Antwort an Chat 8803409956 gesendet: 📊 Posting-Status:
+• Gesamt: 3
+• Pending: 0
+• Scheduled: 1
+• Posted: 2
+• Cancelled: 0
+[2026-06-15 11:11:37] [INFO] Nachricht empfangen: 'post list' von Chat 8803409956
+[2026-06-15 11:11:37] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:11:39] [INFO] Antwort an Chat 8803409956 gesendet: 📋 Posting-Queue:
+- ID 1: KI Automation [posted] 
+- ID 2: automation [posted] 
+- ID 3: automation [scheduled] ⏰ 2026-06-16T10:30:00
+[2026-06-15 11:11:39] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:12:01] [INFO] Nachricht empfangen: 'post cancel 1' von Chat 8803409956
+[2026-06-15 11:12:01] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:12:02] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:12:02] [INFO] Antwort an Chat 8803409956 gesendet: ❌ Kein aktiver Eintrag mit ID 1 gefunden.

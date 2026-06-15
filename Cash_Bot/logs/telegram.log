@@ -1046,3 +1046,16 @@
 [2026-06-15 10:49:37] [INFO] Telegram Listener läuft und hört zu...
 [2026-06-15 10:53:37] [INFO] Telegram Listener wird gestartet...
 [2026-06-15 10:53:38] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 11:02:23] [INFO] Telegram Listener wird gestartet...
+[2026-06-15 11:02:23] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 11:03:04] [INFO] Nachricht empfangen: 'reel automation' von Chat 8803409956
+[2026-06-15 11:03:04] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:03:05] [INFO] Antwort an Chat 8803409956 gesendet: 🎬 Reel-Skript erstellt für: automation
+📁 Gespeichert unter:
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation.json
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation.txt
+[2026-06-15 11:03:05] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:03:36] [INFO] Nachricht empfangen: 'post now automation' von Chat 8803409956
+[2026-06-15 11:03:36] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:03:38] [INFO] Antwort an Chat 8803409956 gesendet: 🚀 Posting für 'automation' wird sofort ausgeführt.
+[2026-06-15 11:03:38] [INFO] Antwort an Chat 8803409956 gesendet.

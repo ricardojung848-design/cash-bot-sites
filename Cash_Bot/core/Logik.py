@@ -556,4 +556,95 @@ def scheduler_status():
 
     next_evergreen = None
     if EVERGREEN_TOPICS:
-        next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN)
+        next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN_TOPICS)]
+
+    lines = [
+        "🧠 Scheduler-Status:",
+        f"• Paused: {paused}",
+        f"• Letzter Daily-Run: {last_daily}",
+        f"• Letzter Weekly-Run: {last_weekly}",
+        f"• Nächster Evergreen-Index: {evergreen_index}",
+    ]
+
+    if next_evergreen:
+        lines.append(f"• Nächstes Evergreen-Thema: {next_evergreen}")
+
+    return "\n".join(lines)
+
+
+def scheduler_pause():
+    state = load_scheduler_state()
+    state["paused"] = True
+    save_scheduler_state(state)
+    return "⏸ Scheduler pausiert."
+
+
+def scheduler_resume():
+    state = load_scheduler_state()
+    state["paused"] = False
+    save_scheduler_state(state)
+    return "▶ Scheduler wieder aktiviert."
+
+
+def handle_scheduler_command(text):
+    t = text.lower().strip()
+
+    if t == "scheduler status":
+        return scheduler_status()
+    if t == "scheduler pause":
+        return scheduler_pause()
+    if t == "scheduler resume":
+        return scheduler_resume()
+    if t == "scheduler run daily":
+        return scheduler_run_daily()
+    if t == "scheduler run weekly":
+        return scheduler_run_weekly()
+    if t == "scheduler run evergreen":
+        return scheduler_run_evergreen()
+
+    return (
+        "❌ Unbekannter Scheduler-Befehl.\n"
+        "Verfügbar:\n"
+        "· scheduler status\n"
+        "· scheduler pause\n"
+        "· scheduler resume\n"
+        "· scheduler run daily\n"
+        "· scheduler run weekly\n"
+        "· scheduler run evergreen\n"
+    )
+
+
+# === KI-ROUTER ===
+def process_ki_anfrage(text):
+    text_low = text.lower().strip()
+
+    if text_low.startswith("reel "):
+        return handle_reel_command(text)
+    if text_low.startswith("fabrik"):
+        return handle_fabrik_command(text)
+    if text_low.startswith("cluster"):
+        return handle_cluster_command(text)
+    if text_low == "queue":
+        return handle_queue_command()
+    if text_low.startswith("post"):
+        return handle_post_command(text)
+    if text_low.startswith("scheduler"):
+        return handle_scheduler_command(text)
+
+    return (
+        f"Verstanden. Du hast geschrieben: '{text}'.\n"
+        "Nutze:\n"
+        "· 'reel <Thema>' → Reel-Skript erzeugen\n"
+        "· 'fabrik <Thema>' → Seite generieren\n"
+        "· 'cluster <Thema>' → Keyword-Cluster\n"
+        "· 'queue' → Posting-Queue anzeigen\n"
+        "· 'post now <Thema>' → Sofort posten\n"
+        "· 'post schedule <YYYY-MM-DD> <HH:MM> <Thema>' → planen\n"
+        "· 'post status' → Statusübersicht\n"
+        "· 'post list' → Liste aller Einträge\n"
+        "· 'post cancel <ID>' → Eintrag abbrechen\n"
+        "· 'post clear' → Queue leeren\n"
+        "· 'scheduler status' → Scheduler-Status\n"
+        "· 'scheduler run daily/weekly/evergreen'\n"
+        "· 'scheduler pause' / 'scheduler resume'\n"
+    )

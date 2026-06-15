@@ -42,5 +42,39 @@
         "created_at": "2026-06-15T11:10:39.924516",
         "posted_at": null,
         "cancelled_at": null
+    },
+    {
+        "id": 4,
+        "thema": "KI Automation",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\ki_automation.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\ki_automation.txt",
+        "status": "pending",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": false,
+        "created_at": "2026-06-15T11:33:24.275592",
+        "posted_at": null,
+        "cancelled_at": null
+    },
+    {
+        "id": 5,
+        "thema": "Automation Basics",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation_basics.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation_basics.txt",
+        "status": "pending",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": false,
+        "created_at": "2026-06-15T11:33:24.289812",
+        "posted_at": null,
+        "cancelled_at": null
     }
 ]

@@ -196,3 +196,31 @@ fabrik stop | Chat: 8803409956
 📄 Datei erstellt: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
 ✅ Systemstruktur vollständig geprüft.
 [2026-06-15 10:47:36] [INFO] Worker bereit. Warte auf Aufgaben...
+[2026-06-15 10:49:36] [INFO] Worker wird gestartet...
+[2026-06-15 10:49:36] [INFO] 🔍 Starte Systemstruktur-Prüfung...
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\core
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\logs
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\scraped_data
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\generated_content
+[2026-06-15 10:49:36] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media
+[2026-06-15 10:49:36] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\token.txt
+[2026-06-15 10:49:36] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\cashbot_config.json
+[2026-06-15 10:49:36] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\aufgaben.json
+[2026-06-15 10:49:36] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
+[2026-06-15 10:49:36] [INFO] ✅ Systemstruktur vollständig geprüft.
+[2026-06-15 10:49:36] [INFO] 🔍 Starte Systemstruktur-Prüfung...
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\core
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\logs
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\scraped_data
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\generated_content
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\token.txt
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\cashbot_config.json
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\aufgaben.json
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
+✅ Systemstruktur vollständig geprüft.
+[2026-06-15 10:49:36] [INFO] Worker bereit. Warte auf Aufgaben...

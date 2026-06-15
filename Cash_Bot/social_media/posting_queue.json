@@ -76,5 +76,56 @@
         "created_at": "2026-06-15T11:33:24.289812",
         "posted_at": null,
         "cancelled_at": null
+    },
+    {
+        "id": 6,
+        "thema": "Content Automation",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\content_automation.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\content_automation.txt",
+        "status": "pending",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": false,
+        "created_at": "2026-06-15T11:36:12.151327",
+        "posted_at": null,
+        "cancelled_at": null
+    },
+    {
+        "id": 7,
+        "thema": "Automation Basics",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation_basics.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation_basics.txt",
+        "status": "pending",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": false,
+        "created_at": "2026-06-15T11:36:34.684602",
+        "posted_at": null,
+        "cancelled_at": null
+    },
+    {
+        "id": 8,
+        "thema": "Lead Generierung mit Automation",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\lead_generierung_mit_automation.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\lead_generierung_mit_automation.txt",
+        "status": "pending",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": false,
+        "created_at": "2026-06-15T11:36:55.162563",
+        "posted_at": null,
+        "cancelled_at": null
     }
 ]

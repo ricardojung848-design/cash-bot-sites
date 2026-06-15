@@ -389,3 +389,69 @@ fabrik stop | Chat: 8803409956
 [2026-06-15 11:33:24] [INFO] Worker bereit. Warte auf Aufgaben...
 [2026-06-15 11:33:24] [INFO] 📆 Daily-Scheduler ausgeführt für Thema: KI Automation
 [2026-06-15 11:33:24] [INFO] 📆 Weekly-Scheduler ausgeführt für Thema: Automation Basics
+[2026-06-15 11:33:55] [INFO] Worker wird gestartet...
+[2026-06-15 11:33:55] [INFO] 🔍 Starte Systemstruktur-Prüfung...
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\core
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\logs
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\scraped_data
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\generated_content
+[2026-06-15 11:33:55] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media
+[2026-06-15 11:33:55] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\token.txt
+[2026-06-15 11:33:55] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\cashbot_config.json
+[2026-06-15 11:33:55] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\aufgaben.json
+[2026-06-15 11:33:55] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
+[2026-06-15 11:33:55] [INFO] ✅ Systemstruktur vollständig geprüft.
+[2026-06-15 11:33:55] [INFO] 🔍 Starte Systemstruktur-Prüfung...
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\core
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\logs
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\scraped_data
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\generated_content
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\token.txt
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\cashbot_config.json
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\aufgaben.json
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
+✅ Systemstruktur vollständig geprüft.
+[2026-06-15 11:33:55] [INFO] Worker bereit. Warte auf Aufgaben...
+[2026-06-15 11:35:51] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:35:51] [INFO] Antwort erzeugt: 🧠 Scheduler-Status:
+• Paused: False
+• Letzter Daily-Run: 2026-06-15
+• Letzter Weekly-Run: 2026-06-15
+• Nächster Evergreen-Index: 1
+• Nächstes Evergreen-Thema: Content Automation
+[2026-06-15 11:35:51] [INFO] Antwort für Telegram gespeichert.
+[2026-06-15 11:35:51] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-15 11:36:12] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:36:12] [INFO] Antwort erzeugt: 📆 Daily-Scheduler ausgeführt für Thema: Content Automation
+[2026-06-15 11:36:12] [INFO] Antwort für Telegram gespeichert.
+[2026-06-15 11:36:12] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-15 11:36:34] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:36:34] [INFO] Antwort erzeugt: 📆 Weekly-Scheduler ausgeführt für Thema: Automation Basics
+[2026-06-15 11:36:34] [INFO] Antwort für Telegram gespeichert.
+[2026-06-15 11:36:34] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-15 11:36:55] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:36:55] [INFO] Antwort erzeugt: 🔁 Evergreen-Scheduler ausgeführt für Thema: Lead Generierung mit Automation
+[2026-06-15 11:36:55] [INFO] Antwort für Telegram gespeichert.
+[2026-06-15 11:36:55] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-15 11:37:09] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:37:09] [INFO] Antwort erzeugt: 📋 Posting-Queue:
+- ID 1: KI Automation [posted] 
+- ID 2: automation [posted] 
+- ID 3: automation [scheduled] 📅 2026-06-16T10:30:00
+- ID 4: KI Automation [pending] 
+- ID 5: Automation Basics [pending] 
+- ID 6: Content Automation [pending] 
+- ID 7: Automation Basics [pending] 
+- ID 8: Lead Generierung mit Automation [pending] 
+[2026-06-15 11:37:09] [INFO] Antwort für Telegram gespeichert.
+[2026-06-15 11:37:09] [INFO] Aufgabe abgeschlossen.
+

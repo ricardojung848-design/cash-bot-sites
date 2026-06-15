@@ -1096,3 +1096,38 @@
 [2026-06-15 11:23:49] [INFO] Telegram Listener läuft und hört zu...
 [2026-06-15 11:28:25] [INFO] Telegram Listener wird gestartet...
 [2026-06-15 11:28:25] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 11:33:55] [INFO] Telegram Listener wird gestartet...
+[2026-06-15 11:33:56] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 11:35:51] [INFO] Nachricht empfangen: 'scheduler status' von Chat 8803409956
+[2026-06-15 11:35:51] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:35:51] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:35:51] [INFO] Antwort an Chat 8803409956 gesendet: 🧠 Scheduler-Status:
+• Paused: False
+• Letzter Daily-Run: 2026-06-15
+• Letzter Weekly-Run: 2026-06-15
+• Nächster Evergreen-Index: 1
+• Nächstes Evergreen-Thema: Content Automation
+[2026-06-15 11:36:11] [INFO] Nachricht empfangen: 'scheduler run daily' von Chat 8803409956
+[2026-06-15 11:36:11] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:36:12] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:36:12] [INFO] Antwort an Chat 8803409956 gesendet: 📆 Daily-Scheduler ausgeführt für Thema: Content Automation
+[2026-06-15 11:36:34] [INFO] Nachricht empfangen: 'scheduler run weekly' von Chat 8803409956
+[2026-06-15 11:36:34] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:36:35] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:36:36] [INFO] Antwort an Chat 8803409956 gesendet: 📆 Weekly-Scheduler ausgeführt für Thema: Automation Basics
+[2026-06-15 11:36:54] [INFO] Nachricht empfangen: 'scheduler run evergreen' von Chat 8803409956
+[2026-06-15 11:36:54] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:36:55] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:36:55] [INFO] Antwort an Chat 8803409956 gesendet: 🔁 Evergreen-Scheduler ausgeführt für Thema: Lead Generierung mit Automation
+[2026-06-15 11:37:09] [INFO] Nachricht empfangen: 'post list' von Chat 8803409956
+[2026-06-15 11:37:09] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 11:37:09] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 11:37:10] [INFO] Antwort an Chat 8803409956 gesendet: 📋 Posting-Queue:
+- ID 1: KI Automation [posted] 
+- ID 2: automation [posted] 
+- ID 3: automation [scheduled] 📅 2026-06-16T10:30:00
+- ID 4: KI Automation [pending] 
+- ID 5: Automation Basics [pending] 
+- ID 6: Content Automation [pending] 
+- ID 7: Automation Basics [pending] 
+- ID 8: Lead Generierung mit Automation [pending] 

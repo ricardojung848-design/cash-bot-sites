@@ -4,7 +4,6 @@ import json
 import traceback
 from datetime import datetime
 
-# === interne Utils ===
 from core.utils import (
     BASE_DIR,
     load_json,
@@ -14,19 +13,13 @@ from core.utils import (
     error_worker,
 )
 
-# === Systemstruktur-Manager ===
 from core.SystemStructureManager import SystemStructureManager
+from core.Logik import process_ki_anfrage, auto_posting_tick, scheduler_tick
 
-# === Logik (inkl. auto_posting_tick) ===
-from core.Logik import process_ki_anfrage, auto_posting_tick
-
-
-# === PFAD ZU AUFGABEN & RÜCKGABE ===
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
 
 
-# === AUFGABEN LADEN ===
 def load_tasks():
     tasks = load_json(AUFGABEN_DATEI, [])
     if not isinstance(tasks, list):
@@ -36,12 +29,10 @@ def load_tasks():
     return tasks
 
 
-# === AUFGABEN SPEICHERN ===
 def save_tasks(tasks):
     save_json(AUFGABEN_DATEI, tasks)
 
 
-# === EINZELNE AUFGABE VERARBEITEN ===
 def process_task(task):
     chat_id = task.get("chat_id")
     befehl = task.get("befehl")
@@ -50,27 +41,16 @@ def process_task(task):
     log_worker(f"Verarbeite Aufgabe: {befehl} | Chat {chat_id}")
 
     try:
-        # KI-Anfrage
         if befehl == "KI_ANFRAGE":
             antwort = process_ki_anfrage(text)
-
-        # Systemcheck
         elif befehl == "CHECK_SYSTEM":
             antwort = "System läuft stabil."
-
-        # Architekt-Modus
         elif befehl == "ARCHITEKT":
             antwort = "Architekt-Modus aktiviert."
-
-        # RUN
         elif befehl == "RUN":
             antwort = "RUN-Befehl ausgeführt."
-
-        # Logbuch
         elif befehl == "LOGBUCH":
             antwort = "Logbuch wird übertragen."
-
-        # Unbekannt
         else:
             antwort = f"Unbekannter Befehl: {befehl}"
 
@@ -84,17 +64,14 @@ def process_task(task):
     return {"chat_id": chat_id, "antwort": antwort}
 
 
-# === RÜCKGABE SCHREIBEN ===
 def write_response(response):
     save_json(RUECKGABE_DATEI, response)
     log_worker("Antwort für Telegram gespeichert.")
 
 
-# === MAIN LOOP ===
 def main():
     log_worker("Worker wird gestartet...")
 
-    # === Systemstruktur prüfen ===
     manager = SystemStructureManager()
     status = manager.run_full_check()
     log_worker(status)
@@ -102,26 +79,25 @@ def main():
     log_worker("Worker bereit. Warte auf Aufgaben...")
 
     while True:
-        # 1) Auto-Posting-Tick jedes Mal ausführen
+        # Scheduler (Daily + Weekly + Evergreen)
+        scheduler_tick()
+
+        # Auto-Posting
         auto_posting_tick()
 
-        # 2) Aufgaben prüfen
+        # Aufgaben
         tasks = load_tasks()
 
         if not tasks:
             time.sleep(0.5)
             continue
 
-        # Erste Aufgabe entnehmen
         task = tasks.pop(0)
 
-        # Verarbeiten
         response = process_task(task)
 
-        # Rückgabe speichern
         write_response(response)
 
-        # Aufgabenliste aktualisieren
         save_tasks(tasks)
 
         log_worker("Aufgabe abgeschlossen.\n")

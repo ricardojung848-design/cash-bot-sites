@@ -59,6 +59,9 @@ def add_to_posting_queue(script, json_path, txt_path):
         "json_path": json_path,
         "txt_path": txt_path,
         "status": "pending",
+        "scheduled_at": None,
+        "platforms": ["instagram"],
+        "auto_post": False,
         "created_at": datetime.now().isoformat(),
         "posted_at": None
     }
@@ -75,16 +78,58 @@ def get_queue_overview():
         lines.append(f"- ID {item['id']}: {item['thema']} [{item['status']}]")
     return "\n".join(lines)
 
+def mark_posted(entry):
+    entry["status"] = "posted"
+    entry["posted_at"] = datetime.now().isoformat()
+
 def mark_posted_by_thema(thema):
     queue = load_posting_queue()
     thema_low = thema.lower().strip()
     for item in queue:
         if item["status"] == "pending" and item["thema"].lower() == thema_low:
-            item["status"] = "posted"
-            item["posted_at"] = datetime.now().isoformat()
+            mark_posted(item)
             save_posting_queue(queue)
             return f"✅ Eintrag für '{thema}' als 'posted' markiert."
     return f"❌ Kein pending-Eintrag mit Thema '{thema}' gefunden."
+
+
+# === AUTO-POSTING ENGINE ===
+def perform_post(entry):
+    """
+    A) Simuliertes Posting
+    """
+    log_worker(f"Simuliere Posting für: {entry['thema']}")
+    return f"📢 Simuliertes Posting veröffentlicht für: {entry['thema']}"
+
+def auto_posting_tick():
+    queue = load_posting_queue()
+    changed = False
+
+    for entry in queue:
+        if entry["status"] != "pending":
+            continue
+
+        # Sofort posten
+        if entry["auto_post"] is True:
+            result = perform_post(entry)
+            mark_posted(entry)
+            changed = True
+            log_worker(result)
+
+        # Zeitgesteuertes Posting
+        elif entry["scheduled_at"]:
+            try:
+                sched = datetime.fromisoformat(entry["scheduled_at"])
+                if datetime.now() >= sched:
+                    result = perform_post(entry)
+                    mark_posted(entry)
+                    changed = True
+                    log_worker(result)
+            except:
+                pass
+
+    if changed:
+        save_posting_queue(queue)
 
 
 # === REEL ENGINE ===
@@ -190,35 +235,29 @@ def handle_reel_command(text):
         f"- {txt_path}"
     )
 
-def handle_fabrik_command(text):
-    cmd = text.lower().strip()
+def handle_post_now(text):
+    parts = text.split(" ", 2)
+    if len(parts) < 3:
+        return "❌ Bitte nutze: post now <Thema>"
 
-    if cmd == "fabrik start":
-        return FABRIK.start()
-    if cmd == "fabrik stop":
-        return FABRIK.stop()
-    if cmd == "fabrik status":
-        return FABRIK.status()
-    if cmd.startswith("fabrik add "):
-        thema = text.split(" ", 2)[2].strip()
-        return FABRIK.add_task(thema, fabrik_callback)
+    thema = parts[2].strip()
+    queue = load_posting_queue()
 
-    return "❌ Unbekannter Fabrik-Befehl."
+    for entry in queue:
+        if entry["thema"].lower() == thema.lower():
+            entry["auto_post"] = True
+            save_posting_queue(queue)
+            return f"🚀 Posting für '{thema}' wird sofort ausgeführt."
 
-def handle_cluster_command(text):
-    parts = text.split(" ", 1)
-    if len(parts) < 2:
-        return "❌ Bitte nutze: cluster <Thema>"
-    return create_cluster_tasks(parts[1].strip())
+    return f"❌ Kein Eintrag für '{thema}' gefunden."
 
 def handle_queue_command():
     return get_queue_overview()
 
 def handle_post_command(text):
-    parts = text.split(" ", 1)
-    if len(parts) < 2:
-        return "❌ Bitte nutze: post <Thema>"
-    return mark_posted_by_thema(parts[1].strip())
+    if text.startswith("post now"):
+        return handle_post_now(text)
+    return "❌ Unbekannter Post-Befehl."
 
 
 # === KI-ROUTER ===
@@ -233,7 +272,7 @@ def process_ki_anfrage(text):
         return handle_cluster_command(text)
     if text_low == "queue":
         return handle_queue_command()
-    if text_low.startswith("post "):
+    if text_low.startswith("post"):
         return handle_post_command(text)
 
     return (
@@ -243,5 +282,5 @@ def process_ki_anfrage(text):
         "· 'fabrik' → Seiten generieren\n"
         "· 'reel <Thema>' → Reel-Skript erzeugen\n"
         "· 'queue' → Posting-Queue anzeigen\n"
-        "· 'post <Thema>' → Eintrag als gepostet markieren\n"
+        "· 'post now <Thema>' → Sofort posten\n"
     )

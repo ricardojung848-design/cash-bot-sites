@@ -177,7 +177,9 @@ def auto_posting_tick():
                     changed = True
                     log_worker(result)
             except Exception as e:
-                warn_worker(f"Fehler beim Lesen von scheduled_at für ID {entry.get('id')}: {e}")
+                warn_worker(
+                    f"Fehler beim Lesen von scheduled_at für ID {entry.get('id')}: {e}"
+                )
 
     if changed:
         save_posting_queue(queue)
@@ -510,7 +512,9 @@ def scheduler_run_daily(state=None):
     state["last_daily_date"] = datetime.now().date().isoformat()
     save_scheduler_state(state)
 
-    return f"📆 Daily-Scheduler ausgeführt für Thema: {thema}"
+    msg = f"📆 Daily-Scheduler ausgeführt für Thema: {thema}"
+    log_worker(msg)
+    return msg
 
 
 def scheduler_run_weekly(state=None):
@@ -522,7 +526,9 @@ def scheduler_run_weekly(state=None):
 
     thema = WEEKLY_TOPICS.get(weekday)
     if not thema:
-        return "ℹ️ Kein Weekly-Thema für diesen Tag."
+        msg = "ℹ️ Kein Weekly-Thema für diesen Tag."
+        log_worker(msg)
+        return msg
 
     FABRIK.add_task(thema, fabrik_callback)
 
@@ -533,7 +539,31 @@ def scheduler_run_weekly(state=None):
     state["last_weekly_date"] = now.date().isoformat()
     save_scheduler_state(state)
 
-    return f"📆 Weekly-Scheduler ausgeführt für Thema: {thema}"
+    msg = f"📆 Weekly-Scheduler ausgeführt für Thema: {thema}"
+    log_worker(msg)
+    return msg
+
+
+def scheduler_run_evergreen(state=None):
+    # manueller Evergreen-Run (falls du ihn per Command triggern willst)
+    if state is None:
+        state = load_scheduler_state()
+
+    idx = state.get("evergreen_index", 0)
+    thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
+
+    FABRIK.add_task(thema, fabrik_callback)
+
+    script = generate_reel_script(thema)
+    json_path, txt_path = save_reel_script(script)
+    add_to_posting_queue(script, json_path, txt_path)
+
+    state["evergreen_index"] = idx + 1
+    save_scheduler_state(state)
+
+    msg = f"🔁 Evergreen-Scheduler ausgeführt für Thema: {thema}"
+    log_worker(msg)
+    return msg
 
 
 def scheduler_tick():
@@ -551,19 +581,16 @@ def scheduler_tick():
 
     # DAILY
     if current_time >= DAILY_TIME and last_daily != today_str:
-        msg = scheduler_run_daily(state)
-        log_worker(msg)
+        scheduler_run_daily(state)
 
     # WEEKLY (Mo–Sa)
     if current_time >= DAILY_TIME and last_weekly != today_str and weekday in WEEKLY_TOPICS:
-        msg = scheduler_run_weekly(state)
-        log_worker(msg)
+        scheduler_run_weekly(state)
 
 
 def scheduler_status():
     state = load_scheduler_state()
     evergreen_index = state.get("evergreen_index", 0)
-
     next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN_TOPICS)]
 
     return (
@@ -571,6 +598,7 @@ def scheduler_status():
         f"• Paused: {state.get('paused')}\n"
         f"• Letzter Daily-Run: {state.get('last_daily_date')}\n"
         f"• Letzter Weekly-Run: {state.get('last_weekly_date')}\n"
+        f"• Daily-Time: {DAILY_TIME_STR}\n"
         f"• Nächster Evergreen-Index: {evergreen_index}\n"
         f"• Nächstes Evergreen-Thema: {next_evergreen}"
     )
@@ -588,3 +616,149 @@ def scheduler_resume():
     state["paused"] = False
     save_scheduler_state(state)
     return "▶ Scheduler wieder aktiviert."
+
+
+# === NEUE SCHEDULER COMMAND ENGINE (Phase A – FINAL) ===
+
+# Mapping für Wochentage (Deutsch + Englisch)
+DAY_MAPPING = {
+    "montag": 0, "mo": 0, "monday": 0, "mon": 0,
+    "dienstag": 1, "di": 1, "tuesday": 1, "tue": 1,
+    "mittwoch": 2, "mi": 2, "wednesday": 2, "wed": 2,
+    "donnerstag": 3, "do": 3, "thursday": 3, "thu": 3,
+    "freitag": 4, "fr": 4, "friday": 4, "fri": 4,
+    "samstag": 5, "sa": 5, "saturday": 5, "sat": 5,
+}
+
+
+def scheduler_list_weekly():
+    lines = ["📅 Weekly-Themen:"]
+    for day, thema in sorted(WEEKLY_TOPICS.items(), key=lambda x: x[0]):
+        lines.append(f"- {day}: {thema}")
+    return "\n".join(lines)
+
+
+def scheduler_list_evergreen():
+    lines = ["🌲 Evergreen-Themen:"]
+    for i, thema in enumerate(EVERGREEN_TOPICS):
+        lines.append(f"{i}: {thema}")
+    return "\n".join(lines)
+
+
+def scheduler_set_daily_time(new_time_str):
+    global DAILY_TIME_STR, DAILY_TIME
+
+    try:
+        DAILY_TIME = dtime.fromisoformat(new_time_str)
+        DAILY_TIME_STR = new_time_str
+        return f"⏰ Daily-Zeit gesetzt auf {new_time_str}"
+    except Exception:
+        return "❌ Ungültiges Zeitformat. Nutze HH:MM"
+
+
+def scheduler_add_evergreen(thema):
+    EVERGREEN_TOPICS.append(thema)
+    return f"🌲 Evergreen-Thema hinzugefügt: {thema}"
+
+
+def scheduler_remove_evergreen(index_str):
+    try:
+        idx = int(index_str)
+        thema = EVERGREEN_TOPICS.pop(idx)
+        return f"🗑 Evergreen-Thema entfernt: {thema}"
+    except Exception:
+        return "❌ Ungültiger Index."
+
+
+def scheduler_set_weekly(day_str, thema):
+    day_str = day_str.lower().strip()
+    if day_str not in DAY_MAPPING:
+        return "❌ Ungültiger Tag. Nutze z.B. 'montag' oder 'monday'."
+
+    weekday = DAY_MAPPING[day_str]
+    WEEKLY_TOPICS[weekday] = thema
+    return f"📅 Weekly-Thema für {day_str} gesetzt auf: {thema}"
+
+
+def handle_scheduler_command(text):
+    t = text.strip()
+    parts = t.split(" ")
+
+    if len(parts) < 2:
+        return (
+            "❌ Unbekannter Scheduler-Befehl.\n"
+            "Verfügbar:\n"
+            "· scheduler status\n"
+            "· scheduler pause\n"
+            "· scheduler resume\n"
+            "· scheduler run daily\n"
+            "· scheduler run weekly\n"
+            "· scheduler run evergreen\n"
+            "· scheduler list weekly\n"
+            "· scheduler list evergreen\n"
+            "· scheduler set daily <HH:MM>\n"
+            "· scheduler set weekly <Tag> <Thema>\n"
+            "· scheduler add evergreen <Thema>\n"
+            "· scheduler remove evergreen <Index>\n"
+        )
+
+    base = parts[0].lower()
+    if base != "scheduler":
+        return "❌ Bitte nutze: scheduler <command>"
+
+    cmd = parts[1].lower()
+
+    # STATUS / PAUSE / RESUME / RUN
+    if cmd == "status":
+        return scheduler_status()
+    if cmd == "pause":
+        return scheduler_pause()
+    if cmd == "resume":
+        return scheduler_resume()
+    if cmd == "run":
+        if len(parts) < 3:
+            return "❌ Nutze: scheduler run daily|weekly|evergreen"
+        mode = parts[2].lower()
+        if mode == "daily":
+            return scheduler_run_daily()
+        if mode == "weekly":
+            return scheduler_run_weekly()
+        if mode == "evergreen":
+            return scheduler_run_evergreen()
+        return "❌ Unbekannter Run-Modus."
+
+    # LIST COMMANDS
+    if cmd == "list":
+        if len(parts) < 3:
+            return "❌ Nutze: scheduler list weekly|evergreen"
+        if parts[2].lower() == "weekly":
+            return scheduler_list_weekly()
+        if parts[2].lower() == "evergreen":
+            return scheduler_list_evergreen()
+        return "❌ Unbekannte Liste."
+
+    # SET DAILY / WEEKLY
+    if cmd == "set":
+        if len(parts) < 4:
+            return (
+                "❌ Nutze:\n"
+                "· scheduler set daily <HH:MM>\n"
+                "· scheduler set weekly <Tag> <Thema>"
+            )
+        mode = parts[2].lower()
+        if mode == "daily":
+            return scheduler_set_daily_time(parts[3])
+        if mode == "weekly":
+            if len(parts) < 5:
+                return "❌ Nutze: scheduler set weekly <Tag> <Thema>"
+            day = parts[3]
+            thema = " ".join(parts[4:])
+            return scheduler_set_weekly(day, thema)
+        return "❌ Unbekannter Set-Modus."
+
+    # ADD EVERGREEN
+    if cmd == "add":
+        if len(parts) < 4 or parts[2].lower() != "evergreen":
+            return "❌ Nutze: scheduler add evergreen <Thema>"
+        thema = " ".join(parts[3:])
+        return scheduler_add_ever

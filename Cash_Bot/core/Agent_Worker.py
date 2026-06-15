@@ -1,167 +1,124 @@
 import os
-import time
 import json
-import threading
+import time
 import datetime
-import urllib.request
-import urllib.parse
+import traceback
 
-from . import Logik
-from . import updater
-from .utils import (
-    BASE_DIR,
-    CONFIG_DIR,
-    info_worker,
-    warn_worker,
-    error_worker,
-    fatal_worker,
-    load_json,
-    save_json,
-)
-
-# =========================
-# Pfade & Dateien
-# =========================
+# === PFAD BASIS ===
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+CORE_DIR = os.path.join(BASE_DIR, "core")
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
-TOKEN_FILE = os.path.join(CONFIG_DIR, "token.txt")
-CHAT_ID_FILE = os.path.join(CONFIG_DIR, "telegram_chat_id.json")
+WORKER_LOG = os.path.join(LOGS_DIR, "worker.log")
 
+os.makedirs(LOGS_DIR, exist_ok=True)
 
-# =========================
-# Token / Telegram
-# =========================
-
-def get_token():
-    if not os.path.exists(TOKEN_FILE):
-        warn_worker(f"Kein TOKEN_FILE gefunden: {TOKEN_FILE}")
-        return None
+# === LOGGING ===
+def log(level, msg):
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{ts}] [{level}] {msg}"
+    print(line)
     try:
-        with open(TOKEN_FILE, "r", encoding="utf-8") as f:
-            return f.read().strip()
+        with open(WORKER_LOG, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except:
+        pass
+
+def info(msg): log("INFO", msg)
+def warn(msg): log("WARN", msg)
+def error(msg): log("ERROR", msg)
+
+
+# === KI-LOGIK LADEN ===
+try:
+    from core.Logik import process_ki_anfrage
+    info("Logik erfolgreich geladen.")
+except Exception as e:
+    error(f"Fehler beim Laden der Logik: {e}")
+    traceback.print_exc()
+    time.sleep(3)
+    exit()
+
+
+# === AUFGABEN LADEN ===
+def load_tasks():
+    if not os.path.exists(AUFGABEN_DATEI):
+        return []
+
+    try:
+        with open(AUFGABEN_DATEI, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        warn("Konnte Aufgaben-Datei nicht lesen – JSON fehlerhaft.")
+        return []
+
+
+# === AUFGABEN SPEICHERN ===
+def save_tasks(tasks):
+    try:
+        with open(AUFGABEN_DATEI, "w", encoding="utf-8") as f:
+            json.dump(tasks, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        warn_worker(f"Konnte TOKEN_FILE nicht lesen: {e}")
-        return None
+        error(f"Fehler beim Speichern der Aufgaben: {e}")
 
 
-BOT_TOKEN = get_token()
+# === AUFGABE VERARBEITEN ===
+def process_task(task):
+    chat_id = task["chat_id"]
+    befehl = task["befehl"]
+    text = task["text"]
 
-
-def send_telegram_message(chat_id, text):
-    if not chat_id or not BOT_TOKEN:
-        warn_worker("Konnte keine Telegram-Nachricht senden (fehlende chat_id oder BOT_TOKEN).")
-        return
-    try:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        data = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode("utf-8")
-        req = urllib.request.Request(url, data=data)
-        with urllib.request.urlopen(req, timeout=10):
-            pass
-        info_worker(f"Antwort an Telegram gesendet (Chat {chat_id}).")
-    except Exception as e:
-        error_worker(f"[RÜCKKANAL] Fehler beim Senden: {e}")
-
-
-# =========================
-# Chat-ID speichern / laden
-# =========================
-
-def speichere_chat_id(chat_id):
-    if not chat_id:
-        return
-    try:
-        data = {"chat_id": str(chat_id)}
-        save_json(CHAT_ID_FILE, data)
-        info_worker(f"CHAT_ID gespeichert: {chat_id}")
-    except Exception as e:
-        warn_worker(f"Konnte CHAT_ID nicht speichern: {e}")
-
-
-def lade_chat_id():
-    data = load_json(CHAT_ID_FILE, default={})
-    return data.get("chat_id")
-
-
-# =========================
-# Aufgaben verarbeiten
-# =========================
-
-def verarbeite_aufgabe(task: dict):
-    befehl = task.get("befehl", "UNBEKANNT")
-    text = task.get("text", "")
-    chat_id = task.get("chat_id") or lade_chat_id()
-
-    if chat_id:
-        speichere_chat_id(chat_id)
-
-    info_worker(f"Neue Aufgabe: {befehl} | Text: {text} | Chat: {chat_id}")
+    info(f"Verarbeite Aufgabe: {befehl} | Chat {chat_id}")
 
     try:
-        if befehl == "CHECK_SYSTEM":
-            send_telegram_message(chat_id, "✅ DetoBot-System läuft stabil.")
-
-        elif befehl == "KI_ANFRAGE":
-            info_worker("KI-Anfrage wird verarbeitet...")
-            antwort = Logik.process_ki_anfrage(text)
-            send_telegram_message(chat_id, antwort)
-
-        elif befehl == "FABRIK":
-            info_worker("FABRIK-Befehl empfangen.")
-            antwort = Logik.handle_fabrik_command(text)
-            send_telegram_message(chat_id, antwort)
-
+        if befehl == "KI_ANFRAGE":
+            antwort = process_ki_anfrage(text)
+        elif befehl == "CHECK_SYSTEM":
+            antwort = "System läuft stabil."
+        elif befehl == "ARCHITEKT":
+            antwort = "Architekt-Modus aktiviert."
+        elif befehl == "RUN":
+            antwort = "RUN-Befehl ausgeführt."
+        elif befehl == "LOGBUCH":
+            antwort = "Logbuch wird übertragen."
         else:
-            warn_worker(f"Unbekannter Befehl: {befehl}")
-            send_telegram_message(chat_id, f"❓ Unbekannter Befehl: {befehl}")
+            antwort = f"Unbekannter Befehl: {befehl}"
+
+        info(f"Antwort erzeugt: {antwort}")
 
     except Exception as e:
-        msg = f"Fehler bei der Aufgabenverarbeitung ({befehl}): {e}"
-        error_worker(msg)
-        if chat_id:
-            send_telegram_message(chat_id, f"❌ {msg}")
+        error(f"Fehler bei der Verarbeitung: {e}")
+        traceback.print_exc()
+        antwort = f"❌ Fehler bei der Verarbeitung: {e}"
+
+    return antwort
 
 
-# =========================
-# Hauptschleife
-# =========================
-
+# === MAIN LOOP ===
 def main():
-    info_worker("DetoBot Agent Worker gestartet.")
-    info_worker(f"Geladene Logik.py: {Logik.__file__}")
+    info("Worker gestartet und wartet auf Aufgaben...")
 
     while True:
-        try:
-            if os.path.exists(AUFGABEN_DATEI) and os.path.getsize(AUFGABEN_DATEI) > 0:
-                with open(AUFGABEN_DATEI, "r", encoding="utf-8") as f:
-                    try:
-                        tasks = json.load(f)
-                    except json.JSONDecodeError as e:
-                        error_worker(f"JSON-Fehler in {AUFGABEN_DATEI}: {e}")
-                        tasks = []
+        tasks = load_tasks()
 
-                if isinstance(tasks, list):
-                    for task in tasks:
-                        if isinstance(task, dict):
-                            verarbeite_aufgabe(task)
-                        else:
-                            warn_worker(f"Ungültiger Task-Eintrag: {task}")
-                else:
-                    warn_worker("Aufgaben-Datei enthält kein List-Format.")
+        if not tasks:
+            time.sleep(1)
+            continue
 
-                with open(AUFGABEN_DATEI, "w", encoding="utf-8") as f:
-                    json.dump([], f)
+        task = tasks.pop(0)
+        antwort = process_task(task)
 
-        except Exception as loop_error:
-            fatal_worker(f"Fehler in der Hauptschleife: {loop_error}")
+        # Antwort speichern für Telegram (Worker schreibt Rückgabe)
+        rueckgabe_datei = os.path.join(BASE_DIR, "rueckgabe.json")
+        with open(rueckgabe_datei, "w", encoding="utf-8") as f:
+            json.dump({"chat_id": task["chat_id"], "antwort": antwort}, f, indent=4, ensure_ascii=False)
 
-        time.sleep(1)
+        save_tasks(tasks)
+        info("Aufgabe abgeschlossen.\n")
 
+        time.sleep(0.5)
 
-# =========================
-# Start
-# =========================
 
 if __name__ == "__main__":
-    # Updater im Hintergrund
-    threading.Thread(target=updater.auto_update_loop, daemon=True).start()
     main()

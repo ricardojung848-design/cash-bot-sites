@@ -7,8 +7,8 @@ import io
 from datetime import datetime
 
 # Fabrik + Keyword Engine
-from fabrik_engine import FABRIK
-from seo_keywords import generate_keyword_cluster
+from modules.fabrik_engine import FABRIK
+from modules.seo_keywords import generate_keyword_cluster
 
 # === VERZEICHNISSE ===
 DATA_DIR = "scraped_data"

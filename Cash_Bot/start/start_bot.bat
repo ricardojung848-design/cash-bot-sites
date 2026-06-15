@@ -1,7 +1,7 @@
 @echo off
-cd /d "C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot"
+cd /d "%~dp0"
+cd ..
 
-start "Telegram Listener" cmd /k telegram_loop.bat
-start "Worker" cmd /k worker_loop.bat
-
-exit
+echo Starte DetoBot...
+start "" "start\worker_loop.bat"
+start "" "start\telegram_loop.bat"

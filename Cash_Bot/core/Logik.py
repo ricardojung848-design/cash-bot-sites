@@ -351,4 +351,4 @@ class ReelEngine:
     def __init__(self, queue: PostingQueue) -> None:
         self.queue = queue
 
-    def generate_reel_script(self, thema: str) -> Dict[str, Any
+def generate_reel_script(self, thema: str) -> Dict[str, Any]:

@@ -17,8 +17,8 @@ from core.utils import (
 # === Systemstruktur-Manager ===
 from core.SystemStructureManager import SystemStructureManager
 
-# === Logik ===
-from core.Logik import process_ki_anfrage
+# === Logik (inkl. auto_posting_tick) ===
+from core.Logik import process_ki_anfrage, auto_posting_tick
 
 
 # === PFAD ZU AUFGABEN & RÜCKGABE ===
@@ -102,6 +102,10 @@ def main():
     log_worker("Worker bereit. Warte auf Aufgaben...")
 
     while True:
+        # 1) Auto-Posting-Tick jedes Mal ausführen
+        auto_posting_tick()
+
+        # 2) Aufgaben prüfen
         tasks = load_tasks()
 
         if not tasks:

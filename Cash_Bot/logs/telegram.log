@@ -1145,3 +1145,79 @@
 [2026-06-15 14:17:18] [INFO] Telegram Listener läuft und hört zu...
 [2026-06-15 15:41:50] [INFO] Telegram Listener wird gestartet...
 [2026-06-15 15:41:51] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 17:51:02] [INFO] Telegram Listener wird gestartet...
+[2026-06-15 17:51:03] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-15 17:51:49] [INFO] Nachricht empfangen: 'scheduler status' von Chat 8803409956
+[2026-06-15 17:51:49] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 17:51:50] [INFO] Antwort an Chat 8803409956 gesendet: 🧠 Scheduler-Status:
+• Paused: False
+• Letzter Daily-Run: 2026-06-15
+• Letzter Weekly-Run: 2026-06-15
+• Daily-Time: 18:00
+• Nächster Evergreen-Index: 3
+• Nächstes Evergreen-Thema: Die häufigsten Fehler bei Automationen
+[2026-06-15 17:51:50] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 17:52:18] [INFO] Nachricht empfangen: 'reel Automation Basics' von Chat 8803409956
+[2026-06-15 17:52:18] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 17:52:18] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 17:52:19] [INFO] Antwort an Chat 8803409956 gesendet: 🎬 Reel-Skript erstellt für: Automation Basics
+📁 Gespeichert unter:
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation_basics.json
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation_basics.txt
+[2026-06-15 17:52:34] [INFO] Nachricht empfangen: 'post list' von Chat 8803409956
+[2026-06-15 17:52:34] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 17:52:34] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-15 17:52:34] [INFO] Antwort an Chat 8803409956 gesendet: 📋 Posting-Queue:
+- ID 1: KI Automation [posted] 
+- ID 2: automation [posted] 
+- ID 3: automation [scheduled] 📅 2026-06-16T10:30:00
+- ID 4: KI Automation [pending] 
+- ID 5: Automation Basics [pending] 
+- ID 6: Content Automation [pending] 
+- ID 7: Automation Basics [pending] 
+- ID 8: Lead Generierung mit Automation [pending] 
+- ID 9: Automation Basics [pending] 
+[2026-06-15 17:52:50] [INFO] Nachricht empfangen: 'scheduler list evergreen' von Chat 8803409956
+[2026-06-15 17:52:50] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-15 17:52:52] [INFO] Antwort an Chat 8803409956 gesendet: 🌲 Evergreen-Themen:
+0: Die 5 wichtigsten Automationen für jedes Business
+1: Wie du deinen ersten Workflow baust
+2: Automationen, die dir 10 Stunden pro Woche sparen
+3: Die häufigsten Fehler bei Automationen
+4: Wie du Prozesse richtig dokumentierst
+5: Die beste Struktur für Automations-Workflows
+6: Wie du Automationen testest, bevor du live gehst
+7: Die 3 Automationen, die jedes kleine Unternehmen braucht
+8: Die besten KI-Tools für Unternehmer
+9: Wie KI-Agenten deinen Alltag automatisieren
+10: Der perfekte KI-Workflow für Lead-Generierung
+11: KI-Agenten für Sales
+12: KI-Agenten für Support
+13: KI-Agenten für Content-Produktion
+14: Wie du KI-Tools kombinierst, um Systeme zu bauen
+15: Die Zukunft von KI-Automationen
+16: Sales-Automationen, die wirklich funktionieren
+17: CRM-Automationen, die du sofort brauchst
+18: Wie du deinen Funnel automatisierst
+19: Reporting-Automationen für Skalierung
+20: Follow-Up-Automationen, die Umsatz bringen
+21: Wie du Leads automatisch qualifizierst
+22: Automatisierte Onboarding-Prozesse
+23: Automatisierte Kundenbindung
+24: Wie du wie ein System-Designer denkst
+25: Die 3 Ebenen eines skalierbaren Systems
+26: Bottlenecks erkennen und lösen
+27: Warum Systeme wichtiger sind als Tools
+28: Wie du dein Business in 90 Tagen systematisierst
+29: Die 5 größten System-Fehler
+30: Wie du Prozesse standardisierst
+31: Wie du dein Business skalierbar machst
+32: 1-Minute-Automation für mehr Leads
+33: 3 KI-Prompts, die dir sofort Zeit sparen
+34: Mini-Workflow für Content-Planung
+35: Mini-Workflow für Kundenkommunikation
+36: Mini-Workflow für Rechnungen
+37: Mini-Workflow für Social Media
+38: Mini-Workflow für E-Mails
+39: Mini-Workflow für Reporting
+[2026-06-15 17:52:52] [INFO] Antwort an Chat 8803409956 gesendet.

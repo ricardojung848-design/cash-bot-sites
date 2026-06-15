@@ -1,12 +1,13 @@
 """
-core/Logik.py – CashBot / Logik (Version B – Agentur-Level)
+core/Logik.py – CashBot / Logik (Version B+ – Agentur-Level, mit Fabrik-Pipelines)
 
 Enthält:
 - JSON-basierte Posting-Queue (pending, scheduled, posted, cancelled)
 - Auto-Posting-Engine (auto_posting_tick)
 - Reel-Engine (Reel-Skripte generieren + speichern)
-- Fabrik-Engine (HTML-Seiten generieren + FABRIK-Tasks)
+- Fabrik-Engine 2.0 (Templates, Auto-Content, Multi-Output)
 - Cluster-Engine (Keyword-Cluster + FABRIK-Tasks)
+- Pipeline-Engine (Daily + Weekly Pipelines: C1 + C2)
 - Scheduler-Engine (Daily, Weekly, Evergreen – Mo–Sa, 18:00)
 - Scheduler-Command-Engine (alle Commands beginnen mit "scheduler")
 - KI-Router (process_ki_anfrage) für Telegram-/KI-Befehle
@@ -19,7 +20,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, time as dtime, time, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # === interne Utils ===
 from core.utils import (
@@ -375,7 +376,7 @@ class ReelEngine:
             "timestamp": datetime.now().isoformat(),
         }
 
-    def save_reel_script(self, script: Dict[str, Any]) -> (str, str):
+    def save_reel_script(self, script: Dict[str, Any]) -> Tuple[str, str]:
         thema = script["thema"].replace(" ", "_").lower()
         json_path = os.path.join(SOCIAL_DIR, f"{thema}.json")
         txt_path = os.path.join(SOCIAL_DIR, f"{thema}.txt")
@@ -415,42 +416,216 @@ class ReelEngine:
 
 
 # ---------------------------------------------------------------------------
-# Fabrik-Engine
+# Fabrik-Engine 2.0 (Templates, Auto-Content, Multi-Output)
 # ---------------------------------------------------------------------------
 
 class FabrikEngine:
-    def fabrik_callback(self, thema: str) -> str:
-        filename = thema.replace(" ", "_").lower() + ".html"
-        path = os.path.join(OUTPUT_DIR, filename)
+    """
+    Fabrik-Engine 2.0
+    - C1: Social-Media-optimierte Kurz-Seiten
+    - C2: SEO-optimierte Mittel-Langform-Seiten
+    - Multi-Output: HTML + JSON + Markdown
+    """
+
+    def _slugify(self, thema: str) -> str:
+        return thema.strip().replace(" ", "_").lower()
+
+    def _build_social_content(self, thema: str) -> Dict[str, Any]:
+        # C1 – kurz & knackig, Social-Media-Begleitseite
+        return {
+            "title": f"{thema} – Quick Overview",
+            "meta_description": f"Schneller Überblick zu {thema} für Social Media & Reels.",
+            "sections": [
+                {
+                    "heading": "Warum dieses Thema wichtig ist",
+                    "bullets": [
+                        f"{thema} spart dir Zeit und Nerven.",
+                        "Du kannst Prozesse automatisieren statt alles manuell zu machen.",
+                        "Perfekt, um mit kleinen Automationen zu starten.",
+                    ],
+                },
+                {
+                    "heading": "3 schnelle Umsetzungsideen",
+                    "bullets": [
+                        "Starte mit einem Mini-Workflow.",
+                        "Automatisiere eine wiederkehrende Aufgabe.",
+                        "Nutze KI, um Routinearbeit zu reduzieren.",
+                    ],
+                },
+                {
+                    "heading": "Call to Action",
+                    "bullets": [
+                        "Speichere dir diese Seite.",
+                        "Teste heute eine kleine Automation.",
+                        "Teile das Thema mit jemandem, der es braucht.",
+                    ],
+                },
+            ],
+        }
+
+    def _build_seo_content(self, thema: str) -> Dict[str, Any]:
+        # C2 – SEO-optimiert, 500–900 Wörter (konzeptionell)
+        return {
+            "title": f"{thema} – Leitfaden für Business Automation",
+            "meta_description": f"Ausführlicher Leitfaden zu {thema} mit Praxisbeispielen, Automations-Ideen und System-Strategien.",
+            "sections": [
+                {
+                    "heading": f"Einführung in {thema}",
+                    "paragraphs": [
+                        f"{thema} ist ein zentraler Baustein moderner Business Automation.",
+                        "Richtig eingesetzt, hilft es dir, Zeit zu sparen, Fehler zu reduzieren und dein Unternehmen skalierbar zu machen.",
+                    ],
+                },
+                {
+                    "heading": "Typische Probleme ohne Automationen",
+                    "paragraphs": [
+                        "Viele Teams arbeiten mit manuellen Prozessen, Excel-Listen und Copy-Paste.",
+                        "Das führt zu Fehlern, Verzögerungen und Frust – sowohl intern als auch bei Kunden.",
+                    ],
+                },
+                {
+                    "heading": f"Wie du {thema} in deinem Business einführst",
+                    "paragraphs": [
+                        "Starte mit einer klaren Prozessanalyse: Welche Schritte wiederholen sich ständig?",
+                        "Definiere ein Minimum Viable System – eine erste, einfache Version deiner Automation.",
+                        "Nutze Tools, die zu deinem Tech-Stack passen, statt alles neu zu erfinden.",
+                    ],
+                },
+                {
+                    "heading": "Best Practices & nächste Schritte",
+                    "paragraphs": [
+                        "Dokumentiere deine Workflows, bevor du sie automatisierst.",
+                        "Teste jede Automation in einer sicheren Umgebung.",
+                        "Iteriere regelmäßig und optimiere auf Basis von echten Daten.",
+                    ],
+                },
+            ],
+        }
+
+    def _render_html(self, thema: str, content: Dict[str, Any]) -> str:
+        title = content["title"]
+        meta_desc = content["meta_description"]
+        sections_html = []
+
+        for sec in content.get("sections", []):
+            h = sec.get("heading")
+            paragraphs = sec.get("paragraphs", [])
+            bullets = sec.get("bullets", [])
+
+            block = f"<h2>{h}</h2>\n"
+            for p in paragraphs:
+                block += f"<p>{p}</p>\n"
+            if bullets:
+                block += "<ul>\n"
+                for b in bullets:
+                    block += f"<li>{b}</li>\n"
+                block += "</ul>\n"
+            sections_html.append(block)
+
+        sections_joined = "\n".join(sections_html)
 
         html = f"""
-<html>
+<!DOCTYPE html>
+<html lang="de">
 <head>
-    <title>{thema} – {NISCHE}</title>
     <meta charset="utf-8">
+    <title>{title}</title>
+    <meta name="description" content="{meta_desc}">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{meta_desc}">
 </head>
 <body>
-    <h1>{thema}</h1>
-    <p>Diese Seite wurde automatisch generiert durch den DETO CashBot.</p>
-    <p>Nische: {NISCHE}</p>
-    <p>Produkt-Typ: {PRODUKT_TYP}</p>
-    <p>Erstellt am: {datetime.now().isoformat()}</p>
+    <header>
+        <h1>{title}</h1>
+        <p>Nische: {NISCHE} – Produkt-Typ: {PRODUKT_TYP}</p>
+    </header>
+    <main>
+        {sections_joined}
+    </main>
+    <footer>
+        <p>Erstellt am: {datetime.now().isoformat()}</p>
+    </footer>
 </body>
 </html>
         """.strip()
+        return html
 
-        with open(path, "w", encoding="utf-8") as f:
+    def _render_markdown(self, thema: str, content: Dict[str, Any]) -> str:
+        title = content["title"]
+        lines = [f"# {title}", "", f"_Nische: {NISCHE} – Produkt-Typ: {PRODUKT_TYP}_", ""]
+        for sec in content.get("sections", []):
+            lines.append(f"## {sec.get('heading')}")
+            for p in sec.get("paragraphs", []):
+                lines.append(p)
+                lines.append("")
+            bullets = sec.get("bullets", [])
+            if bullets:
+                for b in bullets:
+                    lines.append(f"- {b}")
+                lines.append("")
+        return "\n".join(lines)
+
+    def create_page(self, thema: str, variant: str) -> Dict[str, str]:
+        """
+        variant: "social" (C1) oder "seo" (C2)
+        Gibt Pfade für html/json/md zurück.
+        """
+        slug = self._slugify(thema)
+        if variant == "social":
+            content = self._build_social_content(thema)
+            suffix = "social"
+        else:
+            content = self._build_seo_content(thema)
+            suffix = "seo"
+
+        html = self._render_html(thema, content)
+        md = self._render_markdown(thema, content)
+        json_data = {
+            "thema": thema,
+            "variant": variant,
+            "title": content["title"],
+            "meta_description": content["meta_description"],
+            "sections": content["sections"],
+            "nische": NISCHE,
+            "produkt_typ": PRODUKT_TYP,
+            "created_at": datetime.now().isoformat(),
+        }
+
+        html_path = os.path.join(OUTPUT_DIR, f"{slug}_{suffix}.html")
+        json_path = os.path.join(OUTPUT_DIR, f"{slug}_{suffix}.json")
+        md_path = os.path.join(OUTPUT_DIR, f"{slug}_{suffix}.md")
+
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(html)
+        save_json(json_path, json_data)
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(md)
 
-        return path
+        return {
+            "html": html_path,
+            "json": json_path,
+            "md": md_path,
+        }
 
+    # Kompatibler Fabrik-Command (einfacher Modus)
     def handle_fabrik_command(self, text: str) -> str:
         parts = text.split(" ", 1)
         if len(parts) < 2:
             return "❌ Bitte nutze: fabrik <Thema>"
         thema = parts[1].strip()
-        FABRIK.add_task(thema, self.fabrik_callback)
-        return f"🏭 Fabrik-Task erstellt für: {thema}"
+        paths_social = self.create_page(thema, "social")
+        paths_seo = self.create_page(thema, "seo")
+        return (
+            f"🏭 Fabrik-Seiten erstellt für: {thema}\n"
+            f"• Social (C1):\n"
+            f"  - {paths_social['html']}\n"
+            f"  - {paths_social['json']}\n"
+            f"  - {paths_social['md']}\n"
+            f"• SEO (C2):\n"
+            f"  - {paths_seo['html']}\n"
+            f"  - {paths_seo['json']}\n"
+            f"  - {paths_seo['md']}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -466,7 +641,8 @@ class ClusterEngine:
         keywords = cluster["keywords"]
 
         for kw in keywords:
-            FABRIK.add_task(kw, self.fabrik_engine.fabrik_callback)
+            # Hier nutzen wir weiterhin FABRIK.add_task, falls dein altes System das erwartet
+            FABRIK.add_task(kw, lambda t, fe=self.fabrik_engine: fe.create_page(t, "seo"))
 
         return (
             f"🔗 Cluster erstellt für '{thema}'\n"
@@ -483,7 +659,7 @@ class ClusterEngine:
 
 
 # ---------------------------------------------------------------------------
-# Scheduler-Engine (Daily, Weekly, Evergreen)
+# Scheduler-Engine (Daily, Weekly, Evergreen) + Pipelines
 # ---------------------------------------------------------------------------
 
 SCHEDULER_STATE_FILE = os.path.join(CONFIG_DIR, "scheduler_state.json")
@@ -582,23 +758,72 @@ class SchedulerStateManager:
         save_json(self.path, state)
 
 
+# ---------------------------------------------------------------------------
+# Pipeline-Engine (Daily + Weekly Pipelines: C1 + C2 + Reel + Cluster)
+# ---------------------------------------------------------------------------
+
+class PipelineEngine:
+    """
+    F3-Modus:
+    - Daily → Evergreen-Pipeline
+    - Weekly → Weekly-Pipeline
+    Jede Pipeline:
+    - C1 Social-Page
+    - C2 SEO-Page
+    - Cluster-Tasks
+    - Reel + Posting-Queue
+    """
+
+    def __init__(
+        self,
+        fabrik_engine: FabrikEngine,
+        reel_engine: ReelEngine,
+        cluster_engine: ClusterEngine,
+        queue: PostingQueue,
+    ) -> None:
+        self.fabrik_engine = fabrik_engine
+        self.reel_engine = reel_engine
+        self.cluster_engine = cluster_engine
+        self.queue = queue
+
+    def run_pipeline(self, thema: str) -> None:
+        log_worker(f"Starte Pipeline für Thema: {thema}")
+
+        # 1) Fabrik-Seiten (C1 + C2)
+        paths_social = self.fabrik_engine.create_page(thema, "social")
+        paths_seo = self.fabrik_engine.create_page(thema, "seo")
+
+        log_worker(
+            f"Fabrik-Seiten erstellt für '{thema}': "
+            f"Social={paths_social['html']}, SEO={paths_seo['html']}"
+        )
+
+        # 2) Cluster-Tasks
+        cluster_msg = self.cluster_engine.create_cluster_tasks(thema)
+        log_worker(cluster_msg)
+
+        # 3) Reel + Posting-Queue
+        script = self.reel_engine.generate_reel_script(thema)
+        json_path, txt_path = self.reel_engine.save_reel_script(script)
+        self.queue.add_entry(script, json_path, txt_path)
+
+        log_worker(f"Pipeline abgeschlossen für Thema: {thema}")
+
+
 class SchedulerEngine:
     """
     Scheduler-Engine für Daily, Weekly, Evergreen.
     Mo–Sa aktiv, Daily-Time = 18:00.
+    Nutzt PipelineEngine für F3 (Daily + Weekly Pipelines).
     """
 
     def __init__(
         self,
         state_manager: SchedulerStateManager,
-        reel_engine: ReelEngine,
-        fabrik_engine: FabrikEngine,
-        queue: PostingQueue,
+        pipeline_engine: PipelineEngine,
     ) -> None:
         self.state_manager = state_manager
-        self.reel_engine = reel_engine
-        self.fabrik_engine = fabrik_engine
-        self.queue = queue
+        self.pipeline_engine = pipeline_engine
 
     # --- Core Runs ---------------------------------------------------------
 
@@ -609,17 +834,14 @@ class SchedulerEngine:
         idx = state.get("evergreen_index", 0)
         thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
 
-        FABRIK.add_task(thema, self.fabrik_engine.fabrik_callback)
-
-        script = self.reel_engine.generate_reel_script(thema)
-        json_path, txt_path = self.reel_engine.save_reel_script(script)
-        self.queue.add_entry(script, json_path, txt_path)
+        # Vollständige Pipeline (Evergreen)
+        self.pipeline_engine.run_pipeline(thema)
 
         state["evergreen_index"] = idx + 1
         state["last_daily_date"] = datetime.now().date().isoformat()
         self.state_manager.save(state)
 
-        msg = f"📆 Daily-Scheduler ausgeführt für Thema: {thema}"
+        msg = f"📆 Daily-Pipeline ausgeführt für Thema: {thema}"
         log_worker(msg)
         return msg
 
@@ -636,36 +858,30 @@ class SchedulerEngine:
             log_worker(msg)
             return msg
 
-        FABRIK.add_task(thema, self.fabrik_engine.fabrik_callback)
-
-        script = self.reel_engine.generate_reel_script(thema)
-        json_path, txt_path = self.reel_engine.save_reel_script(script)
-        self.queue.add_entry(script, json_path, txt_path)
+        # Vollständige Pipeline (Weekly)
+        self.pipeline_engine.run_pipeline(thema)
 
         state["last_weekly_date"] = now.date().isoformat()
         self.state_manager.save(state)
 
-        msg = f"📆 Weekly-Scheduler ausgeführt für Thema: {thema}"
+        msg = f"📆 Weekly-Pipeline ausgeführt für Thema: {thema}"
         log_worker(msg)
         return msg
 
     def run_evergreen(self, state: Optional[Dict[str, Any]] = None) -> str:
+        # Manueller Evergreen-Run (z.B. per Command)
         if state is None:
             state = self.state_manager.load()
 
         idx = state.get("evergreen_index", 0)
         thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
 
-        FABRIK.add_task(thema, self.fabrik_engine.fabrik_callback)
-
-        script = self.reel_engine.generate_reel_script(thema)
-        json_path, txt_path = self.reel_engine.save_reel_script(script)
-        self.queue.add_entry(script, json_path, txt_path)
+        self.pipeline_engine.run_pipeline(thema)
 
         state["evergreen_index"] = idx + 1
         self.state_manager.save(state)
 
-        msg = f"🔁 Evergreen-Scheduler ausgeführt für Thema: {thema}"
+        msg = f"🔁 Evergreen-Pipeline ausgeführt für Thema: {thema}"
         log_worker(msg)
         return msg
 
@@ -995,11 +1211,15 @@ class CashBotContext:
         self.fabrik_engine = FabrikEngine()
         self.cluster_engine = ClusterEngine(self.fabrik_engine)
         self.scheduler_state_manager = SchedulerStateManager(SCHEDULER_STATE_FILE)
+        self.pipeline_engine = PipelineEngine(
+            self.fabrik_engine,
+            self.reel_engine,
+            self.cluster_engine,
+            self.posting_queue,
+        )
         self.scheduler_engine = SchedulerEngine(
             self.scheduler_state_manager,
-            self.reel_engine,
-            self.fabrik_engine,
-            self.posting_queue,
+            self.pipeline_engine,
         )
         self.scheduler_cmd_engine = SchedulerCommandEngine(self.scheduler_engine)
         # KI-Router
@@ -1018,7 +1238,7 @@ _CTX: Optional[CashBotContext] = None
 def _get_context() -> CashBotContext:
     global _CTX
     if _CTX is None:
-        log_worker("Initialisiere CashBotContext (Logik.py – Agentur-Level)...")
+        log_worker("Initialisiere CashBotContext (Logik.py – Agentur-Level, Pipelines)...")
         _CTX = CashBotContext()
     return _CTX
 
@@ -1053,14 +1273,13 @@ def auto_posting_tick() -> None:
     from core.Logik import auto_posting_tick
 
     Führt Auto-Posting über die JSON-Queue aus.
-    Optional könnte hier auch scheduler_engine.tick() integriert werden,
-    wenn du den Scheduler über den Worker triggern willst.
+    Optional: Scheduler-Tick kann hier mitlaufen, wenn du es aktivierst.
     """
     try:
         ctx = _get_context()
         # Auto-Posting
         ctx.posting_engine.auto_posting_tick()
-        # Optional: Scheduler-Tick (wenn gewünscht aktivieren)
+        # Optional: Scheduler-Tick (wenn du willst, dass der Scheduler über den Worker läuft)
         # ctx.scheduler_engine.tick()
     except Exception as e:
         error_worker(f"Fehler in auto_posting_tick: {e}")

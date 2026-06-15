@@ -407,35 +407,71 @@ def handle_cluster_command(text):
     return create_cluster_tasks(thema)
 
 
-# === SCHEDULER (Phase 7D) ===
+# === SCHEDULER (Phase A – FINAL) ===
 
 SCHEDULER_STATE_FILE = os.path.join(CONFIG_DIR, "scheduler_state.json")
 
 # Daily-Time (Serverzeit)
-DAILY_TIME_STR = "10:00"  # HH:MM
+DAILY_TIME_STR = "18:00"  # HH:MM
 DAILY_TIME = dtime.fromisoformat(DAILY_TIME_STR)
 
 # Weekly Topics (0=Montag ... 6=Sonntag)
 WEEKLY_TOPICS = {
-    0: "Automation Basics",
-    1: "KI Tools",
-    2: "Business Automation",
-    3: "Marketing Automation",
-    4: "Mindset & Systems",
+    0: "Automation Basics",          # Montag
+    1: "KI Tools & Agenten",         # Dienstag
+    2: "Deep Dive",                  # Mittwoch
+    3: "Business Automation",        # Donnerstag
+    4: "Quick Wins",                 # Freitag
+    5: "System Thinking",            # Samstag
+    # Sonntag bewusst leer
 }
 
-# Evergreen-Themenliste
+# Evergreen-Themenliste (40 Themen)
 EVERGREEN_TOPICS = [
-    "KI Automation",
-    "Content Automation",
-    "Lead Generierung mit Automation",
-    "Sales Funnels automatisieren",
-    "Onboarding automatisieren",
-    "Reporting automatisieren",
-    "Social Media Automation",
-    "E-Mail Automation",
-    "Prozessdokumentation mit KI",
-    "Agenten-Systeme im Business",
+    "Die 5 wichtigsten Automationen für jedes Business",
+    "Wie du deinen ersten Workflow baust",
+    "Automationen, die dir 10 Stunden pro Woche sparen",
+    "Die häufigsten Fehler bei Automationen",
+    "Wie du Prozesse richtig dokumentierst",
+    "Die beste Struktur für Automations-Workflows",
+    "Wie du Automationen testest, bevor du live gehst",
+    "Die 3 Automationen, die jedes kleine Unternehmen braucht",
+
+    "Die besten KI-Tools für Unternehmer",
+    "Wie KI-Agenten deinen Alltag automatisieren",
+    "Der perfekte KI-Workflow für Lead-Generierung",
+    "KI-Agenten für Sales",
+    "KI-Agenten für Support",
+    "KI-Agenten für Content-Produktion",
+    "Wie du KI-Tools kombinierst, um Systeme zu bauen",
+    "Die Zukunft von KI-Automationen",
+
+    "Sales-Automationen, die wirklich funktionieren",
+    "CRM-Automationen, die du sofort brauchst",
+    "Wie du deinen Funnel automatisierst",
+    "Reporting-Automationen für Skalierung",
+    "Follow-Up-Automationen, die Umsatz bringen",
+    "Wie du Leads automatisch qualifizierst",
+    "Automatisierte Onboarding-Prozesse",
+    "Automatisierte Kundenbindung",
+
+    "Wie du wie ein System-Designer denkst",
+    "Die 3 Ebenen eines skalierbaren Systems",
+    "Bottlenecks erkennen und lösen",
+    "Warum Systeme wichtiger sind als Tools",
+    "Wie du dein Business in 90 Tagen systematisierst",
+    "Die 5 größten System-Fehler",
+    "Wie du Prozesse standardisierst",
+    "Wie du dein Business skalierbar machst",
+
+    "1-Minute-Automation für mehr Leads",
+    "3 KI-Prompts, die dir sofort Zeit sparen",
+    "Mini-Workflow für Content-Planung",
+    "Mini-Workflow für Kundenkommunikation",
+    "Mini-Workflow für Rechnungen",
+    "Mini-Workflow für Social Media",
+    "Mini-Workflow für E-Mails",
+    "Mini-Workflow für Reporting",
 ]
 
 
@@ -462,9 +498,6 @@ def scheduler_run_daily(state=None):
         state = load_scheduler_state()
 
     idx = state.get("evergreen_index", 0)
-    if not EVERGREEN_TOPICS:
-        return "❌ Keine Evergreen-Themen definiert."
-
     thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
 
     FABRIK.add_task(thema, fabrik_callback)
@@ -486,10 +519,10 @@ def scheduler_run_weekly(state=None):
 
     now = datetime.now()
     weekday = now.weekday()
-    thema = WEEKLY_TOPICS.get(weekday)
 
+    thema = WEEKLY_TOPICS.get(weekday)
     if not thema:
-        return "ℹ️ Kein Weekly-Thema für diesen Wochentag definiert."
+        return "ℹ️ Kein Weekly-Thema für diesen Tag."
 
     FABRIK.add_task(thema, fabrik_callback)
 
@@ -503,28 +536,6 @@ def scheduler_run_weekly(state=None):
     return f"📆 Weekly-Scheduler ausgeführt für Thema: {thema}"
 
 
-def scheduler_run_evergreen(state=None):
-    if state is None:
-        state = load_scheduler_state()
-
-    idx = state.get("evergreen_index", 0)
-    if not EVERGREEN_TOPICS:
-        return "❌ Keine Evergreen-Themen definiert."
-
-    thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
-
-    FABRIK.add_task(thema, fabrik_callback)
-
-    script = generate_reel_script(thema)
-    json_path, txt_path = save_reel_script(script)
-    add_to_posting_queue(script, json_path, txt_path)
-
-    state["evergreen_index"] = idx + 1
-    save_scheduler_state(state)
-
-    return f"🔁 Evergreen-Scheduler ausgeführt für Thema: {thema}"
-
-
 def scheduler_tick():
     state = load_scheduler_state()
     if state.get("paused"):
@@ -536,12 +547,14 @@ def scheduler_tick():
 
     last_daily = state.get("last_daily_date")
     last_weekly = state.get("last_weekly_date")
+    weekday = now.weekday()
 
+    # DAILY
     if current_time >= DAILY_TIME and last_daily != today_str:
         msg = scheduler_run_daily(state)
         log_worker(msg)
 
-    weekday = now.weekday()
+    # WEEKLY (Mo–Sa)
     if current_time >= DAILY_TIME and last_weekly != today_str and weekday in WEEKLY_TOPICS:
         msg = scheduler_run_weekly(state)
         log_worker(msg)
@@ -549,27 +562,18 @@ def scheduler_tick():
 
 def scheduler_status():
     state = load_scheduler_state()
-    paused = state.get("paused", False)
-    last_daily = state.get("last_daily_date")
-    last_weekly = state.get("last_weekly_date")
     evergreen_index = state.get("evergreen_index", 0)
 
-    next_evergreen = None
-    if EVERGREEN_TOPICS:
-        next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN_TOPICS)]
+    next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN_TOPICS)]
 
-    lines = [
-        "🧠 Scheduler-Status:",
-        f"• Paused: {paused}",
-        f"• Letzter Daily-Run: {last_daily}",
-        f"• Letzter Weekly-Run: {last_weekly}",
-        f"• Nächster Evergreen-Index: {evergreen_index}",
-    ]
-
-    if next_evergreen:
-        lines.append(f"• Nächstes Evergreen-Thema: {next_evergreen}")
-
-    return "\n".join(lines)
+    return (
+        "🧠 Scheduler-Status:\n"
+        f"• Paused: {state.get('paused')}\n"
+        f"• Letzter Daily-Run: {state.get('last_daily_date')}\n"
+        f"• Letzter Weekly-Run: {state.get('last_weekly_date')}\n"
+        f"• Nächster Evergreen-Index: {evergreen_index}\n"
+        f"• Nächstes Evergreen-Thema: {next_evergreen}"
+    )
 
 
 def scheduler_pause():
@@ -584,67 +588,3 @@ def scheduler_resume():
     state["paused"] = False
     save_scheduler_state(state)
     return "▶ Scheduler wieder aktiviert."
-
-
-def handle_scheduler_command(text):
-    t = text.lower().strip()
-
-    if t == "scheduler status":
-        return scheduler_status()
-    if t == "scheduler pause":
-        return scheduler_pause()
-    if t == "scheduler resume":
-        return scheduler_resume()
-    if t == "scheduler run daily":
-        return scheduler_run_daily()
-    if t == "scheduler run weekly":
-        return scheduler_run_weekly()
-    if t == "scheduler run evergreen":
-        return scheduler_run_evergreen()
-
-    return (
-        "❌ Unbekannter Scheduler-Befehl.\n"
-        "Verfügbar:\n"
-        "· scheduler status\n"
-        "· scheduler pause\n"
-        "· scheduler resume\n"
-        "· scheduler run daily\n"
-        "· scheduler run weekly\n"
-        "· scheduler run evergreen\n"
-    )
-
-
-# === KI-ROUTER ===
-def process_ki_anfrage(text):
-    text_low = text.lower().strip()
-
-    if text_low.startswith("reel "):
-        return handle_reel_command(text)
-    if text_low.startswith("fabrik"):
-        return handle_fabrik_command(text)
-    if text_low.startswith("cluster"):
-        return handle_cluster_command(text)
-    if text_low == "queue":
-        return handle_queue_command()
-    if text_low.startswith("post"):
-        return handle_post_command(text)
-    if text_low.startswith("scheduler"):
-        return handle_scheduler_command(text)
-
-    return (
-        f"Verstanden. Du hast geschrieben: '{text}'.\n"
-        "Nutze:\n"
-        "· 'reel <Thema>' → Reel-Skript erzeugen\n"
-        "· 'fabrik <Thema>' → Seite generieren\n"
-        "· 'cluster <Thema>' → Keyword-Cluster\n"
-        "· 'queue' → Posting-Queue anzeigen\n"
-        "· 'post now <Thema>' → Sofort posten\n"
-        "· 'post schedule <YYYY-MM-DD> <HH:MM> <Thema>' → planen\n"
-        "· 'post status' → Statusübersicht\n"
-        "· 'post list' → Liste aller Einträge\n"
-        "· 'post cancel <ID>' → Eintrag abbrechen\n"
-        "· 'post clear' → Queue leeren\n"
-        "· 'scheduler status' → Scheduler-Status\n"
-        "· 'scheduler run daily/weekly/evergreen'\n"
-        "· 'scheduler pause' / 'scheduler resume'\n"
-    )

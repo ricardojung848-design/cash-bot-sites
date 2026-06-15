@@ -1,5 +1,25 @@
+"""
+core/Logik.py – CashBot / Logik (Version B – Agentur-Level)
+
+Enthält:
+- JSON-basierte Posting-Queue (pending, scheduled, posted, cancelled)
+- Auto-Posting-Engine (auto_posting_tick)
+- Reel-Engine (Reel-Skripte generieren + speichern)
+- Fabrik-Engine (HTML-Seiten generieren + FABRIK-Tasks)
+- Cluster-Engine (Keyword-Cluster + FABRIK-Tasks)
+- Scheduler-Engine (Daily, Weekly, Evergreen – Mo–Sa, 18:00)
+- Scheduler-Command-Engine (alle Commands beginnen mit "scheduler")
+- KI-Router (process_ki_anfrage) für Telegram-/KI-Befehle
+
+Kompatibel mit:
+from core.Logik import process_ki_anfrage, auto_posting_tick
+"""
+
+from __future__ import annotations
+
 import os
-from datetime import datetime, time as dtime
+from datetime import datetime, time as dtime, time, timedelta
+from typing import Any, Dict, List, Optional
 
 # === interne Utils ===
 from core.utils import (
@@ -20,7 +40,10 @@ from modules.fabrik_engine import FABRIK
 from modules.seo_keywords import generate_keyword_cluster
 
 
-# === CONFIG LADEN ===
+# ---------------------------------------------------------------------------
+# Konfiguration laden
+# ---------------------------------------------------------------------------
+
 CONFIG_FILE = os.path.join(CONFIG_DIR, "cashbot_config.json")
 
 DEFAULT_CONFIG = {
@@ -29,8 +52,8 @@ DEFAULT_CONFIG = {
     "social_media": {
         "instagram_reels": True,
         "auto_store_posts": True,
-        "auto_post": False
-    }
+        "auto_post": False,
+    },
 }
 
 CONFIG = load_json(CONFIG_FILE, DEFAULT_CONFIG)
@@ -39,397 +62,449 @@ PRODUKT_TYP = CONFIG["produkt_typ"]
 SOCIAL_CFG = CONFIG["social_media"]
 
 
-# === POSTING-QUEUE ===
+# ---------------------------------------------------------------------------
+# Posting-Queue (JSON-basiert)
+# ---------------------------------------------------------------------------
+
 POSTING_QUEUE_FILE = os.path.join(SOCIAL_DIR, "posting_queue.json")
 
 
-def load_posting_queue():
-    queue = load_json(POSTING_QUEUE_FILE, [])
-    if not isinstance(queue, list):
-        queue = []
-        save_json(POSTING_QUEUE_FILE, queue)
-    return queue
-
-
-def save_posting_queue(queue):
-    save_json(POSTING_QUEUE_FILE, queue)
-
-
-def _next_queue_id(queue):
-    if not queue:
-        return 1
-    return max(item.get("id", 0) for item in queue) + 1
-
-
-def add_to_posting_queue(script, json_path, txt_path):
-    queue = load_posting_queue()
-    entry = {
-        "id": _next_queue_id(queue),
-        "thema": script["thema"],
-        "nische": script["nische"],
-        "produkt_typ": script["produkt_typ"],
-        "json_path": json_path,
-        "txt_path": txt_path,
-        "status": "pending",  # pending | scheduled | posted | cancelled
-        "scheduled_at": None,
-        "platforms": ["instagram"],
-        "auto_post": False,
-        "created_at": datetime.now().isoformat(),
-        "posted_at": None,
-        "cancelled_at": None,
-    }
-    queue.append(entry)
-    save_posting_queue(queue)
-    return entry
-
-
-def get_queue_overview():
-    queue = load_posting_queue()
-    if not queue:
-        return "📭 Posting-Queue ist leer."
-
-    lines = ["📋 Posting-Queue:"]
-    for item in queue:
-        sched = item.get("scheduled_at")
-        sched_str = f"📅 {sched}" if sched else ""
-        lines.append(
-            f"- ID {item['id']}: {item['thema']} "
-            f"[{item['status']}] {sched_str}"
-        )
-    return "\n".join(lines)
-
-
-def mark_posted(entry):
-    entry["status"] = "posted"
-    entry["posted_at"] = datetime.now().isoformat()
-
-
-def cancel_post_by_id(post_id: int):
-    queue = load_posting_queue()
-    for item in queue:
-        if item.get("id") == post_id and item["status"] in ("pending", "scheduled"):
-            item["status"] = "cancelled"
-            item["cancelled_at"] = datetime.now().isoformat()
-            save_posting_queue(queue)
-            return f"🛑 Posting mit ID {post_id} wurde abgebrochen."
-    return f"❌ Kein aktiver Eintrag mit ID {post_id} gefunden."
-
-
-def clear_queue():
-    save_posting_queue([])
-    return "🧹 Posting-Queue wurde komplett geleert."
-
-
-def queue_status():
-    queue = load_posting_queue()
-    if not queue:
-        return "📭 Keine Einträge in der Posting-Queue."
-
-    total = len(queue)
-    pending = sum(1 for x in queue if x["status"] == "pending")
-    scheduled = sum(1 for x in queue if x["status"] == "scheduled")
-    posted = sum(1 for x in queue if x["status"] == "posted")
-    cancelled = sum(1 for x in queue if x["status"] == "cancelled")
-
-    return (
-        "📊 Posting-Status:\n"
-        f"• Gesamt: {total}\n"
-        f"• Pending: {pending}\n"
-        f"• Scheduled: {scheduled}\n"
-        f"• Posted: {posted}\n"
-        f"• Cancelled: {cancelled}"
-    )
-
-
-# === AUTO-POSTING ENGINE ===
-def perform_post(entry):
-    log_worker(f"Simuliere Posting für: {entry['thema']}")
-    msg = f"💥 Simuliertes Posting veröffentlicht für: {entry['thema']}"
-    log_worker(msg)
-    return msg
-
-
-def auto_posting_tick():
-    queue = load_posting_queue()
-    changed = False
-    now = datetime.now()
-
-    for entry in queue:
-        status = entry.get("status", "pending")
-
-        if status not in ("pending", "scheduled"):
-            continue
-
-        if entry.get("auto_post") is True:
-            result = perform_post(entry)
-            mark_posted(entry)
-            changed = True
-            log_worker(result)
-            continue
-
-        sched_str = entry.get("scheduled_at")
-        if sched_str:
-            try:
-                sched = datetime.fromisoformat(sched_str)
-                if now >= sched:
-                    result = perform_post(entry)
-                    mark_posted(entry)
-                    changed = True
-                    log_worker(result)
-            except Exception as e:
-                warn_worker(
-                    f"Fehler beim Lesen von scheduled_at für ID {entry.get('id')}: {e}"
-                )
-
-    if changed:
-        save_posting_queue(queue)
-
-
-# === REEL ENGINE ===
-def generate_reel_script(thema):
-    thema_clean = thema.strip()
-    return {
-        "thema": thema_clean,
-        "nische": NISCHE,
-        "produkt_typ": PRODUKT_TYP,
-        "hook": f"🔥 Du willst {thema_clean} endlich meistern – aber weißt nicht, wo du anfangen sollst?",
-        "content": [
-            f"{thema_clean} ist einer der schnellsten Wege, um Prozesse zu automatisieren.",
-            f"Viele machen Fehler, weil sie ohne System starten.",
-            f"Mit einem klaren Workflow kannst du {thema_clean} in wenigen Tagen umsetzen."
-        ],
-        "cta": f"Wenn du {PRODUKT_TYP} ernsthaft skalieren willst, fang mit einem kleinen Workflow rund um {thema_clean} an.",
-        "hashtags": [
-            "#automation", "#businessautomation", "#kiberatung",
-            "#onlineskalierung", "#prozesse", "#cashbot"
-        ],
-        "timestamp": datetime.now().isoformat()
-    }
-
-
-def save_reel_script(script):
-    thema = script["thema"].replace(" ", "_").lower()
-    json_path = os.path.join(SOCIAL_DIR, f"{thema}.json")
-    txt_path = os.path.join(SOCIAL_DIR, f"{thema}.txt")
-
-    save_json(json_path, script)
-
-    with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(f"Reel für Thema: {script['thema']}\n")
-        f.write(f"Hook: {script['hook']}\n\n")
-        f.write("Content:\n")
-        for line in script["content"]:
-            f.write(f"- {line}\n")
-        f.write(f"\nCTA: {script['cta']}\n")
-        f.write("\nHashtags:\n")
-        f.write(" ".join(script["hashtags"]))
-
-    return json_path, txt_path
-
-
-# === FABRIK CALLBACK ===
-def fabrik_callback(thema):
-    filename = thema.replace(" ", "_").lower() + ".html"
-    path = os.path.join(OUTPUT_DIR, filename)
-
-    html = f"""
-    <html>
-    <head>
-        <title>{thema} – {NISCHE}</title>
-        <meta charset="utf-8">
-    </head>
-    <body>
-        <h1>{thema}</h1>
-        <p>Diese Seite wurde automatisch generiert durch den DETO CashBot.</p>
-        <p>Nische: {NISCHE}</p>
-        <p>Produkt-Typ: {PRODUKT_TYP}</p>
-        <p>Erstellt am: {datetime.now().isoformat()}</p>
-    </body>
-    </html>
+class PostingQueue:
+    """
+    JSON-basierte Posting-Queue.
+    Status: pending | scheduled | posted | cancelled
     """
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(html)
+    def __init__(self, path: str) -> None:
+        self.path = path
+        self._ensure_file()
 
-    return path
+    def _ensure_file(self) -> None:
+        queue = load_json(self.path, [])
+        if not isinstance(queue, list):
+            warn_worker("Posting-Queue war beschädigt – neu initialisiert.")
+            queue = []
+            save_json(self.path, queue)
 
+    def _load(self) -> List[Dict[str, Any]]:
+        queue = load_json(self.path, [])
+        if not isinstance(queue, list):
+            warn_worker("Posting-Queue war beschädigt – neu initialisiert.")
+            queue = []
+            save_json(self.path, queue)
+        return queue
 
-# === CLUSTER ENGINE ===
-def create_cluster_tasks(thema):
-    cluster = generate_keyword_cluster(thema)
-    keywords = cluster["keywords"]
+    def _save(self, queue: List[Dict[str, Any]]) -> None:
+        save_json(self.path, queue)
 
-    for kw in keywords:
-        FABRIK.add_task(kw, fabrik_callback)
+    def _next_id(self, queue: List[Dict[str, Any]]) -> int:
+        if not queue:
+            return 1
+        return max(item.get("id", 0) for item in queue) + 1
 
-    return (
-        f"🔗 Cluster erstellt für '{thema}'\n"
-        f"📌 Keywords: {len(keywords)}\n"
-        f"🚀 Tasks in Fabrik-Queue gelegt."
-    )
+    def add_entry(
+        self,
+        script: Dict[str, Any],
+        json_path: str,
+        txt_path: str,
+        auto_post: bool = False,
+    ) -> Dict[str, Any]:
+        queue = self._load()
+        entry = {
+            "id": self._next_id(queue),
+            "thema": script["thema"],
+            "nische": script["nische"],
+            "produkt_typ": script["produkt_typ"],
+            "json_path": json_path,
+            "txt_path": txt_path,
+            "status": "pending",  # pending | scheduled | posted | cancelled
+            "scheduled_at": None,
+            "platforms": ["instagram"],
+            "auto_post": auto_post,
+            "created_at": datetime.now().isoformat(),
+            "posted_at": None,
+            "cancelled_at": None,
+        }
+        queue.append(entry)
+        self._save(queue)
+        return entry
 
+    def list_entries(self) -> List[Dict[str, Any]]:
+        return self._load()
 
-# === TELEGRAM-BEFEHLE: REEL ===
-def handle_reel_command(text):
-    parts = text.split(" ", 1)
-    if len(parts) < 2:
-        return "❌ Bitte nutze: reel <Thema>"
+    def save_entries(self, queue: List[Dict[str, Any]]) -> None:
+        self._save(queue)
 
-    thema = parts[1].strip()
-    script = generate_reel_script(thema)
-    json_path, txt_path = save_reel_script(script)
+    def clear(self) -> None:
+        self._save([])
 
-    if SOCIAL_CFG.get("auto_store_posts", True):
-        add_to_posting_queue(script, json_path, txt_path)
+    def cancel_by_id(self, post_id: int) -> str:
+        queue = self._load()
+        for item in queue:
+            if item.get("id") == post_id and item["status"] in ("pending", "scheduled"):
+                item["status"] = "cancelled"
+                item["cancelled_at"] = datetime.now().isoformat()
+                self._save(queue)
+                return f"🛑 Posting mit ID {post_id} wurde abgebrochen."
+        return f"❌ Kein aktiver Eintrag mit ID {post_id} gefunden."
 
-    return (
-        f"🎬 Reel-Skript erstellt für: {thema}\n"
-        f"📁 Gespeichert unter:\n"
-        f"- {json_path}\n"
-        f"- {txt_path}"
-    )
+    def overview_text(self) -> str:
+        queue = self._load()
+        if not queue:
+            return "📭 Posting-Queue ist leer."
 
+        lines = ["📋 Posting-Queue:"]
+        for item in queue:
+            sched = item.get("scheduled_at")
+            sched_str = f"📅 {sched}" if sched else ""
+            lines.append(
+                f"- ID {item['id']}: {item['thema']} "
+                f"[{item['status']}] {sched_str}"
+            )
+        return "\n".join(lines)
 
-# === TELEGRAM-BEFEHLE: POSTING ===
-def handle_post_now(text):
-    parts = text.split(" ", 2)
-    if len(parts) < 3:
-        return "❌ Bitte nutze: post now <Thema>"
+    def status_text(self) -> str:
+        queue = self._load()
+        if not queue:
+            return "📭 Keine Einträge in der Posting-Queue."
 
-    thema = parts[2].strip()
-    queue = load_posting_queue()
+        total = len(queue)
+        pending = sum(1 for x in queue if x["status"] == "pending")
+        scheduled = sum(1 for x in queue if x["status"] == "scheduled")
+        posted = sum(1 for x in queue if x["status"] == "posted")
+        cancelled = sum(1 for x in queue if x["status"] == "cancelled")
 
-    for entry in queue:
-        if entry["thema"].lower() == thema.lower() and entry["status"] in ("pending", "scheduled"):
-            entry["auto_post"] = True
-            save_posting_queue(queue)
-            return f"🚀 Posting für '{thema}' wird sofort ausgeführt."
-
-    return f"❌ Kein aktiver Eintrag für '{thema}' gefunden."
-
-
-def handle_post_schedule(text):
-    # Format: post schedule <YYYY-MM-DD> <HH:MM> <Thema...>
-    parts = text.split(" ", 4)
-    if len(parts) < 5:
-        return "❌ Bitte nutze: post schedule <YYYY-MM-DD> <HH:MM> <Thema>"
-
-    date_str = parts[2].strip()
-    time_str = parts[3].strip()
-    thema = parts[4].strip()
-
-    try:
-        sched = datetime.fromisoformat(f"{date_str} {time_str}")
-    except Exception:
-        return "❌ Datum/Uhrzeit ungültig. Format: YYYY-MM-DD HH:MM"
-
-    queue = load_posting_queue()
-    for entry in queue:
-        if entry["thema"].lower() == thema.lower() and entry["status"] in ("pending", "scheduled"):
-            entry["scheduled_at"] = sched.isoformat()
-            entry["status"] = "scheduled"
-            save_posting_queue(queue)
-            return f"📅 Posting für '{thema}' geplant am {sched}."
-
-    return f"❌ Kein aktiver Eintrag für '{thema}' gefunden."
-
-
-def handle_post_cancel(text):
-    parts = text.split(" ", 2)
-    if len(parts) < 3:
-        return "❌ Bitte nutze: post cancel <ID>"
-
-    try:
-        post_id = int(parts[2].strip())
-    except ValueError:
-        return "❌ ID muss eine Zahl sein."
-
-    return cancel_post_by_id(post_id)
-
-
-def handle_post_clear():
-    return clear_queue()
-
-
-def handle_queue_command():
-    return get_queue_overview()
-
-
-def handle_post_status():
-    return queue_status()
+        return (
+            "📊 Posting-Status:\n"
+            f"• Gesamt: {total}\n"
+            f"• Pending: {pending}\n"
+            f"• Scheduled: {scheduled}\n"
+            f"• Posted: {posted}\n"
+            f"• Cancelled: {cancelled}"
+        )
 
 
-def handle_post_list():
-    return get_queue_overview()
+# ---------------------------------------------------------------------------
+# Posting-Engine (Auto-Posting + Commands)
+# ---------------------------------------------------------------------------
+
+class PostingEngine:
+    def __init__(self, queue: PostingQueue) -> None:
+        self.queue = queue
+
+    # --- Auto-Posting ------------------------------------------------------
+
+    def _perform_post(self, entry: Dict[str, Any]) -> str:
+        log_worker(f"Simuliere Posting für: {entry['thema']}")
+        msg = f"💥 Simuliertes Posting veröffentlicht für: {entry['thema']}"
+        log_worker(msg)
+        return msg
+
+    def _mark_posted(self, entry: Dict[str, Any]) -> None:
+        entry["status"] = "posted"
+        entry["posted_at"] = datetime.now().isoformat()
+
+    def auto_posting_tick(self) -> None:
+        queue = self.queue.list_entries()
+        changed = False
+        now = datetime.now()
+
+        for entry in queue:
+            status = entry.get("status", "pending")
+
+            if status not in ("pending", "scheduled"):
+                continue
+
+            # Sofort posten, wenn auto_post=True
+            if entry.get("auto_post") is True:
+                result = self._perform_post(entry)
+                self._mark_posted(entry)
+                changed = True
+                log_worker(result)
+                continue
+
+            # Geplante Zeit prüfen
+            sched_str = entry.get("scheduled_at")
+            if sched_str:
+                try:
+                    sched = datetime.fromisoformat(sched_str)
+                    if now >= sched:
+                        result = self._perform_post(entry)
+                        self._mark_posted(entry)
+                        changed = True
+                        log_worker(result)
+                except Exception as e:
+                    warn_worker(
+                        f"Fehler beim Lesen von scheduled_at für ID {entry.get('id')}: {e}"
+                    )
+
+        if changed:
+            self.queue.save_entries(queue)
+
+    # --- Commands ----------------------------------------------------------
+
+    def handle_post_now(self, text: str) -> str:
+        parts = text.split(" ", 2)
+        if len(parts) < 3:
+            return "❌ Bitte nutze: post now <Thema>"
+
+        thema = parts[2].strip()
+        queue = self.queue.list_entries()
+
+        for entry in queue:
+            if entry["thema"].lower() == thema.lower() and entry["status"] in (
+                "pending",
+                "scheduled",
+            ):
+                entry["auto_post"] = True
+                self.queue.save_entries(queue)
+                return f"🚀 Posting für '{thema}' wird sofort ausgeführt."
+
+        return f"❌ Kein aktiver Eintrag für '{thema}' gefunden."
+
+    def handle_post_schedule(self, text: str) -> str:
+        # Format: post schedule <YYYY-MM-DD> <HH:MM> <Thema...>
+        parts = text.split(" ", 4)
+        if len(parts) < 5:
+            return "❌ Bitte nutze: post schedule <YYYY-MM-DD> <HH:MM> <Thema>"
+
+        date_str = parts[2].strip()
+        time_str = parts[3].strip()
+        thema = parts[4].strip()
+
+        try:
+            sched = datetime.fromisoformat(f"{date_str} {time_str}")
+        except Exception:
+            return "❌ Datum/Uhrzeit ungültig. Format: YYYY-MM-DD HH:MM"
+
+        queue = self.queue.list_entries()
+        for entry in queue:
+            if entry["thema"].lower() == thema.lower() and entry["status"] in (
+                "pending",
+                "scheduled",
+            ):
+                entry["scheduled_at"] = sched.isoformat()
+                entry["status"] = "scheduled"
+                self.queue.save_entries(queue)
+                return f"📅 Posting für '{thema}' geplant am {sched}."
+
+        return f"❌ Kein aktiver Eintrag für '{thema}' gefunden."
+
+    def handle_post_cancel(self, text: str) -> str:
+        parts = text.split(" ", 2)
+        if len(parts) < 3:
+            return "❌ Bitte nutze: post cancel <ID>"
+
+        try:
+            post_id = int(parts[2].strip())
+        except ValueError:
+            return "❌ ID muss eine Zahl sein."
+
+        return self.queue.cancel_by_id(post_id)
+
+    def handle_post_clear(self) -> str:
+        self.queue.clear()
+        return "🧹 Posting-Queue wurde komplett geleert."
+
+    def handle_post_status(self) -> str:
+        return self.queue.status_text()
+
+    def handle_post_list(self) -> str:
+        return self.queue.overview_text()
+
+    def handle_post_command(self, text: str) -> str:
+        t = text.lower().strip()
+
+        if t.startswith("post now"):
+            return self.handle_post_now(text)
+        if t.startswith("post schedule"):
+            return self.handle_post_schedule(text)
+        if t.startswith("post cancel"):
+            return self.handle_post_cancel(text)
+        if t.startswith("post clear"):
+            return self.handle_post_clear()
+        if t.startswith("post status"):
+            return self.handle_post_status()
+        if t.startswith("post list"):
+            return self.handle_post_list()
+
+        return (
+            "❌ Unbekannter Post-Befehl.\n"
+            "Verfügbar:\n"
+            "· post now <Thema>\n"
+            "· post schedule <YYYY-MM-DD> <HH:MM> <Thema>\n"
+            "· post cancel <ID>\n"
+            "· post clear\n"
+            "· post status\n"
+            "· post list\n"
+        )
 
 
-def handle_post_command(text):
-    t = text.lower().strip()
+# ---------------------------------------------------------------------------
+# Reel-Engine
+# ---------------------------------------------------------------------------
 
-    if t.startswith("post now"):
-        return handle_post_now(text)
-    if t.startswith("post schedule"):
-        return handle_post_schedule(text)
-    if t.startswith("post cancel"):
-        return handle_post_cancel(text)
-    if t.startswith("post clear"):
-        return handle_post_clear()
-    if t.startswith("post status"):
-        return handle_post_status()
-    if t.startswith("post list"):
-        return handle_post_list()
+class ReelEngine:
+    def __init__(self, queue: PostingQueue) -> None:
+        self.queue = queue
 
-    return (
-        "❌ Unbekannter Post-Befehl.\n"
-        "Verfügbar:\n"
-        "· post now <Thema>\n"
-        "· post schedule <YYYY-MM-DD> <HH:MM> <Thema>\n"
-        "· post cancel <ID>\n"
-        "· post clear\n"
-        "· post status\n"
-        "· post list\n"
-    )
+    def generate_reel_script(self, thema: str) -> Dict[str, Any]:
+        thema_clean = thema.strip()
+        return {
+            "thema": thema_clean,
+            "nische": NISCHE,
+            "produkt_typ": PRODUKT_TYP,
+            "hook": f"🔥 Du willst {thema_clean} endlich meistern – aber weißt nicht, wo du anfangen sollst?",
+            "content": [
+                f"{thema_clean} ist einer der schnellsten Wege, um Prozesse zu automatisieren.",
+                "Viele machen Fehler, weil sie ohne System starten.",
+                f"Mit einem klaren Workflow kannst du {thema_clean} in wenigen Tagen umsetzen.",
+            ],
+            "cta": (
+                f"Wenn du {PRODUKT_TYP} ernsthaft skalieren willst, "
+                f"fang mit einem kleinen Workflow rund um {thema_clean} an."
+            ),
+            "hashtags": [
+                "#automation",
+                "#businessautomation",
+                "#kiberatung",
+                "#onlineskalierung",
+                "#prozesse",
+                "#cashbot",
+            ],
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    def save_reel_script(self, script: Dict[str, Any]) -> (str, str):
+        thema = script["thema"].replace(" ", "_").lower()
+        json_path = os.path.join(SOCIAL_DIR, f"{thema}.json")
+        txt_path = os.path.join(SOCIAL_DIR, f"{thema}.txt")
+
+        save_json(json_path, script)
+
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write(f"Reel für Thema: {script['thema']}\n")
+            f.write(f"Hook: {script['hook']}\n\n")
+            f.write("Content:\n")
+            for line in script["content"]:
+                f.write(f"- {line}\n")
+            f.write(f"\nCTA: {script['cta']}\n")
+            f.write("\nHashtags:\n")
+            f.write(" ".join(script["hashtags"]))
+
+        return json_path, txt_path
+
+    def handle_reel_command(self, text: str) -> str:
+        parts = text.split(" ", 1)
+        if len(parts) < 2:
+            return "❌ Bitte nutze: reel <Thema>"
+
+        thema = parts[1].strip()
+        script = self.generate_reel_script(thema)
+        json_path, txt_path = self.save_reel_script(script)
+
+        if SOCIAL_CFG.get("auto_store_posts", True):
+            self.queue.add_entry(script, json_path, txt_path)
+
+        return (
+            f"🎬 Reel-Skript erstellt für: {thema}\n"
+            f"📁 Gespeichert unter:\n"
+            f"- {json_path}\n"
+            f"- {txt_path}"
+        )
 
 
-# === FABRIK & CLUSTER TELEGRAM-BEFEHLE ===
-def handle_fabrik_command(text):
-    parts = text.split(" ", 1)
-    if len(parts) < 2:
-        return "❌ Bitte nutze: fabrik <Thema>"
-    thema = parts[1].strip()
-    FABRIK.add_task(thema, fabrik_callback)
-    return f"🏭 Fabrik-Task erstellt für: {thema}"
+# ---------------------------------------------------------------------------
+# Fabrik-Engine
+# ---------------------------------------------------------------------------
+
+class FabrikEngine:
+    def fabrik_callback(self, thema: str) -> str:
+        filename = thema.replace(" ", "_").lower() + ".html"
+        path = os.path.join(OUTPUT_DIR, filename)
+
+        html = f"""
+<html>
+<head>
+    <title>{thema} – {NISCHE}</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>{thema}</h1>
+    <p>Diese Seite wurde automatisch generiert durch den DETO CashBot.</p>
+    <p>Nische: {NISCHE}</p>
+    <p>Produkt-Typ: {PRODUKT_TYP}</p>
+    <p>Erstellt am: {datetime.now().isoformat()}</p>
+</body>
+</html>
+        """.strip()
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+
+        return path
+
+    def handle_fabrik_command(self, text: str) -> str:
+        parts = text.split(" ", 1)
+        if len(parts) < 2:
+            return "❌ Bitte nutze: fabrik <Thema>"
+        thema = parts[1].strip()
+        FABRIK.add_task(thema, self.fabrik_callback)
+        return f"🏭 Fabrik-Task erstellt für: {thema}"
 
 
-def handle_cluster_command(text):
-    parts = text.split(" ", 1)
-    if len(parts) < 2:
-        return "❌ Bitte nutze: cluster <Thema>"
-    thema = parts[1].strip()
-    return create_cluster_tasks(thema)
+# ---------------------------------------------------------------------------
+# Cluster-Engine
+# ---------------------------------------------------------------------------
+
+class ClusterEngine:
+    def __init__(self, fabrik_engine: FabrikEngine) -> None:
+        self.fabrik_engine = fabrik_engine
+
+    def create_cluster_tasks(self, thema: str) -> str:
+        cluster = generate_keyword_cluster(thema)
+        keywords = cluster["keywords"]
+
+        for kw in keywords:
+            FABRIK.add_task(kw, self.fabrik_engine.fabrik_callback)
+
+        return (
+            f"🔗 Cluster erstellt für '{thema}'\n"
+            f"📌 Keywords: {len(keywords)}\n"
+            f"🚀 Tasks in Fabrik-Queue gelegt."
+        )
+
+    def handle_cluster_command(self, text: str) -> str:
+        parts = text.split(" ", 1)
+        if len(parts) < 2:
+            return "❌ Bitte nutze: cluster <Thema>"
+        thema = parts[1].strip()
+        return self.create_cluster_tasks(thema)
 
 
-# === SCHEDULER (Phase A – FINAL) ===
+# ---------------------------------------------------------------------------
+# Scheduler-Engine (Daily, Weekly, Evergreen)
+# ---------------------------------------------------------------------------
 
 SCHEDULER_STATE_FILE = os.path.join(CONFIG_DIR, "scheduler_state.json")
 
-# Daily-Time (Serverzeit)
+# Default: Daily-Time = 18:00 (Serverzeit)
 DAILY_TIME_STR = "18:00"  # HH:MM
-DAILY_TIME = dtime.fromisoformat(DAILY_TIME_STR)
+DAILY_TIME: dtime = dtime.fromisoformat(DAILY_TIME_STR)
 
-# Weekly Topics (0=Montag ... 6=Sonntag)
-WEEKLY_TOPICS = {
-    0: "Automation Basics",          # Montag
-    1: "KI Tools & Agenten",         # Dienstag
-    2: "Deep Dive",                  # Mittwoch
-    3: "Business Automation",        # Donnerstag
-    4: "Quick Wins",                 # Freitag
-    5: "System Thinking",            # Samstag
+# Weekly Topics (0=Montag ... 6=Sonntag) – 6-Tage-Plan (Mo–Sa)
+WEEKLY_TOPICS: Dict[int, str] = {
+    0: "Automation Basics",   # Montag
+    1: "KI Tools & Agenten",  # Dienstag
+    2: "Deep Dive",           # Mittwoch
+    3: "Business Automation", # Donnerstag
+    4: "Quick Wins",          # Freitag
+    5: "System Thinking",     # Samstag
     # Sonntag bewusst leer
 }
 
 # Evergreen-Themenliste (40 Themen)
-EVERGREEN_TOPICS = [
+EVERGREEN_TOPICS: List[str] = [
     "Die 5 wichtigsten Automationen für jedes Business",
     "Wie du deinen ersten Workflow baust",
     "Automationen, die dir 10 Stunden pro Woche sparen",
@@ -438,7 +513,6 @@ EVERGREEN_TOPICS = [
     "Die beste Struktur für Automations-Workflows",
     "Wie du Automationen testest, bevor du live gehst",
     "Die 3 Automationen, die jedes kleine Unternehmen braucht",
-
     "Die besten KI-Tools für Unternehmer",
     "Wie KI-Agenten deinen Alltag automatisieren",
     "Der perfekte KI-Workflow für Lead-Generierung",
@@ -447,7 +521,6 @@ EVERGREEN_TOPICS = [
     "KI-Agenten für Content-Produktion",
     "Wie du KI-Tools kombinierst, um Systeme zu bauen",
     "Die Zukunft von KI-Automationen",
-
     "Sales-Automationen, die wirklich funktionieren",
     "CRM-Automationen, die du sofort brauchst",
     "Wie du deinen Funnel automatisierst",
@@ -456,7 +529,6 @@ EVERGREEN_TOPICS = [
     "Wie du Leads automatisch qualifizierst",
     "Automatisierte Onboarding-Prozesse",
     "Automatisierte Kundenbindung",
-
     "Wie du wie ein System-Designer denkst",
     "Die 3 Ebenen eines skalierbaren Systems",
     "Bottlenecks erkennen und lösen",
@@ -465,7 +537,6 @@ EVERGREEN_TOPICS = [
     "Die 5 größten System-Fehler",
     "Wie du Prozesse standardisierst",
     "Wie du dein Business skalierbar machst",
-
     "1-Minute-Automation für mehr Leads",
     "3 KI-Prompts, die dir sofort Zeit sparen",
     "Mini-Workflow für Content-Planung",
@@ -477,217 +548,287 @@ EVERGREEN_TOPICS = [
 ]
 
 
-def load_scheduler_state():
-    default = {
-        "paused": False,
-        "last_daily_date": None,
-        "last_weekly_date": None,
-        "evergreen_index": 0,
-    }
-    state = load_json(SCHEDULER_STATE_FILE, default)
-    if not isinstance(state, dict):
-        state = default
-        save_scheduler_state(state)
-    return state
+class SchedulerStateManager:
+    def __init__(self, path: str) -> None:
+        self.path = path
+        self._ensure_state()
+
+    def _ensure_state(self) -> None:
+        default = {
+            "paused": False,
+            "last_daily_date": None,
+            "last_weekly_date": None,
+            "evergreen_index": 0,
+        }
+        state = load_json(self.path, default)
+        if not isinstance(state, dict):
+            state = default
+            save_json(self.path, state)
+
+    def load(self) -> Dict[str, Any]:
+        default = {
+            "paused": False,
+            "last_daily_date": None,
+            "last_weekly_date": None,
+            "evergreen_index": 0,
+        }
+        state = load_json(self.path, default)
+        if not isinstance(state, dict):
+            state = default
+            save_json(self.path, state)
+        return state
+
+    def save(self, state: Dict[str, Any]) -> None:
+        save_json(self.path, state)
 
 
-def save_scheduler_state(state):
-    save_json(SCHEDULER_STATE_FILE, state)
+class SchedulerEngine:
+    """
+    Scheduler-Engine für Daily, Weekly, Evergreen.
+    Mo–Sa aktiv, Daily-Time = 18:00.
+    """
 
+    def __init__(
+        self,
+        state_manager: SchedulerStateManager,
+        reel_engine: ReelEngine,
+        fabrik_engine: FabrikEngine,
+        queue: PostingQueue,
+    ) -> None:
+        self.state_manager = state_manager
+        self.reel_engine = reel_engine
+        self.fabrik_engine = fabrik_engine
+        self.queue = queue
 
-def scheduler_run_daily(state=None):
-    if state is None:
-        state = load_scheduler_state()
+    # --- Core Runs ---------------------------------------------------------
 
-    idx = state.get("evergreen_index", 0)
-    thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
+    def run_daily(self, state: Optional[Dict[str, Any]] = None) -> str:
+        if state is None:
+            state = self.state_manager.load()
 
-    FABRIK.add_task(thema, fabrik_callback)
+        idx = state.get("evergreen_index", 0)
+        thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
 
-    script = generate_reel_script(thema)
-    json_path, txt_path = save_reel_script(script)
-    add_to_posting_queue(script, json_path, txt_path)
+        FABRIK.add_task(thema, self.fabrik_engine.fabrik_callback)
 
-    state["evergreen_index"] = idx + 1
-    state["last_daily_date"] = datetime.now().date().isoformat()
-    save_scheduler_state(state)
+        script = self.reel_engine.generate_reel_script(thema)
+        json_path, txt_path = self.reel_engine.save_reel_script(script)
+        self.queue.add_entry(script, json_path, txt_path)
 
-    msg = f"📆 Daily-Scheduler ausgeführt für Thema: {thema}"
-    log_worker(msg)
-    return msg
+        state["evergreen_index"] = idx + 1
+        state["last_daily_date"] = datetime.now().date().isoformat()
+        self.state_manager.save(state)
 
-
-def scheduler_run_weekly(state=None):
-    if state is None:
-        state = load_scheduler_state()
-
-    now = datetime.now()
-    weekday = now.weekday()
-
-    thema = WEEKLY_TOPICS.get(weekday)
-    if not thema:
-        msg = "ℹ️ Kein Weekly-Thema für diesen Tag."
+        msg = f"📆 Daily-Scheduler ausgeführt für Thema: {thema}"
         log_worker(msg)
         return msg
 
-    FABRIK.add_task(thema, fabrik_callback)
+    def run_weekly(self, state: Optional[Dict[str, Any]] = None) -> str:
+        if state is None:
+            state = self.state_manager.load()
 
-    script = generate_reel_script(thema)
-    json_path, txt_path = save_reel_script(script)
-    add_to_posting_queue(script, json_path, txt_path)
+        now = datetime.now()
+        weekday = now.weekday()
 
-    state["last_weekly_date"] = now.date().isoformat()
-    save_scheduler_state(state)
+        thema = WEEKLY_TOPICS.get(weekday)
+        if not thema:
+            msg = "ℹ️ Kein Weekly-Thema für diesen Tag."
+            log_worker(msg)
+            return msg
 
-    msg = f"📆 Weekly-Scheduler ausgeführt für Thema: {thema}"
-    log_worker(msg)
-    return msg
+        FABRIK.add_task(thema, self.fabrik_engine.fabrik_callback)
+
+        script = self.reel_engine.generate_reel_script(thema)
+        json_path, txt_path = self.reel_engine.save_reel_script(script)
+        self.queue.add_entry(script, json_path, txt_path)
+
+        state["last_weekly_date"] = now.date().isoformat()
+        self.state_manager.save(state)
+
+        msg = f"📆 Weekly-Scheduler ausgeführt für Thema: {thema}"
+        log_worker(msg)
+        return msg
+
+    def run_evergreen(self, state: Optional[Dict[str, Any]] = None) -> str:
+        if state is None:
+            state = self.state_manager.load()
+
+        idx = state.get("evergreen_index", 0)
+        thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
+
+        FABRIK.add_task(thema, self.fabrik_engine.fabrik_callback)
+
+        script = self.reel_engine.generate_reel_script(thema)
+        json_path, txt_path = self.reel_engine.save_reel_script(script)
+        self.queue.add_entry(script, json_path, txt_path)
+
+        state["evergreen_index"] = idx + 1
+        self.state_manager.save(state)
+
+        msg = f"🔁 Evergreen-Scheduler ausgeführt für Thema: {thema}"
+        log_worker(msg)
+        return msg
+
+    # --- Tick (für Cron / Worker, falls gewünscht) ------------------------
+
+    def tick(self) -> None:
+        state = self.state_manager.load()
+        if state.get("paused"):
+            return
+
+        now = datetime.now()
+        today_str = now.date().isoformat()
+        current_time = now.time()
+
+        last_daily = state.get("last_daily_date")
+        last_weekly = state.get("last_weekly_date")
+        weekday = now.weekday()
+
+        # DAILY
+        if current_time >= DAILY_TIME and last_daily != today_str:
+            self.run_daily(state)
+
+        # WEEKLY (Mo–Sa)
+        if current_time >= DAILY_TIME and last_weekly != today_str and weekday in WEEKLY_TOPICS:
+            self.run_weekly(state)
+
+    # --- Status / Steuerung -----------------------------------------------
+
+    def status_text(self) -> str:
+        state = self.state_manager.load()
+        evergreen_index = state.get("evergreen_index", 0)
+        next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN_TOPICS)]
+
+        return (
+            "🧠 Scheduler-Status:\n"
+            f"• Paused: {state.get('paused')}\n"
+            f"• Letzter Daily-Run: {state.get('last_daily_date')}\n"
+            f"• Letzter Weekly-Run: {state.get('last_weekly_date')}\n"
+            f"• Daily-Time: {DAILY_TIME_STR}\n"
+            f"• Nächster Evergreen-Index: {evergreen_index}\n"
+            f"• Nächstes Evergreen-Thema: {next_evergreen}"
+        )
+
+    def pause(self) -> str:
+        state = self.state_manager.load()
+        state["paused"] = True
+        self.state_manager.save(state)
+        return "⏸ Scheduler pausiert."
+
+    def resume(self) -> str:
+        state = self.state_manager.load()
+        state["paused"] = False
+        self.state_manager.save(state)
+        return "▶ Scheduler wieder aktiviert."
 
 
-def scheduler_run_evergreen(state=None):
-    # manueller Evergreen-Run (falls du ihn per Command triggern willst)
-    if state is None:
-        state = load_scheduler_state()
-
-    idx = state.get("evergreen_index", 0)
-    thema = EVERGREEN_TOPICS[idx % len(EVERGREEN_TOPICS)]
-
-    FABRIK.add_task(thema, fabrik_callback)
-
-    script = generate_reel_script(thema)
-    json_path, txt_path = save_reel_script(script)
-    add_to_posting_queue(script, json_path, txt_path)
-
-    state["evergreen_index"] = idx + 1
-    save_scheduler_state(state)
-
-    msg = f"🔁 Evergreen-Scheduler ausgeführt für Thema: {thema}"
-    log_worker(msg)
-    return msg
-
-
-def scheduler_tick():
-    state = load_scheduler_state()
-    if state.get("paused"):
-        return
-
-    now = datetime.now()
-    today_str = now.date().isoformat()
-    current_time = now.time()
-
-    last_daily = state.get("last_daily_date")
-    last_weekly = state.get("last_weekly_date")
-    weekday = now.weekday()
-
-    # DAILY
-    if current_time >= DAILY_TIME and last_daily != today_str:
-        scheduler_run_daily(state)
-
-    # WEEKLY (Mo–Sa)
-    if current_time >= DAILY_TIME and last_weekly != today_str and weekday in WEEKLY_TOPICS:
-        scheduler_run_weekly(state)
-
-
-def scheduler_status():
-    state = load_scheduler_state()
-    evergreen_index = state.get("evergreen_index", 0)
-    next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN_TOPICS)]
-
-    return (
-        "🧠 Scheduler-Status:\n"
-        f"• Paused: {state.get('paused')}\n"
-        f"• Letzter Daily-Run: {state.get('last_daily_date')}\n"
-        f"• Letzter Weekly-Run: {state.get('last_weekly_date')}\n"
-        f"• Daily-Time: {DAILY_TIME_STR}\n"
-        f"• Nächster Evergreen-Index: {evergreen_index}\n"
-        f"• Nächstes Evergreen-Thema: {next_evergreen}"
-    )
-
-
-def scheduler_pause():
-    state = load_scheduler_state()
-    state["paused"] = True
-    save_scheduler_state(state)
-    return "⏸ Scheduler pausiert."
-
-
-def scheduler_resume():
-    state = load_scheduler_state()
-    state["paused"] = False
-    save_scheduler_state(state)
-    return "▶ Scheduler wieder aktiviert."
-
-
-# === NEUE SCHEDULER COMMAND ENGINE (Phase A – FINAL) ===
+# ---------------------------------------------------------------------------
+# Scheduler Command Engine (ersetzt alte handle_scheduler_command)
+# ---------------------------------------------------------------------------
 
 # Mapping für Wochentage (Deutsch + Englisch)
-DAY_MAPPING = {
-    "montag": 0, "mo": 0, "monday": 0, "mon": 0,
-    "dienstag": 1, "di": 1, "tuesday": 1, "tue": 1,
-    "mittwoch": 2, "mi": 2, "wednesday": 2, "wed": 2,
-    "donnerstag": 3, "do": 3, "thursday": 3, "thu": 3,
-    "freitag": 4, "fr": 4, "friday": 4, "fri": 4,
-    "samstag": 5, "sa": 5, "saturday": 5, "sat": 5,
+DAY_MAPPING: Dict[str, int] = {
+    "montag": 0,
+    "mo": 0,
+    "monday": 0,
+    "mon": 0,
+    "dienstag": 1,
+    "di": 1,
+    "tuesday": 1,
+    "tue": 1,
+    "mittwoch": 2,
+    "mi": 2,
+    "wednesday": 2,
+    "wed": 2,
+    "donnerstag": 3,
+    "do": 3,
+    "thursday": 3,
+    "thu": 3,
+    "freitag": 4,
+    "fr": 4,
+    "friday": 4,
+    "fri": 4,
+    "samstag": 5,
+    "sa": 5,
+    "saturday": 5,
+    "sat": 5,
+    # Sonntag optional
+    "sonntag": 6,
+    "so": 6,
+    "sunday": 6,
+    "sun": 6,
 }
 
 
-def scheduler_list_weekly():
-    lines = ["📅 Weekly-Themen:"]
-    for day, thema in sorted(WEEKLY_TOPICS.items(), key=lambda x: x[0]):
-        lines.append(f"- {day}: {thema}")
-    return "\n".join(lines)
+class SchedulerCommandEngine:
+    """
+    Neue Scheduler-Command-Engine.
 
+    Alle Commands beginnen mit 'scheduler', z.B.:
+    - scheduler status
+    - scheduler pause
+    - scheduler resume
+    - scheduler run daily
+    - scheduler run weekly
+    - scheduler run evergreen
+    - scheduler list weekly
+    - scheduler list evergreen
+    - scheduler set daily 18:00
+    - scheduler set weekly Montag Automation Basics
+    - scheduler add evergreen <Thema>
+    - scheduler remove evergreen <Index>
+    """
 
-def scheduler_list_evergreen():
-    lines = ["🌲 Evergreen-Themen:"]
-    for i, thema in enumerate(EVERGREEN_TOPICS):
-        lines.append(f"{i}: {thema}")
-    return "\n".join(lines)
+    def __init__(self, scheduler: SchedulerEngine) -> None:
+        self.scheduler = scheduler
 
+    # --- Helper ------------------------------------------------------------
 
-def scheduler_set_daily_time(new_time_str):
-    global DAILY_TIME_STR, DAILY_TIME
+    def _list_weekly(self) -> str:
+        lines = ["📅 Weekly-Themen (0=Mo ... 6=So):"]
+        for day, thema in sorted(WEEKLY_TOPICS.items(), key=lambda x: x[0]):
+            lines.append(f"- {day}: {thema}")
+        return "\n".join(lines)
 
-    try:
-        DAILY_TIME = dtime.fromisoformat(new_time_str)
-        DAILY_TIME_STR = new_time_str
-        return f"⏰ Daily-Zeit gesetzt auf {new_time_str}"
-    except Exception:
-        return "❌ Ungültiges Zeitformat. Nutze HH:MM"
+    def _list_evergreen(self) -> str:
+        lines = ["🌲 Evergreen-Themen:"]
+        for i, thema in enumerate(EVERGREEN_TOPICS):
+            lines.append(f"{i}: {thema}")
+        return "\n".join(lines)
 
+    def _set_daily_time(self, new_time_str: str) -> str:
+        global DAILY_TIME_STR, DAILY_TIME
+        try:
+            DAILY_TIME = dtime.fromisoformat(new_time_str)
+            DAILY_TIME_STR = new_time_str
+            return f"⏰ Daily-Zeit gesetzt auf {new_time_str}"
+        except Exception:
+            return "❌ Ungültiges Zeitformat. Nutze HH:MM"
 
-def scheduler_add_evergreen(thema):
-    EVERGREEN_TOPICS.append(thema)
-    return f"🌲 Evergreen-Thema hinzugefügt: {thema}"
+    def _add_evergreen(self, thema: str) -> str:
+        EVERGREEN_TOPICS.append(thema)
+        return f"🌲 Evergreen-Thema hinzugefügt: {thema}"
 
+    def _remove_evergreen(self, index_str: str) -> str:
+        try:
+            idx = int(index_str)
+            thema = EVERGREEN_TOPICS.pop(idx)
+            return f"🗑 Evergreen-Thema entfernt: {thema}"
+        except Exception:
+            return "❌ Ungültiger Index."
 
-def scheduler_remove_evergreen(index_str):
-    try:
-        idx = int(index_str)
-        thema = EVERGREEN_TOPICS.pop(idx)
-        return f"🗑 Evergreen-Thema entfernt: {thema}"
-    except Exception:
-        return "❌ Ungültiger Index."
+    def _set_weekly(self, day_str: str, thema: str) -> str:
+        day_str_l = day_str.lower().strip()
+        if day_str_l not in DAY_MAPPING:
+            return "❌ Ungültiger Tag. Nutze z.B. 'Montag' oder 'Monday'."
 
+        weekday = DAY_MAPPING[day_str_l]
+        WEEKLY_TOPICS[weekday] = thema
+        return f"📅 Weekly-Thema für {day_str} gesetzt auf: {thema}"
 
-def scheduler_set_weekly(day_str, thema):
-    day_str = day_str.lower().strip()
-    if day_str not in DAY_MAPPING:
-        return "❌ Ungültiger Tag. Nutze z.B. 'montag' oder 'monday'."
-
-    weekday = DAY_MAPPING[day_str]
-    WEEKLY_TOPICS[weekday] = thema
-    return f"📅 Weekly-Thema für {day_str} gesetzt auf: {thema}"
-
-
-def handle_scheduler_command(text):
-    t = text.strip()
-    parts = t.split(" ")
-
-    if len(parts) < 2:
+    def _help_text(self) -> str:
         return (
-            "❌ Unbekannter Scheduler-Befehl.\n"
-            "Verfügbar:\n"
+            "📆 Scheduler-Commands:\n"
             "· scheduler status\n"
             "· scheduler pause\n"
             "· scheduler resume\n"
@@ -702,63 +843,224 @@ def handle_scheduler_command(text):
             "· scheduler remove evergreen <Index>\n"
         )
 
-    base = parts[0].lower()
-    if base != "scheduler":
-        return "❌ Bitte nutze: scheduler <command>"
+    # --- Public API --------------------------------------------------------
 
-    cmd = parts[1].lower()
+    def handle_command(self, text: str) -> str:
+        t = text.strip()
+        parts = t.split(" ")
 
-    # STATUS / PAUSE / RESUME / RUN
-    if cmd == "status":
-        return scheduler_status()
-    if cmd == "pause":
-        return scheduler_pause()
-    if cmd == "resume":
-        return scheduler_resume()
-    if cmd == "run":
-        if len(parts) < 3:
-            return "❌ Nutze: scheduler run daily|weekly|evergreen"
-        mode = parts[2].lower()
-        if mode == "daily":
-            return scheduler_run_daily()
-        if mode == "weekly":
-            return scheduler_run_weekly()
-        if mode == "evergreen":
-            return scheduler_run_evergreen()
-        return "❌ Unbekannter Run-Modus."
+        if len(parts) < 2:
+            return self._help_text()
 
-    # LIST COMMANDS
-    if cmd == "list":
-        if len(parts) < 3:
-            return "❌ Nutze: scheduler list weekly|evergreen"
-        if parts[2].lower() == "weekly":
-            return scheduler_list_weekly()
-        if parts[2].lower() == "evergreen":
-            return scheduler_list_evergreen()
-        return "❌ Unbekannte Liste."
+        base = parts[0].lower()
+        if base != "scheduler":
+            return "❌ Bitte nutze: scheduler <command>"
 
-    # SET DAILY / WEEKLY
-    if cmd == "set":
-        if len(parts) < 4:
-            return (
-                "❌ Nutze:\n"
-                "· scheduler set daily <HH:MM>\n"
-                "· scheduler set weekly <Tag> <Thema>"
-            )
-        mode = parts[2].lower()
-        if mode == "daily":
-            return scheduler_set_daily_time(parts[3])
-        if mode == "weekly":
-            if len(parts) < 5:
-                return "❌ Nutze: scheduler set weekly <Tag> <Thema>"
-            day = parts[3]
-            thema = " ".join(parts[4:])
-            return scheduler_set_weekly(day, thema)
-        return "❌ Unbekannter Set-Modus."
+        cmd = parts[1].lower()
 
-    # ADD EVERGREEN
-    if cmd == "add":
-        if len(parts) < 4 or parts[2].lower() != "evergreen":
-            return "❌ Nutze: scheduler add evergreen <Thema>"
-        thema = " ".join(parts[3:])
-        return scheduler_add_ever
+        # STATUS / PAUSE / RESUME / RUN
+        if cmd == "status":
+            return self.scheduler.status_text()
+        if cmd == "pause":
+            return self.scheduler.pause()
+        if cmd == "resume":
+            return self.scheduler.resume()
+        if cmd == "run":
+            if len(parts) < 3:
+                return "❌ Nutze: scheduler run daily|weekly|evergreen"
+            mode = parts[2].lower()
+            if mode == "daily":
+                return self.scheduler.run_daily()
+            if mode == "weekly":
+                return self.scheduler.run_weekly()
+            if mode == "evergreen":
+                return self.scheduler.run_evergreen()
+            return "❌ Unbekannter Run-Modus."
+
+        # LIST COMMANDS
+        if cmd == "list":
+            if len(parts) < 3:
+                return "❌ Nutze: scheduler list weekly|evergreen"
+            if parts[2].lower() == "weekly":
+                return self._list_weekly()
+            if parts[2].lower() == "evergreen":
+                return self._list_evergreen()
+            return "❌ Unbekannte Liste."
+
+        # SET DAILY / WEEKLY
+        if cmd == "set":
+            if len(parts) < 4:
+                return (
+                    "❌ Nutze:\n"
+                    "· scheduler set daily <HH:MM>\n"
+                    "· scheduler set weekly <Tag> <Thema>"
+                )
+            mode = parts[2].lower()
+            if mode == "daily":
+                return self._set_daily_time(parts[3])
+            if mode == "weekly":
+                if len(parts) < 5:
+                    return "❌ Nutze: scheduler set weekly <Tag> <Thema>"
+                day = parts[3]
+                thema = " ".join(parts[4:])
+                return self._set_weekly(day, thema)
+            return "❌ Unbekannter Set-Modus."
+
+        # ADD EVERGREEN
+        if cmd == "add":
+            if len(parts) < 4 or parts[2].lower() != "evergreen":
+                return "❌ Nutze: scheduler add evergreen <Thema>"
+            thema = " ".join(parts[3:])
+            return self._add_evergreen(thema)
+
+        # REMOVE EVERGREEN
+        if cmd == "remove":
+            if len(parts) < 4 or parts[2].lower() != "evergreen":
+                return "❌ Nutze: scheduler remove evergreen <Index>"
+            index_str = parts[3]
+            return self._remove_evergreen(index_str)
+
+        return self._help_text()
+
+
+# ---------------------------------------------------------------------------
+# KI-Router (process_ki_anfrage)
+# ---------------------------------------------------------------------------
+
+class KIRouter:
+    """
+    Router für Text-Befehle (z.B. aus Telegram).
+
+    - Commands mit 'scheduler' -> SchedulerCommandEngine
+    - Commands mit 'post'      -> PostingEngine
+    - Commands mit 'reel'      -> ReelEngine
+    - Commands mit 'fabrik'    -> FabrikEngine
+    - Commands mit 'cluster'   -> ClusterEngine
+    """
+
+    def __init__(
+        self,
+        scheduler_cmd_engine: SchedulerCommandEngine,
+        posting_engine: PostingEngine,
+        reel_engine: ReelEngine,
+        fabrik_engine: FabrikEngine,
+        cluster_engine: ClusterEngine,
+    ) -> None:
+        self.scheduler_cmd_engine = scheduler_cmd_engine
+        self.posting_engine = posting_engine
+        self.reel_engine = reel_engine
+        self.fabrik_engine = fabrik_engine
+        self.cluster_engine = cluster_engine
+
+    def handle_message(self, text: str) -> str:
+        t = text.strip()
+        if not t:
+            return "❌ Leere Eingabe."
+
+        lower = t.lower()
+
+        if lower.startswith("scheduler"):
+            return self.scheduler_cmd_engine.handle_command(t)
+        if lower.startswith("post"):
+            return self.posting_engine.handle_post_command(t)
+        if lower.startswith("reel"):
+            return self.reel_engine.handle_reel_command(t)
+        if lower.startswith("fabrik"):
+            return self.fabrik_engine.handle_fabrik_command(t)
+        if lower.startswith("cluster"):
+            return self.cluster_engine.handle_cluster_command(t)
+
+        return (
+            "❌ Unbekannter Befehl.\n"
+            "Verfügbare Prefixe:\n"
+            "· scheduler ...\n"
+            "· post ...\n"
+            "· reel ...\n"
+            "· fabrik ...\n"
+            "· cluster ..."
+        )
+
+
+# ---------------------------------------------------------------------------
+# CashBot-Kontext (Singleton für Worker)
+# ---------------------------------------------------------------------------
+
+class CashBotContext:
+    def __init__(self) -> None:
+        # Queue
+        self.posting_queue = PostingQueue(POSTING_QUEUE_FILE)
+        # Engines
+        self.posting_engine = PostingEngine(self.posting_queue)
+        self.reel_engine = ReelEngine(self.posting_queue)
+        self.fabrik_engine = FabrikEngine()
+        self.cluster_engine = ClusterEngine(self.fabrik_engine)
+        self.scheduler_state_manager = SchedulerStateManager(SCHEDULER_STATE_FILE)
+        self.scheduler_engine = SchedulerEngine(
+            self.scheduler_state_manager,
+            self.reel_engine,
+            self.fabrik_engine,
+            self.posting_queue,
+        )
+        self.scheduler_cmd_engine = SchedulerCommandEngine(self.scheduler_engine)
+        # KI-Router
+        self.ki_router = KIRouter(
+            self.scheduler_cmd_engine,
+            self.posting_engine,
+            self.reel_engine,
+            self.fabrik_engine,
+            self.cluster_engine,
+        )
+
+
+_CTX: Optional[CashBotContext] = None
+
+
+def _get_context() -> CashBotContext:
+    global _CTX
+    if _CTX is None:
+        log_worker("Initialisiere CashBotContext (Logik.py – Agentur-Level)...")
+        _CTX = CashBotContext()
+    return _CTX
+
+
+# ---------------------------------------------------------------------------
+# Öffentliche API für den Worker
+# ---------------------------------------------------------------------------
+
+def process_ki_anfrage(text: str) -> str:
+    """
+    Wird vom Worker aufgerufen:
+    from core.Logik import process_ki_anfrage
+
+    Nutzt den KI-Router und verarbeitet alle Commands:
+    - scheduler ...
+    - post ...
+    - reel ...
+    - fabrik ...
+    - cluster ...
+    """
+    try:
+        ctx = _get_context()
+        return ctx.ki_router.handle_message(text)
+    except Exception as e:
+        error_worker(f"Fehler in process_ki_anfrage: {e}")
+        return f"❌ Fehler in process_ki_anfrage: {e}"
+
+
+def auto_posting_tick() -> None:
+    """
+    Wird vom Worker in der Main-Loop aufgerufen:
+    from core.Logik import auto_posting_tick
+
+    Führt Auto-Posting über die JSON-Queue aus.
+    Optional könnte hier auch scheduler_engine.tick() integriert werden,
+    wenn du den Scheduler über den Worker triggern willst.
+    """
+    try:
+        ctx = _get_context()
+        # Auto-Posting
+        ctx.posting_engine.auto_posting_tick()
+        # Optional: Scheduler-Tick (wenn gewünscht aktivieren)
+        # ctx.scheduler_engine.tick()
+    except Exception as e:
+        error_worker(f"Fehler in auto_posting_tick: {e}")

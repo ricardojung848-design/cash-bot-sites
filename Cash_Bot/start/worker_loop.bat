@@ -4,7 +4,7 @@ cd ..
 
 echo [Worker] Auto-Restart aktiv...
 :loop
-python core\Agent_Worker.py
+python -m core.Agent_Worker
 echo [Worker] abgestuerzt – Neustart in 3 Sekunden...
 timeout /t 3 >nul
 goto loop

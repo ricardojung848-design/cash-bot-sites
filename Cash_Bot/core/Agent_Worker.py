@@ -7,7 +7,6 @@ from datetime import datetime
 # === interne Utils ===
 from core.utils import (
     BASE_DIR,
-    LOGS_DIR,
     load_json,
     save_json,
     log_worker,
@@ -71,6 +70,7 @@ def process_task(task):
         elif befehl == "LOGBUCH":
             antwort = "Logbuch wird übertragen."
 
+        # Unbekannt
         else:
             antwort = f"Unbekannter Befehl: {befehl}"
 

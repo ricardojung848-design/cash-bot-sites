@@ -556,4 +556,4 @@ def scheduler_status():
 
     next_evergreen = None
     if EVERGREEN_TOPICS:
-        next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN
+        next_evergreen = EVERGREEN_TOPICS[evergreen_index % len(EVERGREEN)

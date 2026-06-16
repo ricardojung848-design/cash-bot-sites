@@ -11,5 +11,13 @@
     "instagram_api": {
         "access_token": "DEIN_LONG_LIVED_TOKEN",
         "ig_user_id": "DEINE_IG_USER_ID"
+    },
+
+    "cloudflare_r2": {
+        "account_id": "DEIN_ACCOUNT_ID",
+        "bucket": "DEIN_BUCKET_NAME",
+        "public_base_url": "https://DEIN_PUBLIC_CDN_URL",
+        "access_key_id": "DEIN_R2_ACCESS_KEY",
+        "secret_access_key": "DEIN_R2_SECRET_KEY"
     }
 }

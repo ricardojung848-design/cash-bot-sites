@@ -1,3 +1,5 @@
+# modules/instagram_api.py
+
 import requests
 from typing import Dict, Any
 from core.utils import log_worker, error_worker
@@ -23,25 +25,16 @@ class InstagramAPI:
             return {"error": str(e)}
 
     def upload_reel(self, video_url: str, caption: str) -> Dict[str, Any]:
-        """
-        Erstellt ein Reel über die Instagram Graph API.
-        """
         log_worker("📤 Sende Reel an Instagram...")
-
         params = {
             "media_type": "REELS",
             "video_url": video_url,
             "caption": caption,
             "share_to_feed": "true",
         }
-
         return self._post(f"{self.ig_user_id}/media", params)
 
     def publish_media(self, creation_id: str) -> Dict[str, Any]:
-        """
-        Veröffentlicht ein zuvor hochgeladenes Reel.
-        """
         log_worker("🚀 Veröffentliche Reel...")
-
         params = {"creation_id": creation_id}
         return self._post(f"{self.ig_user_id}/media_publish", params)

@@ -33,14 +33,14 @@
         "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
         "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation.json",
         "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation.txt",
-        "status": "scheduled",
+        "status": "posted",
         "scheduled_at": "2026-06-16T10:30:00",
         "platforms": [
             "instagram"
         ],
         "auto_post": false,
         "created_at": "2026-06-15T11:10:39.924516",
-        "posted_at": null,
+        "posted_at": "2026-06-16T21:22:25.878059",
         "cancelled_at": null
     },
     {

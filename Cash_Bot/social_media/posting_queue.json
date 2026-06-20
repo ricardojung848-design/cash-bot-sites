@@ -144,5 +144,39 @@
         "created_at": "2026-06-15T17:52:18.917732",
         "posted_at": null,
         "cancelled_at": null
+    },
+    {
+        "id": 10,
+        "thema": "instagram automation",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\instagram_automation.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\instagram_automation.txt",
+        "status": "pending",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": false,
+        "created_at": "2026-06-20T18:10:12.981074",
+        "posted_at": null,
+        "cancelled_at": null
+    },
+    {
+        "id": 11,
+        "thema": "automation",
+        "nische": "Business Automation",
+        "produkt_typ": "Automations-Dienstleistungen & KI-Beratung",
+        "json_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation.json",
+        "txt_path": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\automation.txt",
+        "status": "posted",
+        "scheduled_at": null,
+        "platforms": [
+            "instagram"
+        ],
+        "auto_post": true,
+        "created_at": "2026-06-20T18:10:59.699023",
+        "posted_at": "2026-06-20T18:11:24.069596",
+        "cancelled_at": null
     }
 ]

@@ -1318,3 +1318,25 @@ Verfügbare Prefixe:
 · reel ...
 · fabrik ...
 · cluster ...
+[2026-06-20 18:07:47] [INFO] Nachricht empfangen: 'reel <Thema>' von Chat 8803409956
+[2026-06-20 18:07:47] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-20 18:07:47] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-20 18:07:48] [INFO] Antwort an Chat 8803409956 gesendet: ❌ Fehler in process_ki_anfrage: [Errno 22] Invalid argument: 'C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\social_media\\<thema>.txt'
+[2026-06-20 18:10:12] [INFO] Nachricht empfangen: 'reel instagram automation' von Chat 8803409956
+[2026-06-20 18:10:12] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-20 18:10:13] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-20 18:10:13] [INFO] Antwort an Chat 8803409956 gesendet: 🎬 Reel-Skript erstellt für: instagram automation
+📁 Gespeichert unter:
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\instagram_automation.json
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\instagram_automation.txt
+[2026-06-20 18:10:59] [INFO] Nachricht empfangen: 'reel automation' von Chat 8803409956
+[2026-06-20 18:10:59] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-20 18:10:59] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-20 18:10:59] [INFO] Antwort an Chat 8803409956 gesendet: 🎬 Reel-Skript erstellt für: automation
+📁 Gespeichert unter:
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation.json
+- C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media\automation.txt
+[2026-06-20 18:11:23] [INFO] Nachricht empfangen: 'post now automation' von Chat 8803409956
+[2026-06-20 18:11:23] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-20 18:11:23] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-20 18:11:24] [INFO] Antwort an Chat 8803409956 gesendet: 🚀 Posting für 'automation' wird sofort ausgeführt.

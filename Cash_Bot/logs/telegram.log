@@ -1354,3 +1354,21 @@ Verfügbare Prefixe:
 [2026-06-21 20:41:37] [INFO] Telegram Listener läuft und hört zu...
 [2026-06-21 20:43:37] [INFO] Telegram Listener wird gestartet...
 [2026-06-21 20:43:37] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-21 21:15:05] [INFO] Telegram Listener wird gestartet...
+[2026-06-21 21:15:05] [INFO] Telegram Listener läuft und hört zu...
+[2026-06-21 21:15:48] [INFO] Nachricht empfangen: 'hallo' von Chat 8803409956
+[2026-06-21 21:15:48] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:15:48] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-21 21:15:48] [INFO] Antwort an Chat 8803409956 gesendet: Hey Ricardo 👋 Was geht ab?
+[2026-06-21 21:16:09] [INFO] Nachricht empfangen: 'wie geht es dir' von Chat 8803409956
+[2026-06-21 21:16:09] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:16:09] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-21 21:16:10] [INFO] Antwort an Chat 8803409956 gesendet: Interessant… erzähl mir mehr darüber: wie geht es dir
+[2026-06-21 21:16:32] [INFO] Nachricht empfangen: 'wer bist du?' von Chat 8803409956
+[2026-06-21 21:16:32] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:16:32] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-21 21:16:33] [INFO] Antwort an Chat 8803409956 gesendet: Interessant… erzähl mir mehr darüber: wer bist du?
+[2026-06-21 21:17:01] [INFO] Nachricht empfangen: 'was hast du alles für befehle' von Chat 8803409956
+[2026-06-21 21:17:01] [INFO] Aufgabe eingereiht: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:17:01] [INFO] Antwort an Chat 8803409956 gesendet.
+[2026-06-21 21:17:01] [INFO] Antwort an Chat 8803409956 gesendet: Interessant… erzähl mir mehr darüber: was hast du alles für befehle

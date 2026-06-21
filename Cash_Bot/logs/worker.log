@@ -1094,3 +1094,51 @@ Verfügbare Prefixe:
 ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
 ✅ Systemstruktur vollständig geprüft.
 [2026-06-21 20:43:37] [INFO] Worker bereit. Warte auf Aufgaben...
+[2026-06-21 21:15:04] [INFO] Worker wird gestartet...
+[2026-06-21 21:15:04] [INFO] 🔍 Starte Systemstruktur-Prüfung...
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\core
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\logs
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\scraped_data
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\generated_content
+[2026-06-21 21:15:04] [INFO] ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media
+[2026-06-21 21:15:04] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\token.txt
+[2026-06-21 21:15:04] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\cashbot_config.json
+[2026-06-21 21:15:04] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\aufgaben.json
+[2026-06-21 21:15:04] [INFO] ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
+[2026-06-21 21:15:04] [INFO] ✅ Systemstruktur vollständig geprüft.
+[2026-06-21 21:15:04] [INFO] 🔍 Starte Systemstruktur-Prüfung...
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\core
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\logs
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\scraped_data
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\generated_content
+✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\social_media
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\token.txt
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\config\cashbot_config.json
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\aufgaben.json
+✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\rueckgabe.json
+✅ Systemstruktur vollständig geprüft.
+[2026-06-21 21:15:04] [INFO] Worker bereit. Warte auf Aufgaben...
+[2026-06-21 21:15:48] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:15:48] [INFO] Antwort erzeugt: Hey Ricardo 👋 Was geht ab?
+[2026-06-21 21:15:48] [INFO] Antwort für Telegram gespeichert.
+[2026-06-21 21:15:48] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-21 21:16:09] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:16:09] [INFO] Antwort erzeugt: Interessant… erzähl mir mehr darüber: wie geht es dir
+[2026-06-21 21:16:09] [INFO] Antwort für Telegram gespeichert.
+[2026-06-21 21:16:09] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-21 21:16:33] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:16:33] [INFO] Antwort erzeugt: Interessant… erzähl mir mehr darüber: wer bist du?
+[2026-06-21 21:16:33] [INFO] Antwort für Telegram gespeichert.
+[2026-06-21 21:16:33] [INFO] Aufgabe abgeschlossen.
+
+[2026-06-21 21:17:01] [INFO] Verarbeite Aufgabe: KI_ANFRAGE | Chat 8803409956
+[2026-06-21 21:17:01] [INFO] Antwort erzeugt: Interessant… erzähl mir mehr darüber: was hast du alles für befehle
+[2026-06-21 21:17:01] [INFO] Antwort für Telegram gespeichert.
+[2026-06-21 21:17:01] [INFO] Aufgabe abgeschlossen.
+

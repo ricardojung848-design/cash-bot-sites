@@ -23,6 +23,11 @@ IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN", "").strip()
 IG_USER_ID = os.environ.get("IG_USER_ID", "").strip()
 
 dialog_engine = DialogEngine()
+
+
+# ---------------------------------------------------------
+# Posting-Queue laden
+# ---------------------------------------------------------
 def load_posting_queue() -> List[Dict[str, Any]]:
     queue = load_json(POSTING_QUEUE_FILE, [])
     if not isinstance(queue, list):
@@ -32,16 +37,23 @@ def load_posting_queue() -> List[Dict[str, Any]]:
     return queue
 
 
+# ---------------------------------------------------------
+# Posting-Queue speichern
+# ---------------------------------------------------------
 def save_posting_queue(queue: List[Dict[str, Any]]) -> None:
     save_json(POSTING_QUEUE_FILE, queue)
 
 
+# ---------------------------------------------------------
+# Eintrag zur Queue hinzufügen
+# ---------------------------------------------------------
 def add_to_posting_queue(
     video_path: str,
     caption: str,
     scheduled_at: Optional[str] = None,
     auto_post: bool = True,
 ) -> Dict[str, Any]:
+
     queue = load_posting_queue()
 
     entry = {
@@ -62,6 +74,9 @@ def add_to_posting_queue(
     return entry
 
 
+# ---------------------------------------------------------
+# Queue formatieren
+# ---------------------------------------------------------
 def format_posting_queue() -> str:
     queue = load_posting_queue()
     if not queue:
@@ -76,10 +91,18 @@ def format_posting_queue() -> str:
     return "\n".join(lines)
 
 
+# ---------------------------------------------------------
+# Queue leeren
+# ---------------------------------------------------------
 def clear_posting_queue() -> str:
     save_posting_queue([])
     log_worker("🧹 Posting-Queue geleert.")
     return "🧹 Posting-Queue wurde geleert."
+
+
+# ---------------------------------------------------------
+# InstagramPoster holen
+# ---------------------------------------------------------
 def get_instagram_poster() -> Optional[InstagramPoster]:
     if not IG_ACCESS_TOKEN or not IG_USER_ID:
         error_worker("❌ IG_ACCESS_TOKEN oder IG_USER_ID fehlt – kein Instagram-Posting möglich.")
@@ -87,6 +110,9 @@ def get_instagram_poster() -> Optional[InstagramPoster]:
     return InstagramPoster(IG_ACCESS_TOKEN, IG_USER_ID)
 
 
+# ---------------------------------------------------------
+# Einzelnen Post wirklich ausführen
+# ---------------------------------------------------------
 def perform_post(entry: Dict[str, Any]) -> bool:
     video_path = entry["video_path"]
     caption = entry["caption"]
@@ -136,6 +162,11 @@ def perform_post(entry: Dict[str, Any]) -> bool:
         entry["status"] = "error"
         entry["last_error"] = msg
         return False
+
+
+# ---------------------------------------------------------
+# Auto-Posting Tick
+# ---------------------------------------------------------
 def auto_posting_tick() -> None:
     queue = load_posting_queue()
     if not queue:
@@ -167,6 +198,11 @@ def auto_posting_tick() -> None:
 
     if changed:
         save_posting_queue(queue)
+
+
+# ---------------------------------------------------------
+# KI-Anfrage verarbeiten (DialogEngine integriert)
+# ---------------------------------------------------------
 def process_ki_anfrage(text: str) -> str:
     if not text:
         return "Kein Text übergeben."
@@ -193,5 +229,5 @@ def process_ki_anfrage(text: str) -> str:
     return dialog_engine.generate_response("chat", text)
 
 
-# Worker-Kompatibilität (dein Worker importiert diesen Namen!)
+# Worker-Kompatibilität
 process_ki_Anfrage = process_ki_anfrage

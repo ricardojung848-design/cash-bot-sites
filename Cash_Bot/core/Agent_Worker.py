@@ -1,10 +1,9 @@
+# core/Agent_Worker.py
+
 import os
 import time
-import json
-import traceback
 from datetime import datetime
 
-# === interne Utils ===
 from core.utils import (
     BASE_DIR,
     load_json,
@@ -14,111 +13,86 @@ from core.utils import (
     error_worker,
 )
 
-# === Systemstruktur-Manager ===
-from core.SystemStructureManager import SystemStructureManager
+from core.Logik import (
+    process_ki_anfrage,
+    auto_posting_tick,
+)
 
-# === Logik (inkl. auto_posting_tick) ===
-from core.Logik import process_ki_anfrage, auto_posting_tick
-
-# === PFAD ZU AUFGABEN & RÜCKGABE ===
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
-# === AUFGABEN LADEN ===
-def load_tasks():
+
+
+# ---------------------------------------------------------
+# Aufgabe laden
+# ---------------------------------------------------------
+def lade_aufgabe():
     tasks = load_json(AUFGABEN_DATEI, [])
-    if not isinstance(tasks, list):
-        warn_worker("Aufgaben-Datei war beschädigt – neu initialisiert.")
-        tasks = []
-        save_json(AUFGABEN_DATEI, tasks)
-    return tasks
+    if not tasks:
+        return None
 
-
-# === AUFGABEN SPEICHERN ===
-def save_tasks(tasks):
+    task = tasks.pop(0)
     save_json(AUFGABEN_DATEI, tasks)
+    return task
 
 
-# === EINZELNE AUFGABE VERARBEITEN ===
-def process_task(task):
-    chat_id = task.get("chat_id")
-    befehl = task.get("befehl")
-    text = task.get("text")
-
-    log_worker(f"Verarbeite Aufgabe: {befehl} | Chat {chat_id}")
-
-    try:
-        if befehl == "KI_ANFRAGE":
-            antwort = process_ki_anfrage(text)
-
-        elif befehl == "CHECK_SYSTEM":
-            antwort = "System läuft stabil."
-
-        elif befehl == "ARCHITEKT":
-            antwort = "Architekt-Modus aktiviert."
-
-        elif befehl == "RUN":
-            antwort = "RUN-Befehl ausgeführt."
-
-        elif befehl == "LOGBUCH":
-            antwort = "Logbuch wird übertragen."
-
-        else:
-            antwort = f"Unbekannter Befehl: {befehl}"
-
-        log_worker(f"Antwort erzeugt: {antwort}")
-
-    except Exception as e:
-        error_worker(f"Fehler bei der Verarbeitung: {e}")
-        traceback.print_exc()
-        antwort = f"❌ Fehler bei der Verarbeitung: {e}"
-
-    return {"chat_id": chat_id, "antwort": antwort}
+# ---------------------------------------------------------
+# Antwort speichern
+# ---------------------------------------------------------
+def speichere_antwort(chat_id, antwort):
+    save_json(RUECKGABE_DATEI, {
+        "chat_id": chat_id,
+        "antwort": antwort
+    })
+    log_worker(f"Antwort gespeichert für Chat {chat_id}")
 
 
-# === RÜCKGABE SCHREIBEN ===
-def write_response(response):
-    save_json(RUECKGABE_DATEI, response)
-    log_worker("Antwort für Telegram gespeichert.")
-# === MAIN LOOP ===
-def main():
-    log_worker("Worker wird gestartet...")
-
-    # === Systemstruktur prüfen ===
-    manager = SystemStructureManager()
-    status = manager.run_full_check()
-    log_worker(status)
-
-    log_worker("Worker bereit. Warte auf Aufgaben...")
+# ---------------------------------------------------------
+# Worker Loop
+# ---------------------------------------------------------
+def worker_loop():
+    log_worker("Agent Worker gestartet...")
 
     while True:
-        # 1) Auto-Posting-Tick jedes Mal ausführen
         try:
+            # Auto-Posting Tick
             auto_posting_tick()
+
+            # Aufgabe prüfen
+            task = lade_aufgabe()
+            if not task:
+                time.sleep(0.2)
+                continue
+
+            chat_id = task.get("chat_id")
+            befehl = task.get("befehl")
+            text = task.get("text")
+
+            log_worker(f"Aufgabe empfangen: {befehl} | Chat {chat_id}")
+
+            # KI-Anfrage
+            if befehl == "KI_ANFRAGE":
+                antwort = process_ki_anfrage(text)
+                speichere_antwort(chat_id, antwort)
+                continue
+
+            # Systemcheck
+            if befehl == "CHECK_SYSTEM":
+                speichere_antwort(chat_id, "System läuft stabil.")
+                continue
+
+            # Architektur / Code / Run / Logbuch (Platzhalter)
+            if befehl in ("ARCHITEKT", "RUN", "LOGBUCH"):
+                speichere_antwort(chat_id, f"Befehl '{befehl}' ist noch nicht implementiert.")
+                continue
+
         except Exception as e:
-            error_worker(f"❌ Fehler in auto_posting_tick: {e}")
+            error_worker(f"Fehler im Worker: {e}")
 
-        # 2) Aufgaben prüfen
-        tasks = load_tasks()
-
-        if not tasks:
-            time.sleep(0.5)
-            continue
-
-        # Erste Aufgabe entnehmen
-        task = tasks.pop(0)
-
-        # Verarbeiten
-        response = process_task(task)
-
-        # Rückgabe speichern
-        write_response(response)
-
-        # Aufgabenliste aktualisieren
-        save_tasks(tasks)
-
-        log_worker("Aufgabe abgeschlossen.\n")
-        time.sleep(0.3)
+        time.sleep(0.2)
 
 
+# ---------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------
 if __name__ == "__main__":
-    main()
+    worker_loop()

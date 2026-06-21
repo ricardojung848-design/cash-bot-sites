@@ -14,7 +14,7 @@ class InstagramAPI:
         self.base_url = f"https://graph.facebook.com/{self.api_version}"
 
     # ---------------------------------------------------------
-    # Öffentliche Video-URL bauen (korrigiert & stabil)
+    # Öffentliche Video-URL bauen
     # ---------------------------------------------------------
     def _build_public_video_url(self, video_path: str) -> str:
         filename = os.path.basename(video_path)
@@ -38,7 +38,7 @@ class InstagramAPI:
             "video_url": video_url,
             "caption": caption,
             "share_to_feed": True,
-            "access_token": self.access_token,
+            "access_token": self.access_token
         }
 
         log_worker("📦 Erstelle IG-Container für Reel...")
@@ -50,4 +50,3 @@ class InstagramAPI:
             return ""
 
         if resp.status_code != 200:
-            error_worker(f"❌ Fehler beim Er

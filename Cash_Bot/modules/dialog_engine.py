@@ -58,7 +58,7 @@ class DialogEngine:
             scheduled_at = parts[2] if len(parts) > 2 else None
 
             return video_path, caption, scheduled_at
-        except:
+        except Exception:
             return None, None, None
 
     # ---------------------------------------------------------

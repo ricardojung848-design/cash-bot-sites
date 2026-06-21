@@ -1,15 +1,14 @@
+# core/Agent_Telegram.py
+
 import os
 import json
-import time
-import datetime
+import asyncio
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
-# === interne Utils ===
 from core.utils import (
     BASE_DIR,
     CONFIG_DIR,
-    LOGS_DIR,
     load_json,
     save_json,
     log_telegram,
@@ -54,6 +53,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     log_telegram(f"Nachricht empfangen: '{user_text}' von Chat {chat_id}")
 
+    # --- Befehl bestimmen ---
     u = user_text.upper()
 
     if u == "/CHECK_SYSTEM":
@@ -65,13 +65,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif u.startswith("/LOG"):
         b = "LOGBUCH"
     else:
+        # ALLES andere geht an die KI / DialogEngine
         b = "KI_ANFRAGE"
 
+    # Aufgabe speichern
     aufgabe_einreihen(chat_id, b, user_text)
 
-    await update.message.reply_text(f"⏳ Befehl '{b}' empfangen. Worker verarbeitet...")
+    # Sofortige Telegram-Antwort
+    await update.message.reply_text(f"⏳ '{b}' empfangen. Worker verarbeitet...")
     log_telegram(f"Antwort an Chat {chat_id} gesendet.")
-
+    
 
 # === RÜCKKANAL: ANTWORTEN AUTOMATISCH SENDEN ===
 async def rueckkanal_loop(app: Application):
@@ -100,8 +103,6 @@ async def rueckkanal_loop(app: Application):
 
 
 # === MAIN LOOP ===
-import asyncio
-
 def main():
     log_telegram("Telegram Listener wird gestartet...")
 

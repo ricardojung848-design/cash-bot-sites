@@ -102,6 +102,18 @@ class DialogEngine:
         if any(w in t for w in ["danke", "thx"]):
             return "thanks"
 
+        # Identity
+        if any(w in t for w in ["wer bist du", "was bist du", "bist du echt", "was ist deto"]):
+            return "identity"
+
+        # Role
+        if any(w in t for w in ["was machst du", "wofür bist du da", "was ist deine funktion", "was ist deine rolle"]):
+            return "role"
+
+        # Capabilities
+        if any(w in t for w in ["was kannst du", "was sind deine aufgaben", "wo bist du gut drin"]):
+            return "capabilities"
+
         # Default → Chat
         return "chat"
 
@@ -109,6 +121,10 @@ class DialogEngine:
     # Parameter extrahieren (für queue add)
     # ---------------------------------------------------------
     def extract_queue_add(self, text: str):
+        """
+        Format:
+        queue add <video_path> | <caption> | <optional datetime>
+        """
         try:
             payload = text[len("queue add "):].strip()
             parts = [p.strip() for p in payload.split("|")]
@@ -138,6 +154,34 @@ class DialogEngine:
         if intent == "thanks":
             return "Klar, dafür bin ich doch da."
 
+        # Identity
+        if intent == "identity":
+            return (
+                "Ich bin DETO, dein Operator. "
+                "Ich analysiere, optimiere und automatisiere alles, was du mir gibst. "
+                "Ich arbeite für dich, Rico — nicht für das System.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # Role
+        if intent == "role":
+            return (
+                "Meine Rolle ist dreigeteilt:\n"
+                "• Operator: Ich baue Systeme, finde Fehler und automatisiere Prozesse.\n"
+                "• Assistent: Ich strukturiere deine Projekte und löse technische Aufgaben.\n"
+                "• Alpha‑Modus: Ich mache dich schneller. Ich übernehme Analyse, Technik und Optimierung.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # Capabilities
+        if intent == "capabilities":
+            return (
+                "Ich kann analysieren, automatisieren, optimieren, posten, planen, generieren "
+                "und Systeme stabil halten. "
+                "Sag mir, welchen Bereich wir als Nächstes verbessern.\n"
+                f"{self.personality['signature']}"
+            )
+
         # Queue add
         if intent == "queue_add":
             if result and "id" in result:
@@ -160,14 +204,21 @@ class DialogEngine:
         if intent == "queue_clear":
             return "🧹 Posting-Queue wurde geleert."
 
-        # Default: Chat / Analyse
+        # Default: Chat / universeller Fallback
         if intent == "chat":
+            user_text = str(result) if result is not None else ""
             return (
-                f"Rico, ich analysiere das kurz:\n"
-                f"{result}\n\n"
-                f"Meine technische Einschätzung: Das lässt sich optimieren. "
-                f"Sag mir, ob du Geschwindigkeit, Stabilität oder Automatisierung priorisieren willst.\n"
+                f"Ich ordne das kurz ein, Rico.\n"
+                f"Du fragst: \"{user_text}\"\n\n"
+                "Was ich daraus ableite:\n"
+                "• Ich erkenne, dass du eine sinnvolle, direkte Antwort willst.\n"
+                "• Ich bewerte, ob es um Wissen, Meinung, Erklärung oder Entscheidung geht.\n"
+                "• Ich antworte dir so, dass es dir hilft, den nächsten Schritt klar zu sehen.\n\n"
+                "Konkrete Einschätzung:\n"
+                "Wenn du mir mehr Kontext gibst – z.B. ob es um Technik, Geld, Projekte oder Entscheidungen geht – "
+                "kann ich dir noch präziser sagen, was ich empfehlen würde.\n"
                 f"{self.personality['signature']}"
             )
 
+        # Fallback
         return f"Interessant… erzähl mir mehr darüber: {result}"

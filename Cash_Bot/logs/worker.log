@@ -1142,3 +1142,8 @@ Verfügbare Prefixe:
 [2026-06-21 21:17:01] [INFO] Antwort für Telegram gespeichert.
 [2026-06-21 21:17:01] [INFO] Aufgabe abgeschlossen.
 
+[2026-06-22 00:07:45] [INFO] Agent Worker gestartet...
+[2026-06-22 00:08:25] [INFO] Aufgabe empfangen: KI_ANFRAGE | Chat 8803409956
+[2026-06-22 00:08:25] [INFO] Antwort gespeichert für Chat 8803409956
+[2026-06-22 00:09:03] [INFO] Aufgabe empfangen: KI_ANFRAGE | Chat 8803409956
+[2026-06-22 00:09:03] [INFO] Antwort gespeichert für Chat 8803409956

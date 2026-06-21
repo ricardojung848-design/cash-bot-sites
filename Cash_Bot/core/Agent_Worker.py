@@ -20,12 +20,9 @@ from core.SystemStructureManager import SystemStructureManager
 # === Logik (inkl. auto_posting_tick) ===
 from core.Logik import process_ki_anfrage, auto_posting_tick
 
-
 # === PFAD ZU AUFGABEN & RÜCKGABE ===
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
-
-
 # === AUFGABEN LADEN ===
 def load_tasks():
     tasks = load_json(AUFGABEN_DATEI, [])
@@ -50,27 +47,21 @@ def process_task(task):
     log_worker(f"Verarbeite Aufgabe: {befehl} | Chat {chat_id}")
 
     try:
-        # KI-Anfrage
         if befehl == "KI_ANFRAGE":
             antwort = process_ki_anfrage(text)
 
-        # Systemcheck
         elif befehl == "CHECK_SYSTEM":
             antwort = "System läuft stabil."
 
-        # Architekt-Modus
         elif befehl == "ARCHITEKT":
             antwort = "Architekt-Modus aktiviert."
 
-        # RUN
         elif befehl == "RUN":
             antwort = "RUN-Befehl ausgeführt."
 
-        # Logbuch
         elif befehl == "LOGBUCH":
             antwort = "Logbuch wird übertragen."
 
-        # Unbekannt
         else:
             antwort = f"Unbekannter Befehl: {befehl}"
 
@@ -88,8 +79,6 @@ def process_task(task):
 def write_response(response):
     save_json(RUECKGABE_DATEI, response)
     log_worker("Antwort für Telegram gespeichert.")
-
-
 # === MAIN LOOP ===
 def main():
     log_worker("Worker wird gestartet...")
@@ -103,7 +92,10 @@ def main():
 
     while True:
         # 1) Auto-Posting-Tick jedes Mal ausführen
-        auto_posting_tick()
+        try:
+            auto_posting_tick()
+        except Exception as e:
+            error_worker(f"❌ Fehler in auto_posting_tick: {e}")
 
         # 2) Aufgaben prüfen
         tasks = load_tasks()

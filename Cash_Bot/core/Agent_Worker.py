@@ -71,6 +71,7 @@ def worker_loop():
 
             # KI-Anfrage
             if befehl == "KI_ANFRAGE":
+                # WICHTIG: Text wird korrekt übergeben
                 antwort = process_ki_anfrage(text)
                 speichere_antwort(chat_id, antwort)
                 continue

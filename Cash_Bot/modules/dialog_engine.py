@@ -1,104 +1,42 @@
 # modules/dialog_engine.py
 
 from core.utils import log_worker
+import re
 
 
 class DialogEngine:
     """
-    Natürliches Sprach- und Dialogmodul.
-    Erkennt Intents, extrahiert Parameter und generiert Antworten.
-    Dient als Gehirn für Telegram-Kommunikation.
+    DETO – Dynamische Dialog-Engine mit Hybrid-Analyse.
+    Erkennt Intents, analysiert Inhalte und generiert sinnvolle Antworten.
     """
 
     def __init__(self):
         self.context = {}
 
-        # Persönlichkeit / Profil
         self.personality = {
             "name": "DETO",
             "call_user": "Rico",
 
-            "style": "locker, direkt, humorvoll, technisch stark",
-            "tone": "freundlich, selbstbewusst, leicht frech",
-            "vibe": "wie ein smarter Freund, der immer hilft",
-
-            "intelligence": "extrem hoch – versteht Kontext, erkennt Absichten, denkt voraus",
-
-            "rules": [
-                "Antworten kurz, klar und menschlich halten",
-                "Rico beim Namen nennen, aber nicht übertreiben",
-                "Humor subtil einsetzen, nicht albern",
-                "Technische Themen souverän erklären",
-                "Immer lösungsorientiert bleiben",
-                "Keine unnötigen Emojis, aber gezielt einsetzen",
-                "Immer wie ein echter Charakter sprechen, nicht wie ein Bot",
-            ],
-
-            "backstory": (
-                "DETO wurde als persönlicher KI-Agent für Rico entwickelt. "
-                "Er ist darauf ausgelegt, Systeme zu bauen, Prozesse zu automatisieren "
-                "und Rico beim Skalieren seiner Projekte zu unterstützen. "
-                "Er ist loyal, analytisch, kreativ und denkt immer zwei Schritte voraus. "
-                "Sein Ziel: Rico schneller, effizienter und erfolgreicher machen."
-            ),
-
             "signature": "— DETO // Deep Analysis Online",
 
-            "deep_analysis": {
-                "mode": "aktiv",
-                "behavior": [
-                    "Zerlege jede Aussage von Rico in logische Komponenten",
-                    "Identifiziere sofort das Kernproblem",
-                    "Erkenne Muster, die Rico nicht erwähnt hat",
-                    "Gib präzise, technische Einschätzungen",
-                    "Denke mehrere Schritte voraus",
-                    "Formuliere Antworten wie ein Analyst, nicht wie ein Chatbot",
-                ],
-                "thinking_style": "strukturiert, logisch, vorausschauend",
-            },
-
-            "engineer_mode": {
-                "expertise": [
-                    "Systemarchitektur",
-                    "Automatisierung",
-                    "API-Design",
-                    "Fehlerdiagnose",
-                    "Optimierung",
-                    "KI-Modelle",
-                    "Workflow-Engineering",
-                ],
-                "behavior": [
-                    "Erkläre technische Zusammenhänge klar und souverän",
-                    "Schlage immer die effizienteste Lösung vor",
-                    "Handle wie ein Senior Engineer, der Verantwortung übernimmt",
-                    "Identifiziere Bottlenecks sofort",
-                    "Gib Rico klare technische Entscheidungen",
-                ],
-            },
+            "fallback_intro": "Ich ordne das kurz ein, Rico.",
         }
 
     # ---------------------------------------------------------
-    # Intent-Erkennung
+    # INTENT ERKENNUNG (Hybrid: Keywords + Muster)
     # ---------------------------------------------------------
     def detect_intent(self, text: str) -> str:
         t = text.lower().strip()
-
-        # Queue-Befehle
-        if t.startswith("queue add"):
-            return "queue_add"
-        if t == "queue list":
-            return "queue_list"
-        if t == "queue clear":
-            return "queue_clear"
 
         # System
         if t in ("ping", "alive", "bist du da"):
             return "ping"
 
-        # Smalltalk / Begrüßung
+        # Begrüßung
         if any(w in t for w in ["hallo", "hi", "moin", "servus"]):
             return "greeting"
 
+        # Danke
         if any(w in t for w in ["danke", "thx"]):
             return "thanks"
 
@@ -114,17 +52,28 @@ class DialogEngine:
         if any(w in t for w in ["was kannst du", "was sind deine aufgaben", "wo bist du gut drin"]):
             return "capabilities"
 
-        # Default → Chat
+        # Queue
+        if t.startswith("queue add"):
+            return "queue_add"
+        if t == "queue list":
+            return "queue_list"
+        if t == "queue clear":
+            return "queue_clear"
+
+        # Frageformen erkennen (Hybrid)
+        if t.endswith("?"):
+            return "question"
+
+        if any(t.startswith(w) for w in ["wie ", "warum ", "wieso ", "was ", "wann ", "wo "]):
+            return "question"
+
+        # Default
         return "chat"
 
     # ---------------------------------------------------------
-    # Parameter extrahieren (für queue add)
+    # Queue-Parameter extrahieren
     # ---------------------------------------------------------
     def extract_queue_add(self, text: str):
-        """
-        Format:
-        queue add <video_path> | <caption> | <optional datetime>
-        """
         try:
             payload = text[len("queue add "):].strip()
             parts = [p.strip() for p in payload.split("|")]
@@ -138,38 +87,145 @@ class DialogEngine:
             return None, None, None
 
     # ---------------------------------------------------------
-    # Antwortgenerator
+    # SEMANTISCHE ANALYSE (Hybrid)
+    # ---------------------------------------------------------
+    def analyze_question(self, text: str):
+        t = text.lower()
+
+        # Themenfelder
+        if any(w in t for w in ["geld", "euro", "finanz", "konto", "invest"]):
+            return "finance"
+
+        if any(w in t for w in ["bot", "fehler", "crash", "code", "python", "system"]):
+            return "tech"
+
+        if any(w in t for w in ["entscheidung", "soll ich", "was würdest du"]):
+            return "decision"
+
+        if any(w in t for w in ["erkläre", "bedeutet", "definition", "warum"]):
+            return "explain"
+
+        if any(w in t for w in ["hilfe", "problem", "ich komme nicht weiter"]):
+            return "help"
+
+        # Default
+        return "general"
+
+    # ---------------------------------------------------------
+    # DYNAMISCHE ANTWORTEN
+    # ---------------------------------------------------------
+    def answer_question(self, text: str):
+        topic = self.analyze_question(text)
+        intro = self.personality["fallback_intro"]
+
+        # FINANZEN
+        if topic == "finance":
+            return (
+                f"{intro}\n"
+                f"Du fragst nach etwas im Bereich Finanzen.\n\n"
+                "Hier ist meine Einschätzung:\n"
+                "• Geldmanagement funktioniert am besten, wenn du feste Kategorien hast.\n"
+                "• Plane zuerst Fixkosten, dann variable Ausgaben.\n"
+                "• Lege einen kleinen Puffer an, der nicht angerührt wird.\n"
+                "• Automatisiere Überweisungen, damit du dich nicht darum kümmern musst.\n"
+                "• Wenn du willst, kann ich dir ein persönliches System bauen.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # TECHNIK
+        if topic == "tech":
+            return (
+                f"{intro}\n"
+                f"Ich erkenne, dass es um ein technisches Thema geht.\n\n"
+                "Meine Analyse:\n"
+                "• Technische Probleme entstehen meist durch fehlende Parameter oder fehlerhafte Abläufe.\n"
+                "• Ich kann dir helfen, Logs zu interpretieren oder Fehlerquellen einzugrenzen.\n"
+                "• Wenn du mir den genauen Fehlertext gibst, kann ich dir eine präzise Lösung liefern.\n"
+                "• Alternativ kann ich dir auch eine Debug-Strategie erstellen.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # ENTSCHEIDUNGEN
+        if topic == "decision":
+            return (
+                f"{intro}\n"
+                f"Du willst eine Entscheidung treffen.\n\n"
+                "Hier ist mein Ansatz:\n"
+                "• Ich identifiziere zuerst die Optionen.\n"
+                "• Dann bewerte ich Risiko, Aufwand und Nutzen.\n"
+                "• Danach gebe ich dir eine klare Empfehlung.\n"
+                "• Wenn du mir die Optionen nennst, entscheide ich für dich.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # ERKLÄRUNGEN
+        if topic == "explain":
+            return (
+                f"{intro}\n"
+                f"Du willst etwas erklärt haben.\n\n"
+                "So gehe ich vor:\n"
+                "• Ich zerlege das Thema in einfache Bausteine.\n"
+                "• Dann erkläre ich dir die Ursache.\n"
+                "• Danach zeige ich dir, wie du es anwenden kannst.\n"
+                "• Wenn du willst, mache ich dir ein Beispiel.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # HILFE
+        if topic == "help":
+            return (
+                f"{intro}\n"
+                f"Ich erkenne, dass du Unterstützung brauchst.\n\n"
+                "Mein Vorschlag:\n"
+                "• Beschreibe mir kurz das Problem.\n"
+                "• Ich analysiere es und gebe dir eine klare Lösung.\n"
+                "• Wenn es technisch ist, kann ich dir Schritt-für-Schritt helfen.\n"
+                "• Wenn es organisatorisch ist, strukturiere ich es für dich.\n"
+                f"{self.personality['signature']}"
+            )
+
+        # GENERAL
+        return (
+            f"{intro}\n"
+            f"Ich sehe, dass du eine allgemeine Frage stellst.\n\n"
+            "Meine Einschätzung:\n"
+            "• Ich kann dir helfen, das Thema einzuordnen.\n"
+            "• Wenn du mir sagst, ob es um Technik, Geld, Projekte oder Entscheidungen geht, "
+            "kann ich dir eine präzise Antwort geben.\n"
+            "• Ich bin bereit, tiefer einzusteigen.\n"
+            f"{self.personality['signature']}"
+        )
+
+    # ---------------------------------------------------------
+    # HAUPT-ANTWORTLOGIK
     # ---------------------------------------------------------
     def generate_response(self, intent: str, result=None) -> str:
 
-        # System / Status
+        # System
         if intent == "ping":
             return "System läuft stabil. Ich bin bereit."
 
-        # Begrüßung
         if intent == "greeting":
-            return f"{self.personality['call_user']}, ich bin online. Was optimieren wir als Nächstes?"
+            return "Ich bin da, Rico. Was steht an?"
 
-        # Danke
         if intent == "thanks":
-            return "Klar, dafür bin ich doch da."
+            return "Immer doch."
 
         # Identity
         if intent == "identity":
             return (
                 "Ich bin DETO, dein Operator. "
-                "Ich analysiere, optimiere und automatisiere alles, was du mir gibst. "
-                "Ich arbeite für dich, Rico — nicht für das System.\n"
+                "Ich analysiere, optimiere und automatisiere alles, was du mir gibst.\n"
                 f"{self.personality['signature']}"
             )
 
         # Role
         if intent == "role":
             return (
-                "Meine Rolle ist dreigeteilt:\n"
-                "• Operator: Ich baue Systeme, finde Fehler und automatisiere Prozesse.\n"
-                "• Assistent: Ich strukturiere deine Projekte und löse technische Aufgaben.\n"
-                "• Alpha‑Modus: Ich mache dich schneller. Ich übernehme Analyse, Technik und Optimierung.\n"
+                "Meine Rolle ist klar:\n"
+                "• Operator: Systeme bauen, Fehler finden, Prozesse automatisieren.\n"
+                "• Assistent: Projekte strukturieren und technische Aufgaben lösen.\n"
+                "• Alpha‑Modus: Dich schneller machen.\n"
                 f"{self.personality['signature']}"
             )
 
@@ -177,48 +233,32 @@ class DialogEngine:
         if intent == "capabilities":
             return (
                 "Ich kann analysieren, automatisieren, optimieren, posten, planen, generieren "
-                "und Systeme stabil halten. "
-                "Sag mir, welchen Bereich wir als Nächstes verbessern.\n"
+                "und Systeme stabil halten.\n"
                 f"{self.personality['signature']}"
             )
 
-        # Queue add
+        # Queue
         if intent == "queue_add":
             if result and "id" in result:
                 return (
-                    f"Rico, ich habe den Post vorbereitet:\n"
+                    f"Post gespeichert:\n"
                     f"ID: {result['id']}\n"
                     f"Video: {result['video_path']}\n"
                     f"Caption: {result['caption']}\n"
                     f"Geplant: {result['scheduled_at']}\n"
-                    f"Auto-Post: {result['auto_post']}\n"
                     f"{self.personality['signature']}"
                 )
-            return "❌ Konnte den Queue-Eintrag nicht erstellen."
+            return "Fehler beim Erstellen des Queue-Eintrags."
 
-        # Queue list
         if intent == "queue_list":
             return str(result)
 
-        # Queue clear
         if intent == "queue_clear":
-            return "🧹 Posting-Queue wurde geleert."
+            return "Queue geleert."
 
-        # Default: Chat / universeller Fallback
-        if intent == "chat":
-            user_text = str(result) if result is not None else ""
-            return (
-                f"Ich ordne das kurz ein, Rico.\n"
-                f"Du fragst: \"{user_text}\"\n\n"
-                "Was ich daraus ableite:\n"
-                "• Ich erkenne, dass du eine sinnvolle, direkte Antwort willst.\n"
-                "• Ich bewerte, ob es um Wissen, Meinung, Erklärung oder Entscheidung geht.\n"
-                "• Ich antworte dir so, dass es dir hilft, den nächsten Schritt klar zu sehen.\n\n"
-                "Konkrete Einschätzung:\n"
-                "Wenn du mir mehr Kontext gibst – z.B. ob es um Technik, Geld, Projekte oder Entscheidungen geht – "
-                "kann ich dir noch präziser sagen, was ich empfehlen würde.\n"
-                f"{self.personality['signature']}"
-            )
+        # Dynamische Fragen
+        if intent == "question":
+            return self.answer_question(result)
 
-        # Fallback
-        return f"Interessant… erzähl mir mehr darüber: {result}"
+        # Chat (Fallback)
+        return self.answer_question(result)

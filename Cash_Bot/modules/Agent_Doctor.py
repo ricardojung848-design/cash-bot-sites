@@ -1167,3 +1167,19 @@ def main():
 
 if __name__ == "__main__":
     main()
+# --- Phase 6: Simulationsmodus ---
+btn_frame_phase6 = ttk.Frame(main)
+btn_frame_phase6.pack(anchor="w", pady=(0, 10))
+
+ttk.Label(
+    btn_frame_phase6,
+    text="Phase‑6‑Funktionen:",
+    font=("Segoe UI", 10, "bold")
+).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+
+self.btn_phase6_sim = ttk.Button(
+    btn_frame_phase6,
+    text="Phase‑6‑Simulation starten",
+    command=self.simulate_phase6_actions
+)
+self.btn_phase6_sim.grid(row=1, column=0, padx=5, pady=5)

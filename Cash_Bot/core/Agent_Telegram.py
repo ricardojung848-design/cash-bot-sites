@@ -1,8 +1,5 @@
-# telegram_bot.py
-
 import os
 import time
-import json
 from typing import Dict, Any, List
 
 from telegram import Update
@@ -28,9 +25,6 @@ RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 
 
-# ---------------------------------------------------------
-# Aufgaben-Handling
-# ---------------------------------------------------------
 def load_tasks() -> List[Dict[str, Any]]:
     tasks = load_json(AUFGABEN_DATEI, [])
     if not isinstance(tasks, list):
@@ -54,9 +48,6 @@ def add_task(chat_id: int, befehl: str, text: str) -> None:
     log_worker(f"Neue Aufgabe gespeichert: {befehl} | Chat {chat_id}")
 
 
-# ---------------------------------------------------------
-# Rückgabe-Handling
-# ---------------------------------------------------------
 def load_reply() -> Dict[str, Any]:
     data = load_json(RUECKGABE_DATEI, {})
     if not isinstance(data, dict):
@@ -68,13 +59,7 @@ def clear_reply() -> None:
     save_json(RUECKGABE_DATEI, {})
 
 
-# ---------------------------------------------------------
-# Warten auf Antwort des Workers
-# ---------------------------------------------------------
 def wait_for_worker_answer(chat_id: int, timeout: float = 10.0, interval: float = 0.2) -> str:
-    """
-    Wartet kurz auf eine Antwort im rueckgabe.json für den gegebenen Chat.
-    """
     start = time.time()
     while time.time() - start < timeout:
         data = load_reply()
@@ -86,17 +71,10 @@ def wait_for_worker_answer(chat_id: int, timeout: float = 10.0, interval: float 
     return "Keine Antwort vom Worker erhalten."
 
 
-# ---------------------------------------------------------
-# /start
-# ---------------------------------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
     await update.message.reply_text("DETO Cash Manager ist aktiv. Schreib mir einfach etwas.")
 
 
-# ---------------------------------------------------------
-# /help
-# ---------------------------------------------------------
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     text = "/help"
@@ -108,9 +86,6 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(antwort)
 
 
-# ---------------------------------------------------------
-# Alle normalen Nachrichten
-# ---------------------------------------------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -125,9 +100,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(antwort)
 
 
-# ---------------------------------------------------------
-# MAIN
-# ---------------------------------------------------------
 def main():
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN fehlt in den Umgebungsvariablen.")
@@ -140,7 +112,3 @@ def main():
 
     log_worker("Telegram-Bot gestartet...")
     app.run_polling()
-
-
-if __name__ == "__main__":
-    main()

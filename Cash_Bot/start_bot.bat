@@ -3,7 +3,7 @@ chcp 65001 >nul
 title DETO CashBot Starter
 
 REM >>> Hier deinen echten Telegram-Token eintragen
-set "TELEGRAM_BOT_TOKEN=DEIN_TELEGRAM_TOKEN_HIER"
+set "TELEGRAM_BOT_TOKEN=8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI"
 
 echo Starte Worker...
 start cmd /k "python -m core.Agent_Worker"

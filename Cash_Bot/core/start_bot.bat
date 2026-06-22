@@ -1,11 +1,13 @@
 @echo off
-title DETO Telegram Bot Starter
+chcp 65001 >nul
+title DETO Telegram Bot
 
 REM ================================
 REM   TELEGRAM BOT TOKEN SETZEN
 REM ================================
-set TELEGRAM_BOT_TOKEN=8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI
+set "TELEGRAM_BOT_TOKEN=8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI"
 
+echo.
 echo [Telegram] Starte DETO Bot...
 echo.
 

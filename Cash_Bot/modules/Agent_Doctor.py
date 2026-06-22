@@ -22,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # .../Cash_Bot
 CONFIG_DIR = BASE_DIR / "config"
 LOGS_DIR = BASE_DIR / "logs"
 MODULES_DIR = BASE_DIR / "modules"
+ENGINES_DIR = MODULES_DIR / "engines"
 
 CREDENTIALS_FILE = CONFIG_DIR / "doctor_credentials.json"
 TELEGRAM_TOKEN_FILE = CONFIG_DIR / "token.txt"
@@ -31,17 +32,22 @@ SYSTEM_MAP_FILE = CONFIG_DIR / "system_map.json"
 DOC_FILE = CONFIG_DIR / "doctor_docs.json"
 TEST_REPORT_FILE = CONFIG_DIR / "doctor_tests.json"
 
+# Phase-5 Dateien
+PREDICTIVE_STATE_FILE = CONFIG_DIR / "predictive_state.json"
+PRIORITY_FILE = CONFIG_DIR / "priority_plan.json"
+FIX_SUGGESTIONS_FILE = CONFIG_DIR / "fix_suggestions.json"
+OPTIMIZER_PLAN_FILE = CONFIG_DIR / "optimizer_plan.json"
+LEARNING_FILE = CONFIG_DIR / "learning_state.json"
+PLANNER_FILE = CONFIG_DIR / "planner_plan.json"
+
 
 class LogicAdvisor:
     def evaluate_action(self, action: str, context: dict) -> bool:
-        # Hybrid: vorsichtig, aber nicht blockierend
-        # Später: echte Regeln (z.B. keine gefährlichen File-Operationen ohne Bestätigung)
         return True
 
 
 class QualityAdvisor:
     def validate_action(self, action: str, context: dict) -> bool:
-        # Hybrid: prüft, ob Aktion sinnvoll/logisch wirkt
         return True
 
 
@@ -65,6 +71,17 @@ class AgentDoctorApp:
         self._ensure_system_map_file()
         self._ensure_docs_file()
         self._ensure_test_report_file()
+        self._ensure_phase5_files()
+
+        # Phase-5 Engines (werden später geladen)
+        self.predictive_engine = None
+        self.priority_engine = None
+        self.fix_engine = None
+        self.optimizer_engine = None
+        self.learning_engine = None
+        self.planner_engine = None
+
+        self._load_phase5_engines()
 
         self.root = tk.Tk()
         self.root.title("Agent_Doctor // System Engineer")
@@ -82,7 +99,7 @@ class AgentDoctorApp:
 
         header = ttk.Label(
             main,
-            text="Agent_Doctor – Monitoring, Self-Healing, Engineering & Predictive Intelligence",
+            text="Agent_Doctor – Monitoring, Self-Healing, Engineering & Predictive Intelligence (Phase 5 Engines geladen)",
             font=("Segoe UI", 13, "bold"),
         )
         header.pack(anchor="w", pady=(0, 10))
@@ -163,6 +180,15 @@ class AgentDoctorApp:
         )
         self.btn_run_tests.grid(row=0, column=3, padx=5, pady=5)
 
+        # Neuer Button: Phase-5-Brain
+        btn_frame_phase5 = ttk.Frame(main)
+        btn_frame_phase5.pack(anchor="w", pady=(0, 10))
+
+        self.btn_phase5_brain = ttk.Button(
+            btn_frame_phase5, text="Phase-5-Brain aktualisieren", command=self.update_phase5_brain
+        )
+        self.btn_phase5_brain.grid(row=0, column=0, padx=5, pady=5)
+
         self.log_box = tk.Text(
             main,
             bg="#000000",
@@ -196,12 +222,12 @@ class AgentDoctorApp:
 
         threading.Thread(target=self._background_loop, daemon=True).start()
 
-        self.log("Agent_Doctor gestartet (Phase 4 – Hybrid: Predictive, Learning, Mapping, Doku, Tests).")
+        self.log("Agent_Doctor gestartet (Phase 4 + Phase 5 Engines – Hybrid).")
         self.set_status(
-            "Status: Online – Monitoring, Self-Healing, Engineering, Optimierung & Predictive Intelligence aktiv."
+            "Status: Online – Monitoring, Self-Healing, Engineering, Optimierung, Predictive & Brain-Engines aktiv."
         )
         self.say(
-            "Agent Doctor ist online, Ricardo. Ich überwache, repariere, optimiere und lerne aus deinem System, um Probleme frühzeitig zu erkennen."
+            "Agent Doctor ist online, Ricardo. Ich überwache, repariere, optimiere und nutze meine Phase-5-Engines, um dein System besser zu verstehen."
         )
 
     # Voice
@@ -234,7 +260,7 @@ class AgentDoctorApp:
 
     # Struktur-Self-Healing
     def _ensure_base_structure(self):
-        for path in [CONFIG_DIR, LOGS_DIR, MODULES_DIR]:
+        for path in [CONFIG_DIR, LOGS_DIR, MODULES_DIR, ENGINES_DIR]:
             if not path.exists():
                 try:
                     path.mkdir(parents=True, exist_ok=True)
@@ -358,6 +384,24 @@ class AgentDoctorApp:
         else:
             self._safe_json_repair(TEST_REPORT_FILE)
 
+    def _ensure_phase5_files(self):
+        for path, default in [
+            (PREDICTIVE_STATE_FILE, {"history": [], "last_score": 0.0, "last_update": None}),
+            (PRIORITY_FILE, {"last_update": None, "tasks": []}),
+            (FIX_SUGGESTIONS_FILE, {"last_update": None, "suggestions": []}),
+            (OPTIMIZER_PLAN_FILE, {"last_update": None, "modules": []}),
+            (LEARNING_FILE, {"last_update": None, "action_stats": {}, "notes": []}),
+            (PLANNER_FILE, {"last_update": None, "roadmap": []}),
+        ]:
+            if not path.exists():
+                try:
+                    path.write_text(json.dumps(default, indent=2), encoding="utf-8")
+                    log_doctor(f"{path.name} angelegt.")
+                except Exception as e:
+                    log_doctor(f"Fehler beim Anlegen von {path}: {e}")
+            else:
+                self._safe_json_repair(path)
+
     def _safe_json_repair(self, path: Path):
         try:
             raw = path.read_text(encoding="utf-8")
@@ -413,6 +457,57 @@ class AgentDoctorApp:
         state["risk_score"] = float(score)
         self._save_state(state)
 
+    # Phase-5 Engine Loader
+    def _load_phase5_engines(self):
+        try:
+            import importlib.util
+
+            def load_engine(name: str):
+                path = ENGINES_DIR / f"{name}.py"
+                if not path.exists():
+                    log_doctor(f"Engine-Datei fehlt: {path}")
+                    return None
+                spec = importlib.util.spec_from_file_location(name, str(path))
+                if spec is None or spec.loader is None:
+                    log_doctor(f"Konnte Spec für Engine {name} nicht erstellen.")
+                    return None
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                return module
+
+            mod_pred = load_engine("engine_predictive")
+            if mod_pred and hasattr(mod_pred, "PredictiveEngine"):
+                self.predictive_engine = mod_pred.PredictiveEngine()
+                log_doctor("PredictiveEngine geladen.")
+
+            mod_prio = load_engine("engine_priority")
+            if mod_prio and hasattr(mod_prio, "PriorityEngine"):
+                self.priority_engine = mod_prio.PriorityEngine()
+                log_doctor("PriorityEngine geladen.")
+
+            mod_fix = load_engine("engine_fix_suggestions")
+            if mod_fix and hasattr(mod_fix, "FixSuggestionEngine"):
+                self.fix_engine = mod_fix.FixSuggestionEngine()
+                log_doctor("FixSuggestionEngine geladen.")
+
+            mod_opt = load_engine("engine_optimizer")
+            if mod_opt and hasattr(mod_opt, "OptimizerEngine"):
+                self.optimizer_engine = mod_opt.OptimizerEngine()
+                log_doctor("OptimizerEngine geladen.")
+
+            mod_learn = load_engine("engine_learning")
+            if mod_learn and hasattr(mod_learn, "LearningEngine"):
+                self.learning_engine = mod_learn.LearningEngine()
+                log_doctor("LearningEngine geladen.")
+
+            mod_plan = load_engine("engine_planner")
+            if mod_plan and hasattr(mod_plan, "PlannerEngine"):
+                self.planner_engine = mod_plan.PlannerEngine()
+                log_doctor("PlannerEngine geladen.")
+
+        except Exception as e:
+            log_doctor(f"Fehler beim Laden der Phase-5-Engines: {e}")
+
     # Hintergrundüberwachung
     def _background_loop(self):
         self.log("Hintergrundüberwachung gestartet.")
@@ -424,11 +519,11 @@ class AgentDoctorApp:
             self._ensure_system_map_file()
             self._ensure_docs_file()
             self._ensure_test_report_file()
+            self._ensure_phase5_files()
             self._background_predictive_tick()
             time.sleep(10)
 
     def _background_predictive_tick(self):
-        # Sehr einfache Heuristik: Anzahl Logs + Anzahl Module = grober „Komplexitäts-/Risikowert“
         try:
             state = self._load_state()
             logs = state.get("last_logs", [])
@@ -442,6 +537,10 @@ class AgentDoctorApp:
             risk += min(module_count / 10.0, 5.0)
 
             self._update_risk_score(risk)
+
+            if self.predictive_engine:
+                score = self.predictive_engine.update()
+                log_doctor(f"PredictiveEngine Hintergrund-Update: Score={score:.2f}")
         except Exception as e:
             log_doctor(f"Fehler im Predictive-Tick: {e}")
 
@@ -460,7 +559,7 @@ class AgentDoctorApp:
 
         issues = []
 
-        for path in [CONFIG_DIR, LOGS_DIR, MODULES_DIR]:
+        for path in [CONFIG_DIR, LOGS_DIR, MODULES_DIR, ENGINES_DIR]:
             if not path.exists():
                 issues.append(f"Fehlender Ordner: {path}")
 
@@ -472,6 +571,12 @@ class AgentDoctorApp:
             SYSTEM_MAP_FILE,
             DOC_FILE,
             TEST_REPORT_FILE,
+            PREDICTIVE_STATE_FILE,
+            PRIORITY_FILE,
+            FIX_SUGGESTIONS_FILE,
+            OPTIMIZER_PLAN_FILE,
+            LEARNING_FILE,
+            PLANNER_FILE,
         ]:
             if not path.exists():
                 issues.append(f"Fehlende Datei: {path}")
@@ -534,6 +639,7 @@ class AgentDoctorApp:
         self._ensure_system_map_file()
         self._ensure_docs_file()
         self._ensure_test_report_file()
+        self._ensure_phase5_files()
 
         self.log("Basis-Self-Healing abgeschlossen.")
         self.set_status("Status: Basis-Self-Healing abgeschlossen.")
@@ -811,13 +917,17 @@ class AgentDoctorApp:
             self.say("Die Berater lehnen diesen Predictive Check ab. Ich führe ihn nicht aus.")
             return
 
-        self.log("Starte Predictive Check (Hybrid-Heuristik).")
+        self.log("Starte Predictive Check (Hybrid-Heuristik + Engine).")
         self.set_status("Status: Predictive Check läuft...")
-        self.say("Ich führe eine Risikoabschätzung basierend auf Logs und Modulen durch.")
+        self.say("Ich führe eine Risikoabschätzung basierend auf Logs, Modulen und meiner Predictive-Engine durch.")
 
         try:
             state = self._load_state()
             risk = state.get("risk_score", 0.0)
+            if self.predictive_engine:
+                score = self.predictive_engine.update()
+                risk = score
+
             if risk < 2.0:
                 self.log(f"Predictive: Niedriges Risiko erkannt (Score: {risk:.2f}).")
                 self.say("Ich sehe aktuell ein niedriges Risiko im System.")
@@ -974,6 +1084,52 @@ class AgentDoctorApp:
 
         self.set_status("Status: Testlauf abgeschlossen.")
 
+    # Phase-5-Brain: Engines gemeinsam nutzen
+    def update_phase5_brain(self):
+        action = "phase5_brain"
+        context = {}
+        if not self._approve_action(action, context):
+            self.log("Aktion 'Phase-5-Brain aktualisieren' wurde von Beratern abgelehnt.")
+            self.say("Die Berater lehnen diese Brain-Aktualisierung ab. Ich führe sie nicht aus.")
+            return
+
+        self.log("Starte Phase-5-Brain-Aktualisierung.")
+        self.set_status("Status: Phase-5-Brain wird aktualisiert...")
+        self.say("Ich aktualisiere meine Phase-5-Engines und baue eine Roadmap für dein System.")
+
+        try:
+            if self.predictive_engine:
+                score = self.predictive_engine.update()
+                self.log(f"PredictiveEngine: aktueller Risiko-Score: {score:.2f}")
+
+            if self.priority_engine:
+                tasks = self.priority_engine.update()
+                self.log(f"PriorityEngine: {len(tasks)} priorisierte Aufgabe(n) erkannt.")
+
+            if self.fix_engine:
+                fixes = self.fix_engine.update()
+                self.log(f"FixSuggestionEngine: {len(fixes)} Fix-Vorschlag/Vorschläge erkannt.")
+
+            if self.optimizer_engine:
+                mods = self.optimizer_engine.update()
+                self.log(f"OptimizerEngine: {len(mods)} Modul(e) analysiert.")
+
+            if self.learning_engine:
+                learning = self.learning_engine.update_from_logs()
+                stats = learning.get("action_stats", {})
+                self.log(f"LearningEngine: Aktionsstatistik: {stats}")
+
+            if self.planner_engine:
+                roadmap = self.planner_engine.update()
+                self.log(f"PlannerEngine: Roadmap mit {len(roadmap)} Einträgen erstellt.")
+                self.say("Ich habe eine Roadmap aus Prioritäten, Optimierungen und Fix-Vorschlägen erstellt.")
+
+        except Exception as e:
+            self.log(f"Fehler bei der Phase-5-Brain-Aktualisierung: {e}")
+            self.say("Bei der Phase-5-Brain-Aktualisierung ist ein Fehler aufgetreten.")
+
+        self.set_status("Status: Phase-5-Brain aktualisiert.")
+
     # Benutzereingaben
     def handle_user_command(self):
         text = self.input_entry.get().strip()
@@ -984,8 +1140,11 @@ class AgentDoctorApp:
         self.input_entry.delete(0, "end")
         self._append_state_command(text)
 
+        if self.learning_engine:
+            self.learning_engine.add_note(f"User-Command: {text}")
+
         self.say(
-            "Ich habe deine Eingabe registriert. In zukünftigen Erweiterungen werde ich sie direkt in technische Aktionen übersetzen."
+            "Ich habe deine Eingabe registriert und in meinen Lernzustand aufgenommen. In zukünftigen Erweiterungen werde ich sie direkt in technische Aktionen übersetzen."
         )
 
     # Berater-Freigabe

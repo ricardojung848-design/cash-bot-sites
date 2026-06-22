@@ -483,4 +483,4 @@ class AgentDoctorApp:
                 self.say("Ich habe das neue Modul erstellt. Du kannst es jetzt im System integrieren.")
             except Exception as e:
                 self.log(f"Fehler beim Erstellen des Moduls: {e}")
-                self.say("Beim Er
+                self.say("Beim Erstellen ist ein Fehler aufgetreten.")

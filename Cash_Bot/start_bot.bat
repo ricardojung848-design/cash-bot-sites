@@ -5,7 +5,7 @@ title DETO CashBot Starter
 REM ================================
 REM   TELEGRAM BOT TOKEN SETZEN
 REM ================================
-set "TELEGRAM_BOT_TOKEN=DEIN_TOKEN_HIER"
+set "TELEGRAM_BOT_TOKEN=8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI"
 
 REM ================================
 REM   WORKER STARTEN

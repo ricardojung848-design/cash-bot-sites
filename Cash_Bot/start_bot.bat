@@ -1,6 +1,9 @@
 @echo off
-cd /d "%~dp0"
+chcp 65001 >nul
+title DETO Telegram Bot
 
-echo Starte DetoBot...
-start "" "start\worker_loop.bat"
-start "" "start\telegram_loop.bat"
+set "TELEGRAM_BOT_TOKEN="8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI
+
+python -m core.Agent_Telegram
+
+pause

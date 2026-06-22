@@ -26,15 +26,18 @@ MODULES_DIR = BASE_DIR / "modules"
 CREDENTIALS_FILE = CONFIG_DIR / "doctor_credentials.json"
 TELEGRAM_TOKEN_FILE = CONFIG_DIR / "token.txt"
 TELEGRAM_CHAT_ID_FILE = CONFIG_DIR / "telegram_chat_id.json"
+DOCTOR_STATE_FILE = CONFIG_DIR / "doctor_state.json"
 
 
 class LogicAdvisor:
     def evaluate_action(self, action: str, context: dict) -> bool:
+        # Platzhalter für spätere Logikregeln
         return True
 
 
 class QualityAdvisor:
     def validate_action(self, action: str, context: dict) -> bool:
+        # Platzhalter für spätere Qualitätsregeln
         return True
 
 
@@ -54,6 +57,7 @@ class AgentDoctorApp:
         self._ensure_base_structure()
         self._ensure_basic_files()
         self._ensure_credentials_file()
+        self._ensure_state_file()
 
         self.root = tk.Tk()
         self.root.title("Agent_Doctor // System Engineer")
@@ -162,12 +166,12 @@ class AgentDoctorApp:
 
         threading.Thread(target=self._background_loop, daemon=True).start()
 
-        self.log("Agent_Doctor gestartet (Phase 3: Modul-Builder & Optimizer aktiv).")
+        self.log("Agent_Doctor gestartet (Phase 3 + Hooks für Phase 4).")
         self.set_status(
-            "Status: Online – Monitoring, Self-Healing, Token-Manager, Modul-Engineering und Optimierung bereit."
+            "Status: Online – Monitoring, Self-Healing, Token-Manager, Modul-Engineering, Optimierung & Lern-Hooks bereit."
         )
         self.say(
-            "Agent Doctor ist online, Ricardo. Ich überwache dein System, repariere Basisprobleme, verwalte Token und baue sowie erweitere Module."
+            "Agent Doctor ist online, Ricardo. Ich überwache dein System, repariere Basisprobleme, verwalte Token, baue Module und bereite erweiterte KI-Funktionen vor."
         )
 
     # Voice
@@ -192,9 +196,11 @@ class AgentDoctorApp:
         self.log_box.insert("end", line)
         self.log_box.see("end")
         log_doctor(msg)
+        self._append_state_log(msg)
 
     def set_status(self, text: str):
         self.status_label.config(text=text)
+        self._update_state_status(text)
 
     # Struktur-Self-Healing
     def _ensure_base_structure(self):
@@ -243,6 +249,26 @@ class AgentDoctorApp:
         else:
             self._safe_json_repair(CREDENTIALS_FILE)
 
+    def _ensure_state_file(self):
+        if not DOCTOR_STATE_FILE.exists():
+            try:
+                DOCTOR_STATE_FILE.write_text(
+                    json.dumps(
+                        {
+                            "status": "initial",
+                            "last_logs": [],
+                            "last_commands": [],
+                        },
+                        indent=2,
+                    ),
+                    encoding="utf-8",
+                )
+                log_doctor("doctor_state.json angelegt.")
+            except Exception as e:
+                log_doctor(f"Fehler beim Anlegen von doctor_state.json: {e}")
+        else:
+            self._safe_json_repair(DOCTOR_STATE_FILE)
+
     def _safe_json_repair(self, path: Path):
         try:
             raw = path.read_text(encoding="utf-8")
@@ -254,6 +280,45 @@ class AgentDoctorApp:
             except Exception as e:
                 log_doctor(f"Fehler beim Reparieren von {path}: {e}")
 
+    # State-Hooks (Vorbereitung für Learning / Predictive)
+    def _load_state(self) -> dict:
+        if not DOCTOR_STATE_FILE.exists():
+            return {}
+        try:
+            raw = DOCTOR_STATE_FILE.read_text(encoding="utf-8")
+            return json.loads(raw)
+        except Exception:
+            return {}
+
+    def _save_state(self, state: dict):
+        try:
+            DOCTOR_STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        except Exception as e:
+            log_doctor(f"Fehler beim Speichern von doctor_state.json: {e}")
+
+    def _append_state_log(self, msg: str):
+        state = self._load_state()
+        logs = state.get("last_logs", [])
+        logs.append(msg)
+        if len(logs) > 50:
+            logs = logs[-50:]
+        state["last_logs"] = logs
+        self._save_state(state)
+
+    def _update_state_status(self, status: str):
+        state = self._load_state()
+        state["status"] = status
+        self._save_state(state)
+
+    def _append_state_command(self, cmd: str):
+        state = self._load_state()
+        cmds = state.get("last_commands", [])
+        cmds.append(cmd)
+        if len(cmds) > 50:
+            cmds = cmds[-50:]
+        state["last_commands"] = cmds
+        self._save_state(state)
+
     # Hintergrundüberwachung
     def _background_loop(self):
         self.log("Hintergrundüberwachung gestartet.")
@@ -261,6 +326,7 @@ class AgentDoctorApp:
             self._ensure_base_structure()
             self._ensure_basic_files()
             self._ensure_credentials_file()
+            self._ensure_state_file()
             time.sleep(10)
 
     # Systemprüfung
@@ -282,7 +348,7 @@ class AgentDoctorApp:
             if not path.exists():
                 issues.append(f"Fehlender Ordner: {path}")
 
-        for path in [TELEGRAM_TOKEN_FILE, TELEGRAM_CHAT_ID_FILE, CREDENTIALS_FILE]:
+        for path in [TELEGRAM_TOKEN_FILE, TELEGRAM_CHAT_ID_FILE, CREDENTIALS_FILE, DOCTOR_STATE_FILE]:
             if not path.exists():
                 issues.append(f"Fehlende Datei: {path}")
 
@@ -340,6 +406,7 @@ class AgentDoctorApp:
         self._ensure_base_structure()
         self._ensure_basic_files()
         self._ensure_credentials_file()
+        self._ensure_state_file()
 
         self.log("Basis-Self-Healing abgeschlossen.")
         self.set_status("Status: Basis-Self-Healing abgeschlossen.")
@@ -467,9 +534,10 @@ class AgentDoctorApp:
                 self.say("Dieses Modul existiert bereits. Ich überschreibe es nicht.")
                 return
 
+            class_name = "".join(part.capitalize() for part in name.split("_"))
             template_code = (
                 "import time\n\n"
-                f"class {name.capitalize()}:\n"
+                f"class {class_name}:\n"
                 "    def __init__(self):\n"
                 "        pass\n\n"
                 "    def run(self):\n"
@@ -483,4 +551,159 @@ class AgentDoctorApp:
                 self.say("Ich habe das neue Modul erstellt. Du kannst es jetzt im System integrieren.")
             except Exception as e:
                 self.log(f"Fehler beim Erstellen des Moduls: {e}")
-                self.say("Beim Erstellen ist ein Fehler aufgetreten.")
+                self.say("Beim Erstellen des Moduls ist ein Fehler aufgetreten.")
+
+        create_btn = ttk.Button(frame, text="Modul erstellen", command=create_module)
+        create_btn.pack(anchor="e", pady=(10, 0))
+
+    # Modul-Erweiterer
+    def open_module_extender(self):
+        self.log("Modul-Erweiterer geöffnet.")
+        self.say("Ich öffne den Modul-Erweiterer, um bestehende Module zu ergänzen.")
+
+        me = tk.Toplevel(self.root)
+        me.title("Agent_Doctor – Modul-Erweiterer")
+        me.configure(bg="#111111")
+
+        frame = ttk.Frame(me, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(
+            frame,
+            text="Bestehendes Modul erweitern",
+            font=("Segoe UI", 10, "bold"),
+        ).pack(anchor="w", pady=(0, 10))
+
+        modules = []
+        if MODULES_DIR.exists():
+            for f in MODULES_DIR.iterdir():
+                if f.is_file() and f.suffix == ".py":
+                    modules.append(f.name)
+
+        if not modules:
+            ttk.Label(
+                frame,
+                text="Keine Module gefunden im modules/-Ordner.",
+                font=("Segoe UI", 9),
+            ).pack(anchor="w")
+            self.say("Ich habe keine Module im modules-Ordner gefunden.")
+            return
+
+        ttk.Label(frame, text="Modul auswählen:", font=("Segoe UI", 9)).pack(anchor="w")
+        selected = tk.StringVar(value=modules[0])
+        module_combo = ttk.Combobox(frame, textvariable=selected, values=modules, state="readonly")
+        module_combo.pack(fill="x", pady=(0, 5))
+
+        ttk.Label(frame, text="Kommentar / Erweiterungs-Hinweis:", font=("Segoe UI", 9)).pack(anchor="w")
+        note_entry = tk.Entry(
+            frame,
+            bg="#000000",
+            fg="#ffffff",
+            insertbackground="#ffffff",
+            borderwidth=1,
+        )
+        note_entry.pack(fill="x", pady=(0, 5))
+
+        def extend_module():
+            mod_name = selected.get()
+            note = note_entry.get().strip()
+            if not mod_name:
+                self.log("Modul-Erweiterer: Kein Modul ausgewählt.")
+                self.say("Für den Modul-Erweiterer benötige ich ein ausgewähltes Modul.")
+                return
+
+            target_file = MODULES_DIR / mod_name
+            if not target_file.exists():
+                self.log(f"Modul-Erweiterer: Datei existiert nicht: {target_file}")
+                self.say("Das ausgewählte Modul existiert nicht mehr.")
+                return
+
+            addition = "\n\n# Doctor-Erweiterung:\n"
+            if note:
+                addition += f"# {note}\n"
+            else:
+                addition += "# Erweiterungspunkt für zusätzliche Funktionen.\n"
+
+            try:
+                with target_file.open("a", encoding="utf-8") as fh:
+                    fh.write(addition)
+                self.log(f"Modul erweitert: {target_file}")
+                self.say("Ich habe das Modul erweitert. Du kannst hier zusätzliche Logik ergänzen.")
+            except Exception as e:
+                self.log(f"Fehler beim Erweitern des Moduls: {e}")
+                self.say("Beim Erweitern des Moduls ist ein Fehler aufgetreten.")
+
+        extend_btn = ttk.Button(frame, text="Modul erweitern", command=extend_module)
+        extend_btn.pack(anchor="e", pady=(10, 0))
+
+    # Optimizer (Basis-Platzhalter)
+    def optimize_worker(self):
+        action = "optimize_worker"
+        context = {}
+        if not self._approve_action(action, context):
+            self.log("Aktion 'Worker optimieren' wurde von Beratern abgelehnt.")
+            self.say("Die Berater lehnen diese Optimierung ab. Ich führe sie nicht aus.")
+            return
+
+        self.log("Starte Basis-Optimierung für Worker.")
+        self.set_status("Status: Worker-Optimierung läuft...")
+        self.say("Ich führe eine einfache Optimierungsroutine für den Worker aus.")
+
+        time.sleep(1)
+
+        self.log("Basis-Optimierung für Worker abgeschlossen.")
+        self.set_status("Status: Worker-Optimierung abgeschlossen.")
+        self.say("Die Basis-Optimierung für den Worker ist abgeschlossen.")
+
+    def optimize_telegram(self):
+        action = "optimize_telegram"
+        context = {}
+        if not self._approve_action(action, context):
+            self.log("Aktion 'Telegram optimieren' wurde von Beratern abgelehnt.")
+            self.say("Die Berater lehnen diese Optimierung ab. Ich führe sie nicht aus.")
+            return
+
+        self.log("Starte Basis-Optimierung für Telegram-Bot.")
+        self.set_status("Status: Telegram-Optimierung läuft...")
+        self.say("Ich führe eine einfache Optimierungsroutine für den Telegram-Bot aus.")
+
+        time.sleep(1)
+
+        self.log("Basis-Optimierung für Telegram-Bot abgeschlossen.")
+        self.set_status("Status: Telegram-Optimierung abgeschlossen.")
+        self.say("Die Basis-Optimierung für den Telegram-Bot ist abgeschlossen.")
+
+    # Benutzereingaben
+    def handle_user_command(self):
+        text = self.input_entry.get().strip()
+        if not text:
+            return
+
+        self.log(f"Benutzereingabe: {text}")
+        self.input_entry.delete(0, "end")
+        self._append_state_command(text)
+
+        self.say(
+            "Ich habe deine Eingabe registriert. In späteren Phasen werde ich sie direkt in technische Aktionen übersetzen."
+        )
+
+    # Berater-Freigabe
+    def _approve_action(self, action: str, context: dict) -> bool:
+        logic_ok = self.logic.evaluate_action(action, context)
+        quality_ok = self.quality.validate_action(action, context)
+        if not logic_ok or not quality_ok:
+            return False
+        return True
+
+    # Mainloop
+    def run(self):
+        self.root.mainloop()
+
+
+def main():
+    app = AgentDoctorApp()
+    app.run()
+
+
+if __name__ == "__main__":
+    main()

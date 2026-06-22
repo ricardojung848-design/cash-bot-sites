@@ -25,7 +25,7 @@ from core.utils import (
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
 
-TELEGRAM_BOT_TOKEN = os.environ.get("8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI", "").strip()
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 
 
 # ---------------------------------------------------------

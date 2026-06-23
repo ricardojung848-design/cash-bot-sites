@@ -20,21 +20,21 @@ from doctor_core.phase5_brain import Phase5Brain
 from doctor_core.background import BackgroundMonitor
 
 
-# Basis-Pfade und Dateien (für Checks & Module)
-BASE_DIR = Path(__file__).resolve().parent.parent  # .../Cash_Bot
+# Basis-Pfade
+BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = BASE_DIR / "config"
 LOGS_DIR = BASE_DIR / "logs"
 MODULES_DIR = BASE_DIR / "modules"
 ENGINES_DIR = MODULES_DIR / "engines"
 
-CREDENTIALS_FILE = CONFIG_DIR / "doctor_credentials.json"
+# Dateien
 TELEGRAM_TOKEN_FILE = CONFIG_DIR / "token.txt"
 TELEGRAM_CHAT_ID_FILE = CONFIG_DIR / "telegram_chat_id.json"
+CREDENTIALS_FILE = CONFIG_DIR / "doctor_credentials.json"
 DOCTOR_STATE_FILE = CONFIG_DIR / "doctor_state.json"
 SYSTEM_MAP_FILE = CONFIG_DIR / "system_map.json"
 DOC_FILE = CONFIG_DIR / "doctor_docs.json"
 TEST_REPORT_FILE = CONFIG_DIR / "doctor_tests.json"
-
 PREDICTIVE_STATE_FILE = CONFIG_DIR / "predictive_state.json"
 PRIORITY_FILE = CONFIG_DIR / "priority_plan.json"
 FIX_SUGGESTIONS_FILE = CONFIG_DIR / "fix_suggestions.json"
@@ -52,7 +52,7 @@ class AgentDoctorApp:
         # Voice
         self.voice = VoiceEngine(logger=log_doctor)
 
-        # Core-Helper
+        # Core-Module
         self.system_checker = SystemChecker(
             logger=log_doctor,
             config_dir=CONFIG_DIR,
@@ -76,45 +76,15 @@ class AgentDoctorApp:
             ],
         )
 
-        self.log_analyzer = LogAnalyzer(
-            logger=log_doctor,
-            logs_dir=LOGS_DIR,
-        )
-
-        self.module_builder = ModuleBuilder(
-            logger=log_doctor,
-            modules_dir=MODULES_DIR,
-        )
-
-        self.module_extender = ModuleExtender(
-            logger=log_doctor,
-            modules_dir=MODULES_DIR,
-        )
-
-        self.worker_optimizer = WorkerOptimizer(
-            logger=log_doctor,
-        )
-
-        self.telegram_optimizer = TelegramOptimizer(
-            logger=log_doctor,
-        )
-
-        self.auto_docs = AutoDocs(
-            logger=log_doctor,
-            modules_dir=MODULES_DIR,
-        )
-
-        self.test_runner = TestRunner(
-            logger=log_doctor,
-        )
-
-        self.phase5_brain = Phase5Brain(
-            logger=log_doctor,
-        )
-
-        self.background = BackgroundMonitor(
-            logger=log_doctor,
-        )
+        self.log_analyzer = LogAnalyzer(logger=log_doctor, logs_dir=LOGS_DIR)
+        self.module_builder = ModuleBuilder(logger=log_doctor, modules_dir=MODULES_DIR)
+        self.module_extender = ModuleExtender(logger=log_doctor, modules_dir=MODULES_DIR)
+        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)
+        self.telegram_optimizer = TelegramOptimizer(logger=log_doctor)
+        self.auto_docs = AutoDocs(logger=log_doctor, modules_dir=MODULES_DIR)
+        self.test_runner = TestRunner(logger=log_doctor)
+        self.phase5_brain = Phase5Brain(logger=log_doctor)
+        self.background = BackgroundMonitor(logger=log_doctor)
 
         # UI
         self.root = tk.Tk()
@@ -148,166 +118,84 @@ class AgentDoctorApp:
         system_frame = ttk.Frame(main)
         system_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            system_frame,
-            text="System:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(system_frame, text="System:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            system_frame,
-            text="System prüfen",
-            command=self._run_system_check,
-        ).grid(row=1, column=0, padx=5, pady=5)
-
-        ttk.Button(
-            system_frame,
-            text="Logs analysieren",
-            command=self._run_log_analysis,
-        ).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(system_frame, text="System prüfen", command=self._run_system_check).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(system_frame, text="Logs analysieren", command=self._run_log_analysis).grid(row=1, column=1, padx=5, pady=5)
 
         # Module
         module_frame = ttk.Frame(main)
         module_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            module_frame,
-            text="Module:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(module_frame, text="Module:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            module_frame,
-            text="Modul bauen",
-            command=self._open_module_builder_window,
-        ).grid(row=1, column=0, padx=5, pady=5)
-
-        ttk.Button(
-            module_frame,
-            text="Modul erweitern",
-            command=self._open_module_extender_window,
-        ).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(module_frame, text="Modul bauen", command=self._open_module_builder_window).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(module_frame, text="Modul erweitern", command=self._open_module_extender_window).grid(row=1, column=1, padx=5, pady=5)
 
         # Optimierung
         opt_frame = ttk.Frame(main)
         opt_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            opt_frame,
-            text="Optimierung:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(opt_frame, text="Optimierung:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            opt_frame,
-            text="Worker optimieren",
-            command=self._run_worker_opt,
-        ).grid(row=1, column=0, padx=5, pady=5)
-
-        ttk.Button(
-            opt_frame,
-            text="Telegram optimieren",
-            command=self._run_telegram_opt,
-        ).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(opt_frame, text="Worker optimieren", command=self._run_worker_opt).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(opt_frame, text="Telegram optimieren", command=self._run_telegram_opt).grid(row=1, column=1, padx=5, pady=5)
 
         # Dokumentation
         doc_frame = ttk.Frame(main)
         doc_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            doc_frame,
-            text="Dokumentation:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(doc_frame, text="Dokumentation:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            doc_frame,
-            text="Auto-Doku",
-            command=self._run_auto_docs,
-        ).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(doc_frame, text="Auto-Doku", command=self._run_auto_docs).grid(row=1, column=0, padx=5, pady=5)
 
         # Tests
         test_frame = ttk.Frame(main)
         test_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            test_frame,
-            text="Tests:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(test_frame, text="Tests:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            test_frame,
-            text="Tests ausführen",
-            command=self._run_tests,
-        ).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(test_frame, text="Tests ausführen", command=self._run_tests).grid(row=1, column=0, padx=5, pady=5)
 
         # Phase 5
         phase5_frame = ttk.Frame(main)
         phase5_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            phase5_frame,
-            text="Phase 5:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(phase5_frame, text="Phase 5:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            phase5_frame,
-            text="Phase‑5‑Brain aktualisieren",
-            command=self._run_phase5_brain,
-        ).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(phase5_frame, text="Phase‑5‑Brain aktualisieren", command=self._run_phase5_brain).grid(row=1, column=0, padx=5, pady=5)
 
         # Phase 6
         phase6_frame = ttk.Frame(main)
         phase6_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            phase6_frame,
-            text="Phase‑6‑Funktionen:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(phase6_frame, text="Phase‑6‑Funktionen:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            phase6_frame,
-            text="Phase‑6‑Simulation starten",
-            command=self.run_phase6_simulation,
-        ).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(phase6_frame, text="Phase‑6‑Simulation starten", command=self.run_phase6_simulation).grid(row=1, column=0, padx=5, pady=5)
 
         # Voice
         voice_frame = ttk.Frame(main)
         voice_frame.pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
-            voice_frame,
-            text="Voice:",
-            font=("Segoe UI", 10, "bold"),
-        ).grid(row=0, column=0, padx=5, pady=(0, 5), sticky="w")
+        ttk.Label(voice_frame, text="Voice:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            voice_frame,
-            text="Voice‑Test",
-            command=lambda: self.say("Hallo Ricardo, die Voice‑Engine funktioniert wieder."),
-        ).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(voice_frame, text="Voice‑Test", command=lambda: self.say("Hallo Rico, die Voice‑Engine funktioniert.")).grid(row=1, column=0, padx=5, pady=5)
 
         # Log-Ausgabe
-        self.log_box = tk.Text(
-            main,
-            bg="#000000",
-            fg="#00ff88",
-            insertbackground="#00ff88",
-            height=18,
-            borderwidth=0,
-        )
+        self.log_box = tk.Text(main, bg="#000000", fg="#00ff88", insertbackground="#00ff88", height=18, borderwidth=0)
         self.log_box.pack(fill="both", expand=True)
 
+        # Start-Log
         log_doctor("Agent_Doctor PRO gestartet.")
         self._log_ui("Agent_Doctor PRO gestartet.")
+
+        # ⭐ Begrüßung HIER eingebaut
+        self.voice.startup_greeting()
 
         # Hintergrundüberwachung starten
         self.background.start()
 
-    # Hilfsfunktionen UI / Status / Voice
+    # UI Helper
     def _log_ui(self, msg: str):
         self.log_box.insert("end", msg + "\n")
         self.log_box.see("end")
@@ -318,16 +206,14 @@ class AgentDoctorApp:
     def say(self, text: str):
         self.voice.speak(text)
 
-    # System-Funktionen
+    # System
     def _run_system_check(self):
         self.set_status("Status: Systemprüfung läuft...")
         ok = self.system_checker.run()
         if ok:
-            self._log_ui("Systemstruktur wirkt konsistent.")
             self.say("Die Systemstruktur wirkt konsistent.")
         else:
-            self._log_ui("Systemprobleme erkannt. Details im Log.")
-            self.say("Ich habe Probleme im System erkannt. Details im Log.")
+            self.say("Ich habe Probleme im System erkannt.")
         self.set_status("Status: Systemprüfung abgeschlossen.")
 
     def _run_log_analysis(self):
@@ -339,7 +225,7 @@ class AgentDoctorApp:
             self.say("Ich habe keine Log‑Dateien gefunden.")
         self.set_status("Status: Loganalyse abgeschlossen.")
 
-    # Module-Funktionen
+    # Module
     def _open_module_builder_window(self):
         win = tk.Toplevel(self.root)
         win.title("Modul bauen")
@@ -349,23 +235,15 @@ class AgentDoctorApp:
         frame.pack(fill="both", expand=True)
 
         ttk.Label(frame, text="Modulname:", font=("Segoe UI", 9)).pack(anchor="w")
-        name_entry = tk.Entry(
-            frame,
-            bg="#000000",
-            fg="#ffffff",
-            insertbackground="#ffffff",
-            borderwidth=1,
-        )
+        name_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
         name_entry.pack(fill="x", pady=5)
 
         def create():
             name = name_entry.get().strip()
             ok = self.module_builder.create_module(name)
             if ok:
-                self._log_ui(f"Modul erstellt: {name}")
                 self.say("Ich habe das Modul erstellt.")
             else:
-                self._log_ui(f"Modul konnte nicht erstellt werden: {name}")
                 self.say("Das Modul konnte nicht erstellt werden.")
 
         ttk.Button(frame, text="Erstellen", command=create).pack(anchor="e", pady=5)
@@ -379,24 +257,11 @@ class AgentDoctorApp:
         frame.pack(fill="both", expand=True)
 
         ttk.Label(frame, text="Modulname:", font=("Segoe UI", 9)).pack(anchor="w")
-        name_entry = tk.Entry(
-            frame,
-            bg="#000000",
-            fg="#ffffff",
-            insertbackground="#ffffff",
-            borderwidth=1,
-        )
+        name_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
         name_entry.pack(fill="x", pady=5)
 
         ttk.Label(frame, text="Code anhängen:", font=("Segoe UI", 9)).pack(anchor="w")
-        code_box = tk.Text(
-            frame,
-            bg="#000000",
-            fg="#ffffff",
-            insertbackground="#ffffff",
-            height=10,
-            borderwidth=1,
-        )
+        code_box = tk.Text(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff", height=10)
         code_box.pack(fill="both", pady=5)
 
         def extend():
@@ -404,10 +269,8 @@ class AgentDoctorApp:
             code = code_box.get("1.0", "end").strip()
             ok = self.module_extender.append_to_module(name, code)
             if ok:
-                self._log_ui(f"Modul erweitert: {name}")
                 self.say("Ich habe das Modul erweitert.")
             else:
-                self._log_ui(f"Modul konnte nicht erweitert werden: {name}")
                 self.say("Das Modul konnte nicht erweitert werden.")
 
         ttk.Button(frame, text="Anhängen", command=extend).pack(anchor="e", pady=5)
@@ -417,7 +280,6 @@ class AgentDoctorApp:
         self.set_status("Status: Worker-Optimierung läuft...")
         ok = self.worker_optimizer.optimize()
         if ok:
-            self._log_ui("Worker-Optimierung abgeschlossen.")
             self.say("Worker-Optimierung abgeschlossen.")
         self.set_status("Status: Worker-Optimierung abgeschlossen.")
 
@@ -425,7 +287,6 @@ class AgentDoctorApp:
         self.set_status("Status: Telegram-Optimierung läuft...")
         ok = self.telegram_optimizer.optimize()
         if ok:
-            self._log_ui("Telegram-Optimierung abgeschlossen.")
             self.say("Telegram-Optimierung abgeschlossen.")
         self.set_status("Status: Telegram-Optimierung abgeschlossen.")
 
@@ -434,7 +295,6 @@ class AgentDoctorApp:
         self.set_status("Status: Auto-Doku läuft...")
         ok = self.auto_docs.generate()
         if ok:
-            self._log_ui("Auto-Dokumentation abgeschlossen.")
             self.say("Auto-Dokumentation abgeschlossen.")
         self.set_status("Status: Auto-Doku abgeschlossen.")
 
@@ -443,7 +303,6 @@ class AgentDoctorApp:
         self.set_status("Status: Tests laufen...")
         ok = self.test_runner.run()
         if ok:
-            self._log_ui("Tests abgeschlossen.")
             self.say("Tests abgeschlossen.")
         self.set_status("Status: Tests abgeschlossen.")
 
@@ -452,17 +311,15 @@ class AgentDoctorApp:
         self.set_status("Status: Phase‑5‑Brain Update läuft...")
         ok = self.phase5_brain.update()
         if ok:
-            self._log_ui("Phase‑5‑Brain aktualisiert.")
             self.say("Phase‑5‑Brain aktualisiert.")
         self.set_status("Status: Phase‑5‑Brain abgeschlossen.")
 
     # Phase 6
     def run_phase6_simulation(self):
         self.set_status("Status: Phase‑6‑Simulation läuft...")
-        self._log_ui("Phase‑6‑Simulation gestartet.")
         sim = Phase6Simulation(self.engines, self.state)
         sim.run()
-        self._log_ui("Phase‑6‑Simulation abgeschlossen.")
+        self.say("Phase‑6‑Simulation abgeschlossen.")
         self.set_status("Status: Phase‑6‑Simulation abgeschlossen.")
 
     def run(self):

@@ -1,10 +1,15 @@
 @echo off
 chcp 65001 >nul
-title Telegram Starter
+title Telegram Bot Starter
 
+REM ================================
+REM   INS PROJEKTVERZEICHNIS WECHSELN
+REM ================================
 cd /d "C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot"
 
-REM >>> HIER DEIN TOKEN EINTRAGEN
+REM ================================
+REM   TELEGRAM BOT TOKEN SETZEN
+REM ================================
 set "TELEGRAM_BOT_TOKEN=8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI"
 
 echo Starte Telegram-Bot...

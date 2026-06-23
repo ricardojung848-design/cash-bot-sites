@@ -1183,3 +1183,44 @@ self.btn_phase6_sim = ttk.Button(
     command=self.simulate_phase6_actions
 )
 self.btn_phase6_sim.grid(row=1, column=0, padx=5, pady=5)
+def simulate_phase6_actions(self):
+    self.log("Phase‑6‑Simulation gestartet.")
+    self.set_status("Status: Phase‑6‑Simulation läuft...")
+    self.say("Ich simuliere jetzt, welche Aktionen ich in Phase 6 durchführen würde.")
+
+    try:
+        priority = json.loads(PRIORITY_FILE.read_text(encoding="utf-8"))
+        fixes = json.loads(FIX_SUGGESTIONS_FILE.read_text(encoding="utf-8"))
+        optimizer = json.loads(OPTIMIZER_PLAN_FILE.read_text(encoding="utf-8"))
+        roadmap = json.loads(PLANNER_FILE.read_text(encoding="utf-8"))
+
+        self.log("Phase‑6‑Simulation: Daten erfolgreich geladen.")
+
+        self.log("---- Priorisierte Aufgaben ----")
+        for t in priority.get("tasks", []):
+            self.log(f"Würde priorisieren: {t.get('name')} (Grund: {t.get('reason')})")
+
+        self.log("---- Fix‑Vorschläge ----")
+        for s in fixes.get("suggestions", []):
+            self.log(f"Würde fixen: {s.get('file')} (Keyword: {s.get('keyword')}, Hinweis: {s.get('hint')})")
+
+        self.log("---- Optimierungs‑Kandidaten ----")
+        for m in optimizer.get("modules", []):
+            self.log(f"Würde optimieren: {m.get('name')} (Komplexität: {m.get('complexity')}, Zeilen: {m.get('lines')})")
+
+        self.log("---- Roadmap‑Schritte ----")
+        for r in roadmap.get("roadmap", []):
+            if r.get("type") == "priority_task":
+                self.log(f"Roadmap: Aufgabe → {r.get('name')}")
+            elif r.get("type") == "module_optimize":
+                self.log(f"Roadmap: Optimierung → {r.get('name')} ({r.get('info')})")
+            elif r.get("type") == "fix_suggestion":
+                self.log(f"Roadmap: Fix → {r.get('file')} (Keyword: {r.get('keyword')})")
+
+        self.say("Die Simulation ist abgeschlossen. Ich habe dir alle geplanten Aktionen angezeigt.")
+        self.set_status("Status: Phase‑6‑Simulation abgeschlossen.")
+
+    except Exception as e:
+        self.log(f"Fehler in Phase‑6‑Simulation: {e}")
+        self.say("Bei der Phase‑6‑Simulation ist ein Fehler aufgetreten.")
+        self.set_status("Status: Fehler in Phase‑6‑Simulation.")

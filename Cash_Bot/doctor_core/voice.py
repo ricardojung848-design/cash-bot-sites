@@ -41,3 +41,12 @@ class VoiceEngine:
                     self.logger(f"VoiceEngine Fehler beim Sprechen: {e}")
 
         threading.Thread(target=_run, daemon=True).start()
+
+    def startup_greeting(self):
+        text = (
+            "Hallo Rico. Agent Doctor ist vollständig gestartet. "
+            "Alle Engines wurden erfolgreich geladen. "
+            "Die Hintergrundüberwachung läuft stabil. "
+            "Sag mir einfach, was ich als nächstes tun soll."
+        )
+        self.speak(text)

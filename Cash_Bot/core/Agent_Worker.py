@@ -52,10 +52,6 @@ def speichere_antwort(chat_id, antwort):
 def worker_loop():
     log_worker("Agent Worker gestartet...")
 
-    # ⭐ PERFEKTER AUTO-FIX-FEHLER ⭐
-    # Dieser Fehler passiert IM Worker, wird geloggt und von Phase‑7 erkannt.
-    test = undefined_variable  # NameError → Auto‑Fix erkennt Datei, Zeile, Funktion
-
     while True:
         try:
             # Auto-Posting Tick

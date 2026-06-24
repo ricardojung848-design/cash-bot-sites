@@ -22,9 +22,10 @@ from core.utils import (
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
 
-with open(os.path.join(BASE_DIR, "config", "token.txt"), "r") as f:
+# Token aus Datei laden
+TOKEN_PATH = os.path.join(BASE_DIR, "config", "token.txt")
+with open(TOKEN_PATH, "r", encoding="utf-8") as f:
     TELEGRAM_BOT_TOKEN = f.read().strip()
-
 
 
 def load_tasks() -> List[Dict[str, Any]]:
@@ -103,9 +104,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    # Token prüfen
     if not TELEGRAM_BOT_TOKEN:
-    raise RuntimeError("TELEGRAM_BOT_TOKEN konnte nicht aus token.txt geladen werden.")
-
+        raise RuntimeError("TELEGRAM_BOT_TOKEN konnte nicht aus token.txt geladen werden.")
 
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 

@@ -1,30 +1,45 @@
 import time
 import json
+import re
 from pathlib import Path
 from doctor_core.logging import log_doctor
 
 
 class FixSuggestionEngine:
     """
-    Phase‑7 Engine:
-    Analysiert Logs, extrahiert Fehler, erzeugt Fix‑Vorschläge.
-    Kompatibel mit Agent_Doctor.py (logger, logs_dir, state_file).
+    Phase‑7 Engine (stärker):
+    - scannt alle Logs (.log, .txt)
+    - erkennt generisch Exceptions, Tracebacks und typische Fehlermuster
+    - erzeugt Vorschläge auch dann, wenn kein spezielles Keyword hinterlegt ist
     """
 
+    # Spezifische Muster (wie vorher, aber erweiterbar)
     KEYWORDS = {
-        "SyntaxError": "Syntax prüfen, insbesondere Anführungszeichen und Klammern.",
-        "ConnectionError": "Netzwerkverbindung und API-URL prüfen.",
+        "SyntaxError": "Syntax prüfen (Klammern, Anführungszeichen, Einrückung).",
+        "ConnectionError": "Netzwerkverbindung, API‑URL und Zeitüberschreitungen prüfen.",
         "Timeout": "Timeout erhöhen oder Last reduzieren.",
-        "KeyError": "Dictionary-Schlüssel prüfen oder Default-Werte setzen.",
-        "FileNotFoundError": "Pfad und Dateinamen prüfen, ggf. Datei anlegen.",
+        "KeyError": "Dictionary‑Zugriffe prüfen, .get() mit Default verwenden.",
+        "FileNotFoundError": "Pfad und Dateinamen prüfen, Datei ggf. anlegen.",
     }
+
+    # Generische Muster für „alles“
+    GENERIC_PATTERNS = [
+        r"Traceback \(most recent call last\):",
+        r"\bException\b",
+        r"\bError\b",
+        r"\bRuntimeError\b",
+        r"\bValueError\b",
+        r"\bTypeError\b",
+        r"\bNameError\b",
+        r"\bImportError\b",
+        r"\bIndexError\b",
+    ]
 
     def __init__(self, logger=log_doctor, logs_dir=None, state_file=None):
         self.logger = logger
         self.logs_dir = Path(logs_dir)
         self.state_file = Path(state_file)
 
-        # Sicherstellen, dass Datei existiert
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         if not self.state_file.exists():
             self._save_suggestions({
@@ -55,6 +70,7 @@ class FixSuggestionEngine:
         suggestions = []
 
         if not self.logs_dir.exists():
+            self.logger(f"FixSuggestionEngine: logs_dir existiert nicht: {self.logs_dir}")
             return suggestions
 
         for f in self.logs_dir.iterdir():
@@ -65,15 +81,30 @@ class FixSuggestionEngine:
 
             try:
                 content = f.read_text(encoding="utf-8", errors="ignore")
-            except Exception:
+            except Exception as e:
+                self.logger(f"FixSuggestionEngine: Fehler beim Lesen von {f}: {e}")
                 continue
 
+            # 1) Spezifische Keywords wie bisher
             for kw, hint in self.KEYWORDS.items():
                 if kw in content:
                     suggestions.append({
                         "file": str(f),
                         "keyword": kw,
                         "hint": hint,
+                    })
+
+            # 2) Generische Fehlererkennung
+            for pattern in self.GENERIC_PATTERNS:
+                if re.search(pattern, content):
+                    suggestions.append({
+                        "file": str(f),
+                        "keyword": pattern,
+                        "hint": (
+                            "Allgemeiner Fehler erkannt. "
+                            "Traceback und Fehlermeldung genau lesen, "
+                            "betroffene Funktion/Zeile im Code prüfen."
+                        ),
                     })
 
         return suggestions

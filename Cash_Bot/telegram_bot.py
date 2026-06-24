@@ -104,7 +104,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     if not TELEGRAM_BOT_TOKEN:
-        raise RuntimeError("TELEGRAM_BOT_TOKEN fehlt in den Umgebungsvariablen.")
+    raise RuntimeError("TELEGRAM_BOT_TOKEN konnte nicht aus token.txt geladen werden.")
+
 
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 

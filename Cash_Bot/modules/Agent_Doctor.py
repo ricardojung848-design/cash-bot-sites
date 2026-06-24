@@ -23,7 +23,7 @@ from doctor_core.auto_fix_engine import (
     apply_fix_with_backup,
     rollback_last_fix,
 )
-
+from doctor_core.fix_suggestion_engine import FixSuggestionEngine  # ← Phase‑7 Engine
 
 # Basis-Pfade
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -90,6 +90,13 @@ class AgentDoctorApp:
         self.test_runner = TestRunner(logger=log_doctor)
         self.phase5_brain = Phase5Brain(logger=log_doctor)
         self.background = BackgroundMonitor(logger=log_doctor)
+
+        # Phase‑7: FixSuggestionEngine an EngineManager hängen
+        self.engines.fix = FixSuggestionEngine(
+            logger=log_doctor,
+            logs_dir=LOGS_DIR,
+            state_file=FIX_SUGGESTIONS_FILE,
+        )
 
         # UI
         self.root = tk.Tk()
@@ -371,11 +378,13 @@ class AgentDoctorApp:
         keyword = s.get("keyword", "")
         hint = s.get("hint", "")
 
-        # Code‑Template basierend auf Keyword (Option C: Doctor generiert Fix‑Code)
-        template = f"# Auto‑Fix‑Vorschlag basierend auf Log:\n" \
-                   f"# Log-Datei: {log_file}\n" \
-                   f"# Keyword: {keyword}\n" \
-                   f"# Hinweis: {hint}\n\n"
+        # Code‑Template basierend auf Keyword
+        template = (
+            f"# Auto‑Fix‑Vorschlag basierend auf Log:\n"
+            f"# Log-Datei: {log_file}\n"
+            f"# Keyword: {keyword}\n"
+            f"# Hinweis: {hint}\n\n"
+        )
 
         if keyword == "SyntaxError":
             template += (
@@ -411,7 +420,6 @@ class AgentDoctorApp:
         else:
             template += "# Kein spezielles Template vorhanden – bitte manuell anpassen.\n"
 
-        # Pfad lässt du bewusst selbst wählen – Doctor füllt nur Vorschlag
         self._open_auto_fix_window(prefill_path="", prefill_code=template)
         self.say("Ich habe einen Fix‑Vorschlag aus den Logs geladen.")
         self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")

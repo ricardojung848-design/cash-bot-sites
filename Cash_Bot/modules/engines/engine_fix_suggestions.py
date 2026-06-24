@@ -32,9 +32,6 @@ class FixSuggestionEngine:
                 "suggestions": [],
             })
 
-    # -----------------------------
-    # JSON‑Handling
-    # -----------------------------
     def _load_suggestions(self) -> dict:
         try:
             if not self.state_file.exists():
@@ -54,9 +51,6 @@ class FixSuggestionEngine:
         except Exception as e:
             self.logger(f"FixSuggestionEngine: Fehler beim Speichern: {e}")
 
-    # -----------------------------
-    # Log‑Analyse
-    # -----------------------------
     def _scan_logs(self) -> list:
         suggestions = []
 
@@ -84,17 +78,7 @@ class FixSuggestionEngine:
 
         return suggestions
 
-    # -----------------------------
-    # Öffentliche API
-    # -----------------------------
     def update(self) -> list:
-        """
-        Hauptfunktion:
-        - Logs scannen
-        - Vorschläge erzeugen
-        - JSON speichern
-        - Liste zurückgeben
-        """
         suggestions = self._scan_logs()
 
         data = {

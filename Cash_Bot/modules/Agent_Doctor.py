@@ -19,6 +19,12 @@ from doctor_core.tests import TestRunner
 from doctor_core.phase5_brain import Phase5Brain
 from doctor_core.background import BackgroundMonitor
 
+from doctor_core.auto_fix_engine import (
+    apply_fix_with_backup,
+    rollback_last_fix,
+    read_file_safely,
+)
+
 
 # Basis-Pfade
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -102,7 +108,7 @@ class AgentDoctorApp:
 
         header = ttk.Label(
             main,
-            text="Agent_Doctor – PRO‑Architektur (Phase 5 + Phase 6 Simulation)",
+            text="Agent_Doctor – PRO‑Architektur (Phase 5 + Phase 6 + Phase 7 Auto‑Fix)",
             font=("Segoe UI", 13, "bold"),
         )
         header.pack(anchor="w", pady=(0, 10))
@@ -173,6 +179,15 @@ class AgentDoctorApp:
 
         ttk.Button(phase6_frame, text="Phase‑6‑Simulation starten", command=self.run_phase6_simulation).grid(row=1, column=0, padx=5, pady=5)
 
+        # Phase 7 – Auto‑Fix
+        phase7_frame = ttk.Frame(main)
+        phase7_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(phase7_frame, text="Phase‑7‑Auto‑Fix:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+
+        ttk.Button(phase7_frame, text="Fix anwenden (mit Backup)", command=self._open_auto_fix_window).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(phase7_frame, text="Letztes Backup wiederherstellen", command=self._open_rollback_window).grid(row=1, column=1, padx=5, pady=5)
+
         # Voice
         voice_frame = ttk.Frame(main)
         voice_frame.pack(anchor="w", pady=(0, 10))
@@ -189,7 +204,7 @@ class AgentDoctorApp:
         log_doctor("Agent_Doctor PRO gestartet.")
         self._log_ui("Agent_Doctor PRO gestartet.")
 
-        # ⭐ Begrüßung HIER eingebaut
+        # Begrüßung
         self.voice.startup_greeting()
 
         # Hintergrundüberwachung starten
@@ -321,6 +336,71 @@ class AgentDoctorApp:
         sim.run()
         self.say("Phase‑6‑Simulation abgeschlossen.")
         self.set_status("Status: Phase‑6‑Simulation abgeschlossen.")
+
+    # Phase 7 – Auto‑Fix UI
+    def _open_auto_fix_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Auto‑Fix anwenden (mit Backup)")
+        win.configure(bg="#111111")
+
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="Zieldatei (Pfad relativ zu Projekt):", font=("Segoe UI", 9)).pack(anchor="w")
+        path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        path_entry.pack(fill="x", pady=5)
+
+        ttk.Label(frame, text="Neuer Inhalt:", font=("Segoe UI", 9)).pack(anchor="w")
+        code_box = tk.Text(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff", height=12)
+        code_box.pack(fill="both", pady=5)
+
+        def apply_fix():
+            rel_path = path_entry.get().strip()
+            if not rel_path:
+                self.say("Kein Pfad angegeben.")
+                return
+
+            target_path = (BASE_DIR / rel_path).resolve()
+            new_content = code_box.get("1.0", "end").rstrip("\n")
+
+            ok, msg = apply_fix_with_backup(target_path, new_content, create_backup_before=True)
+            log_doctor(msg)
+            self._log_ui(msg)
+            if ok:
+                self.say("Fix angewendet. Backup wurde erstellt.")
+            else:
+                self.say("Fix konnte nicht angewendet werden.")
+
+        ttk.Button(frame, text="Fix anwenden", command=apply_fix).pack(anchor="e", pady=5)
+
+    def _open_rollback_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Letztes Backup wiederherstellen")
+        win.configure(bg="#111111")
+
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="Zieldatei (Pfad relativ zu Projekt):", font=("Segoe UI", 9)).pack(anchor="w")
+        path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        path_entry.pack(fill="x", pady=5)
+
+        def do_rollback():
+            rel_path = path_entry.get().strip()
+            if not rel_path:
+                self.say("Kein Pfad angegeben.")
+                return
+
+            target_path = (BASE_DIR / rel_path).resolve()
+            ok, msg = rollback_last_fix(target_path)
+            log_doctor(msg)
+            self._log_ui(msg)
+            if ok:
+                self.say("Backup wiederhergestellt.")
+            else:
+                self.say("Kein Backup verfügbar oder Wiederherstellung fehlgeschlagen.")
+
+        ttk.Button(frame, text="Backup wiederherstellen", command=do_rollback).pack(anchor="e", pady=5)
 
     def run(self):
         self.root.mainloop()

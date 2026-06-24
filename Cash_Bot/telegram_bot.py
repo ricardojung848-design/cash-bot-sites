@@ -22,7 +22,9 @@ from core.utils import (
 AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+with open(os.path.join(BASE_DIR, "config", "token.txt"), "r") as f:
+    TELEGRAM_BOT_TOKEN = f.read().strip()
+
 
 
 def load_tasks() -> List[Dict[str, Any]]:

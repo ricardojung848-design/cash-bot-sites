@@ -1,4 +1,3 @@
-THIS_IS_A_SYNTAX_ERROR =S
 # core/Agent_Worker.py
 
 import os

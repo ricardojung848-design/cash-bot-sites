@@ -1,10 +1,10 @@
 {
-  "last_update": "2026-06-24 15:14:21",
+  "last_update": "2026-06-24 16:44:12",
   "suggestions": [
     {
-      "file": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\logs\\worker.log",
+      "log_file": "C:\\Users\\ricoj\\Desktop\\Deto_Art_Agenten\\Cash_Bot\\logs\\worker.log",
       "keyword": "\\bError\\b",
-      "hint": "Allgemeiner Fehler erkannt. Traceback und Fehlermeldung genau lesen, betroffene Funktion/Zeile im Code pr\u00fcfen."
+      "hint": "Allgemeiner Fehler erkannt. Traceback und Fehlermeldung pr\u00fcfen."
     }
   ]
 }

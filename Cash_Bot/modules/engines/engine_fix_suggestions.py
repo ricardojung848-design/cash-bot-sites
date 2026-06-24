@@ -4,16 +4,16 @@ import re
 from pathlib import Path
 from doctor_core.logging import log_doctor
 
-
+# Traceback-Pattern: File "...", line X, in function
 TRACEBACK_FILE_RE = re.compile(r'File "(.+?)", line (\d+), in (.+)')
 
 
 class FixSuggestionEngine:
     """
-    Phase‑7 PRO:
-    - scannt alle Logs (.log, .txt)
-    - erkennt Exceptions, Tracebacks, typische Fehlermuster
-    - versucht, die betroffene Quell‑Datei + Zeile zu ermitteln
+    PRO-Version:
+    - erkennt ALLE Fehler (Error, Exception, Traceback)
+    - extrahiert automatisch Datei, Zeile, Funktion
+    - liefert perfekte Daten für Phase-7 PRO
     """
 
     KEYWORDS = {
@@ -68,9 +68,6 @@ class FixSuggestionEngine:
             self.logger(f"FixSuggestionEngine: Fehler beim Speichern: {e}")
 
     def _extract_traceback_info(self, content: str) -> dict | None:
-        """
-        Nimmt den letzten 'File "...", line X, in ...' Block aus einem Traceback.
-        """
         matches = list(TRACEBACK_FILE_RE.finditer(content))
         if not matches:
             return None
@@ -102,7 +99,7 @@ class FixSuggestionEngine:
 
             tb_info = self._extract_traceback_info(content)
 
-            # 1) Spezifische Keywords
+            # Spezifische Fehler
             for kw, hint in self.KEYWORDS.items():
                 if kw in content:
                     s = {
@@ -114,17 +111,13 @@ class FixSuggestionEngine:
                         s.update(tb_info)
                     suggestions.append(s)
 
-            # 2) Generische Fehler
+            # Generische Fehler
             for pattern in self.GENERIC_PATTERNS:
                 if re.search(pattern, content):
                     s = {
                         "log_file": str(f),
                         "keyword": pattern,
-                        "hint": (
-                            "Allgemeiner Fehler erkannt. "
-                            "Traceback und Fehlermeldung genau lesen, "
-                            "betroffene Funktion/Zeile im Code prüfen."
-                        ),
+                        "hint": "Allgemeiner Fehler erkannt. Traceback prüfen.",
                     }
                     if tb_info:
                         s.update(tb_info)

@@ -24,7 +24,7 @@ from doctor_core.auto_fix_engine import (
     rollback_last_fix,
 )
 
-# ⭐ PRO-Version FixSuggestionEngine
+# PRO-Version FixSuggestionEngine
 from modules.engines.engine_fix_suggestions import FixSuggestionEngine
 
 
@@ -94,7 +94,7 @@ class AgentDoctorApp:
         self.phase5_brain = Phase5Brain(logger=log_doctor)
         self.background = BackgroundMonitor(logger=log_doctor)
 
-        # ⭐ Phase‑7 PRO Engine korrekt einbinden
+        # Phase‑7 PRO Engine
         self.engines.fix = FixSuggestionEngine(
             logger=log_doctor,
             logs_dir=LOGS_DIR,
@@ -129,9 +129,94 @@ class AgentDoctorApp:
         )
         self.status_label.pack(anchor="w", pady=(0, 10))
 
-        # Frames folgen in Block 2
-        self.main_frame = main
-    # UI Helper
+        # -------------------------
+        # UI-BUTTONS / FUNKTIONSLEISTE
+        # -------------------------
+
+        # System
+        system_frame = ttk.Frame(main)
+        system_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(system_frame, text="System:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(system_frame, text="System prüfen", command=self._run_system_check).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(system_frame, text="Logs analysieren", command=self._run_log_analysis).grid(row=1, column=1, padx=5, pady=5)
+
+        # Module
+        module_frame = ttk.Frame(main)
+        module_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(module_frame, text="Module:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(module_frame, text="Modul bauen", command=self._open_module_builder_window).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(module_frame, text="Modul erweitern", command=self._open_module_extender_window).grid(row=1, column=1, padx=5, pady=5)
+
+        # Optimierung
+        opt_frame = ttk.Frame(main)
+        opt_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(opt_frame, text="Optimierung:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(opt_frame, text="Worker optimieren", command=self._run_worker_opt).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(opt_frame, text="Telegram optimieren", command=self._run_telegram_opt).grid(row=1, column=1, padx=5, pady=5)
+
+        # Dokumentation
+        doc_frame = ttk.Frame(main)
+        doc_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(doc_frame, text="Dokumentation:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(doc_frame, text="Auto-Doku", command=self._run_auto_docs).grid(row=1, column=0, padx=5, pady=5)
+
+        # Tests
+        test_frame = ttk.Frame(main)
+        test_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(test_frame, text="Tests:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(test_frame, text="Tests ausführen", command=self._run_tests).grid(row=1, column=0, padx=5, pady=5)
+
+        # Phase 5
+        phase5_frame = ttk.Frame(main)
+        phase5_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(phase5_frame, text="Phase 5:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(phase5_frame, text="Phase‑5‑Brain aktualisieren", command=self._run_phase5_brain).grid(row=1, column=0, padx=5, pady=5)
+
+        # Phase 6
+        phase6_frame = ttk.Frame(main)
+        phase6_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(phase6_frame, text="Phase‑6‑Funktionen:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(phase6_frame, text="Phase‑6‑Simulation starten", command=self.run_phase6_simulation).grid(row=1, column=0, padx=5, pady=5)
+
+        # Phase 7
+        phase7_frame = ttk.Frame(main)
+        phase7_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(phase7_frame, text="Phase‑7‑Auto‑Fix:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(phase7_frame, text="Auto‑Fix aus Logs (Vorschlag laden)", command=self._run_auto_fix_from_logs).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Button(phase7_frame, text="Fix anwenden (manuell)", command=self._open_auto_fix_window).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(phase7_frame, text="Letztes Backup wiederherstellen", command=self._open_rollback_window).grid(row=1, column=2, padx=5, pady=5)
+
+        # Voice
+        voice_frame = ttk.Frame(main)
+        voice_frame.pack(anchor="w", pady=(0, 10))
+
+        ttk.Label(voice_frame, text="Voice:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
+        ttk.Button(voice_frame, text="Voice‑Test", command=lambda: self.say("Hallo Ricardo, die Voice‑Engine funktioniert.")).grid(row=1, column=0, padx=5, pady=5)
+
+        # Log-Ausgabe
+        self.log_box = tk.Text(main, bg="#000000", fg="#00ff88", insertbackground="#00ff88", height=18, borderwidth=0)
+        self.log_box.pack(fill="both", expand=True)
+
+        # Start-Log
+        log_doctor("Agent_Doctor PRO gestartet.")
+        self._log_ui("Agent_Doctor PRO gestartet.")
+
+        # Begrüßung
+        self.voice.startup_greeting()
+
+        # Hintergrundüberwachung starten
+        self.background.start()
+    # ----------------------------------------------------
+    # UI HELFER
+    # ----------------------------------------------------
     def _log_ui(self, msg: str):
         self.log_box.insert("end", msg + "\n")
         self.log_box.see("end")
@@ -142,9 +227,9 @@ class AgentDoctorApp:
     def say(self, text: str):
         self.voice.speak(text)
 
-    # -------------------------
+    # ----------------------------------------------------
     # SYSTEM
-    # -------------------------
+    # ----------------------------------------------------
     def _run_system_check(self):
         self.set_status("Status: Systemprüfung läuft...")
         ok = self.system_checker.run()
@@ -163,9 +248,9 @@ class AgentDoctorApp:
             self.say("Ich habe keine Log‑Dateien gefunden.")
         self.set_status("Status: Loganalyse abgeschlossen.")
 
-    # -------------------------
+    # ----------------------------------------------------
     # MODULE
-    # -------------------------
+    # ----------------------------------------------------
     def _open_module_builder_window(self):
         win = tk.Toplevel(self.root)
         win.title("Modul bauen")
@@ -215,9 +300,9 @@ class AgentDoctorApp:
 
         ttk.Button(frame, text="Anhängen", command=extend).pack(anchor="e", pady=5)
 
-    # -------------------------
+    # ----------------------------------------------------
     # OPTIMIERUNG
-    # -------------------------
+    # ----------------------------------------------------
     def _run_worker_opt(self):
         self.set_status("Status: Worker-Optimierung läuft...")
         ok = self.worker_optimizer.optimize()
@@ -232,9 +317,9 @@ class AgentDoctorApp:
             self.say("Telegram-Optimierung abgeschlossen.")
         self.set_status("Status: Telegram-Optimierung abgeschlossen.")
 
-    # -------------------------
+    # ----------------------------------------------------
     # DOKUMENTATION
-    # -------------------------
+    # ----------------------------------------------------
     def _run_auto_docs(self):
         self.set_status("Status: Auto-Doku läuft...")
         ok = self.auto_docs.generate()
@@ -242,9 +327,9 @@ class AgentDoctorApp:
             self.say("Auto-Dokumentation abgeschlossen.")
         self.set_status("Status: Auto-Doku abgeschlossen.")
 
-    # -------------------------
+    # ----------------------------------------------------
     # TESTS
-    # -------------------------
+    # ----------------------------------------------------
     def _run_tests(self):
         self.set_status("Status: Tests laufen...")
         ok = self.test_runner.run()
@@ -252,9 +337,9 @@ class AgentDoctorApp:
             self.say("Tests abgeschlossen.")
         self.set_status("Status: Tests abgeschlossen.")
 
-    # -------------------------
+    # ----------------------------------------------------
     # PHASE 5
-    # -------------------------
+    # ----------------------------------------------------
     def _run_phase5_brain(self):
         self.set_status("Status: Phase‑5‑Brain Update läuft...")
         ok = self.phase5_brain.update()
@@ -262,18 +347,18 @@ class AgentDoctorApp:
             self.say("Phase‑5‑Brain aktualisiert.")
         self.set_status("Status: Phase‑5‑Brain abgeschlossen.")
 
-    # -------------------------
+    # ----------------------------------------------------
     # PHASE 6
-    # -------------------------
+    # ----------------------------------------------------
     def run_phase6_simulation(self):
         self.set_status("Status: Phase‑6‑Simulation läuft...")
         sim = Phase6Simulation(self.engines, self.state)
         sim.run()
         self.say("Phase‑6‑Simulation abgeschlossen.")
         self.set_status("Status: Phase‑6‑Simulation abgeschlossen.")
-    # -------------------------
+    # ----------------------------------------------------
     # PHASE 7 – AUTO‑FIX PRO
-    # -------------------------
+    # ----------------------------------------------------
     def _run_auto_fix_from_logs(self):
         self.set_status("Status: Auto‑Fix aus Logs läuft...")
 
@@ -341,9 +426,9 @@ class AgentDoctorApp:
         self.say("Ich habe einen Fix‑Vorschlag aus den Logs geladen. Pfad wurde automatisch vorbelegt.")
         self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
 
-    # -------------------------
+    # ----------------------------------------------------
     # AUTO‑FIX UI
-    # -------------------------
+    # ----------------------------------------------------
     def _open_auto_fix_window(self, prefill_path: str = "", prefill_code: str = ""):
         win = tk.Toplevel(self.root)
         win.title("Auto‑Fix anwenden (mit Backup)")
@@ -385,9 +470,9 @@ class AgentDoctorApp:
 
         ttk.Button(frame, text="Fix anwenden", command=apply_fix).pack(anchor="e", pady=5)
 
-    # -------------------------
+    # ----------------------------------------------------
     # ROLLBACK
-    # -------------------------
+    # ----------------------------------------------------
     def _open_rollback_window(self):
         win = tk.Toplevel(self.root)
         win.title("Letztes Backup wiederherstellen")
@@ -417,9 +502,9 @@ class AgentDoctorApp:
 
         ttk.Button(frame, text="Backup wiederherstellen", command=do_rollback).pack(anchor="e", pady=5)
 
-    # -------------------------
+    # ----------------------------------------------------
     # START
-    # -------------------------
+    # ----------------------------------------------------
     def run(self):
         self.root.mainloop()
 

@@ -105,7 +105,6 @@ class AgentDoctorApp:
         self.root = tk.Tk()
         self.root.title("Agent_Doctor // System Engineer (PRO)")
         self.root.configure(bg="#111111")
-
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("TFrame", background="#111111")
@@ -424,4 +423,88 @@ class AgentDoctorApp:
             template += "# Kein spezielles Template vorhanden – bitte manuell anpassen.\n"
 
         self._open_auto_fix_window(prefill_path="", prefill_code=template)
-        self.say("Ich habe einen Fix‑
+        self.say("Ich habe einen Fix‑Vorschlag aus den Logs geladen.")
+        self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
+
+    # Phase 7 – Auto‑Fix UI (manuell oder mit Vorschlag)
+    def _open_auto_fix_window(self, prefill_path: str = "", prefill_code: str = ""):
+        win = tk.Toplevel(self.root)
+        win.title("Auto‑Fix anwenden (mit Backup)")
+        win.configure(bg="#111111")
+
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="Zieldatei (Pfad relativ zu Projekt):", font=("Segoe UI", 9)).pack(anchor="w")
+        path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        path_entry.pack(fill="x", pady=5)
+
+        if prefill_path:
+            path_entry.insert(0, prefill_path)
+
+        ttk.Label(frame, text="Neuer Inhalt:", font=("Segoe UI", 9)).pack(anchor="w")
+        code_box = tk.Text(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff", height=12)
+        code_box.pack(fill="both", pady=5)
+
+        if prefill_code:
+            code_box.insert("1.0", prefill_code)
+
+        def apply_fix():
+            rel_path = path_entry.get().strip()
+            if not rel_path:
+                self.say("Kein Pfad angegeben.")
+                return
+
+            target_path = (BASE_DIR / rel_path).resolve()
+            new_content = code_box.get("1.0", "end").rstrip("\n")
+
+            ok, msg = apply_fix_with_backup(target_path, new_content, create_backup_before=True)
+            log_doctor(msg)
+            self._log_ui(msg)
+            if ok:
+                self.say("Fix angewendet. Backup wurde erstellt.")
+            else:
+                self.say("Fix konnte nicht angewendet werden.")
+
+        ttk.Button(frame, text="Fix anwenden", command=apply_fix).pack(anchor="e", pady=5)
+
+    def _open_rollback_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Letztes Backup wiederherstellen")
+        win.configure(bg="#111111")
+
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="Zieldatei (Pfad relativ zu Projekt):", font=("Segoe UI", 9)).pack(anchor="w")
+        path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        path_entry.pack(fill="x", pady=5)
+
+        def do_rollback():
+            rel_path = path_entry.get().strip()
+            if not rel_path:
+                self.say("Kein Pfad angegeben.")
+                return
+
+            target_path = (BASE_DIR / rel_path).resolve()
+            ok, msg = rollback_last_fix(target_path)
+            log_doctor(msg)
+            self._log_ui(msg)
+            if ok:
+                self.say("Backup wiederhergestellt.")
+            else:
+                self.say("Kein Backup verfügbar oder Wiederherstellung fehlgeschlagen.")
+
+        ttk.Button(frame, text="Backup wiederherstellen", command=do_rollback).pack(anchor="e", pady=5)
+
+    def run(self):
+        self.root.mainloop()
+
+
+def main():
+    app = AgentDoctorApp()
+    app.run()
+
+
+if __name__ == "__main__":
+    main()

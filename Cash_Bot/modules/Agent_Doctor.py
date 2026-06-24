@@ -22,7 +22,6 @@ from doctor_core.background import BackgroundMonitor
 from doctor_core.auto_fix_engine import (
     apply_fix_with_backup,
     rollback_last_fix,
-    read_file_safely,
 )
 
 
@@ -185,8 +184,23 @@ class AgentDoctorApp:
 
         ttk.Label(phase7_frame, text="Phase‑7‑Auto‑Fix:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, padx=5)
 
-        ttk.Button(phase7_frame, text="Fix anwenden (mit Backup)", command=self._open_auto_fix_window).grid(row=1, column=0, padx=5, pady=5)
-        ttk.Button(phase7_frame, text="Letztes Backup wiederherstellen", command=self._open_rollback_window).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(
+            phase7_frame,
+            text="Auto‑Fix aus Logs (Vorschlag laden)",
+            command=self._run_auto_fix_from_logs,
+        ).grid(row=1, column=0, padx=5, pady=5)
+
+        ttk.Button(
+            phase7_frame,
+            text="Fix anwenden (manuell)",
+            command=self._open_auto_fix_window,
+        ).grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Button(
+            phase7_frame,
+            text="Letztes Backup wiederherstellen",
+            command=self._open_rollback_window,
+        ).grid(row=1, column=2, padx=5, pady=5)
 
         # Voice
         voice_frame = ttk.Frame(main)
@@ -337,8 +351,73 @@ class AgentDoctorApp:
         self.say("Phase‑6‑Simulation abgeschlossen.")
         self.set_status("Status: Phase‑6‑Simulation abgeschlossen.")
 
-    # Phase 7 – Auto‑Fix UI
-    def _open_auto_fix_window(self):
+    # Phase 7 – Auto‑Fix aus Logs (Vorschlag)
+    def _run_auto_fix_from_logs(self):
+        self.set_status("Status: Auto‑Fix aus Logs läuft...")
+        if not hasattr(self.engines, "fix") or self.engines.fix is None:
+            self.say("Keine FixSuggestionEngine geladen.")
+            self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
+            return
+
+        suggestions = self.engines.fix.update()
+        if not suggestions:
+            self.say("Keine Fix‑Vorschläge in den Logs gefunden.")
+            self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
+            return
+
+        # Wir nehmen den ersten Vorschlag
+        s = suggestions[0]
+        log_file = s.get("file", "")
+        keyword = s.get("keyword", "")
+        hint = s.get("hint", "")
+
+        # Code‑Template basierend auf Keyword (Option C: Doctor generiert Fix‑Code)
+        template = f"# Auto‑Fix‑Vorschlag basierend auf Log:\n" \
+                   f"# Log-Datei: {log_file}\n" \
+                   f"# Keyword: {keyword}\n" \
+                   f"# Hinweis: {hint}\n\n"
+
+        if keyword == "SyntaxError":
+            template += (
+                "# Beispiel: SyntaxError beheben – prüfe Klammern/Anführungszeichen.\n"
+                "# Hier kannst du den fehlerhaften Ausdruck korrigieren.\n"
+                "code = \"dein_code_hier\"\n"
+            )
+        elif keyword == "ConnectionError":
+            template += (
+                "import requests\n\n"
+                "# Beispiel: Verbindung robuster machen.\n"
+                "URL = \"https://example.com/api\"\n"
+                "resp = requests.get(URL, timeout=30)\n"
+            )
+        elif keyword == "Timeout":
+            template += (
+                "# Beispiel: Timeout erhöhen oder Last reduzieren.\n"
+                "TIMEOUT = 60  # Sekunden\n"
+            )
+        elif keyword == "KeyError":
+            template += (
+                "# Beispiel: Dictionary-Zugriff mit Default-Wert.\n"
+                "value = data.get(\"key\", \"default\")\n"
+            )
+        elif keyword == "FileNotFoundError":
+            template += (
+                "from pathlib import Path\n\n"
+                "# Beispiel: Datei anlegen, falls sie fehlt.\n"
+                "path = Path(\"pfad/zur/datei.txt\")\n"
+                "path.parent.mkdir(parents=True, exist_ok=True)\n"
+                "path.write_text(\"\", encoding=\"utf-8\")\n"
+            )
+        else:
+            template += "# Kein spezielles Template vorhanden – bitte manuell anpassen.\n"
+
+        # Pfad lässt du bewusst selbst wählen – Doctor füllt nur Vorschlag
+        self._open_auto_fix_window(prefill_path="", prefill_code=template)
+        self.say("Ich habe einen Fix‑Vorschlag aus den Logs geladen.")
+        self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
+
+    # Phase 7 – Auto‑Fix UI (manuell oder mit Vorschlag)
+    def _open_auto_fix_window(self, prefill_path: str = "", prefill_code: str = ""):
         win = tk.Toplevel(self.root)
         win.title("Auto‑Fix anwenden (mit Backup)")
         win.configure(bg="#111111")
@@ -350,9 +429,15 @@ class AgentDoctorApp:
         path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
         path_entry.pack(fill="x", pady=5)
 
+        if prefill_path:
+            path_entry.insert(0, prefill_path)
+
         ttk.Label(frame, text="Neuer Inhalt:", font=("Segoe UI", 9)).pack(anchor="w")
         code_box = tk.Text(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff", height=12)
         code_box.pack(fill="both", pady=5)
+
+        if prefill_code:
+            code_box.insert("1.0", prefill_code)
 
         def apply_fix():
             rel_path = path_entry.get().strip()

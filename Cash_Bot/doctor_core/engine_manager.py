@@ -1,66 +1,55 @@
-from pathlib import Path
-import importlib.util
-from .logging import log_doctor
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-MODULES_DIR = BASE_DIR / "modules"
-ENGINES_DIR = MODULES_DIR / "engines"
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
+from doctor_core.logging import log_doctor
 
 
+@dataclass
 class EngineManager:
-    def __init__(self):
-        self.predictive = None
-        self.priority = None
-        self.fix = None          # FixEngine NICHT automatisch laden!
-        self.optimizer = None
-        self.learning = None
-        self.planner = None
-        self._load_all()
+    """
+    PRO-Version:
+    - zentraler Container für alle Engines
+    - dynamische Registrierung
+    - Zugriff per Attribut (self.engines.fix, self.engines.worker, ...)
+    - Fallback-Logging, wenn Engine fehlt
+    """
 
-    def _load_module(self, name: str):
-        path = ENGINES_DIR / f"{name}.py"
-        if not path.exists():
-            log_doctor(f"Engine fehlt: {path}")
-            return None
-        spec = importlib.util.spec_from_file_location(name, str(path))
-        if not spec or not spec.loader:
-            log_doctor(f"Spec für Engine {name} fehlgeschlagen.")
-            return None
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+    _engines: Dict[str, Any] = field(default_factory=dict)
 
-    def _load_all(self):
-        # Predictive Engine
-        m_pred = self._load_module("engine_predictive")
-        if m_pred and hasattr(m_pred, "PredictiveEngine"):
-            self.predictive = m_pred.PredictiveEngine()
-            log_doctor("PredictiveEngine geladen.")
+    def register(self, name: str, engine: Any) -> None:
+        """
+        Engine unter einem Namen registrieren.
+        Beispiel:
+            engines.register("fix", FixSuggestionEngine(...))
+        """
+        if not name:
+            raise ValueError("Engine-Name darf nicht leer sein.")
+        self._engines[name] = engine
+        setattr(self, name, engine)
+        log_doctor(f"EngineManager: Engine '{name}' registriert: {engine.__class__.__name__}")
 
-        # Priority Engine
-        m_prio = self._load_module("engine_priority")
-        if m_prio and hasattr(m_prio, "PriorityEngine"):
-            self.priority = m_prio.PriorityEngine()
-            log_doctor("PriorityEngine geladen.")
+    def get(self, name: str) -> Optional[Any]:
+        """
+        Engine per Namen abrufen.
+        """
+        return self._engines.get(name)
 
-        # ⭐ FixSuggestionEngine NICHT automatisch laden ⭐
-        # Sie wird manuell im Agent_Doctor.py gesetzt.
-        self.fix = None
+    def has(self, name: str) -> bool:
+        """
+        Prüfen, ob eine Engine registriert ist.
+        """
+        return name in self._engines
 
-        # Optimizer Engine
-        m_opt = self._load_module("engine_optimizer")
-        if m_opt and hasattr(m_opt, "OptimizerEngine"):
-            self.optimizer = m_opt.OptimizerEngine()
-            log_doctor("OptimizerEngine geladen.")
+    def ensure(self, name: str) -> Any:
+        """
+        Engine holen oder Fehler loggen, wenn sie fehlt.
+        """
+        engine = self.get(name)
+        if engine is None:
+            log_doctor(f"EngineManager: Engine '{name}' ist nicht registriert.")
+        return engine
 
-        # Learning Engine
-        m_learn = self._load_module("engine_learning")
-        if m_learn and hasattr(m_learn, "LearningEngine"):
-            self.learning = m_learn.LearningEngine()
-            log_doctor("LearningEngine geladen.")
-
-        # Planner Engine
-        m_plan = self._load_module("engine_planner")
-        if m_plan and hasattr(m_plan, "PlannerEngine"):
-            self.planner = m_plan.PlannerEngine()
-            log_doctor("PlannerEngine geladen.")
+    def list_engines(self) -> Dict[str, str]:
+        """
+        Übersicht aller registrierten Engines (Name -> Klassennamen).
+        """
+        return {name: engine.__class__.__name__ for name, engine in self._engines.items()}

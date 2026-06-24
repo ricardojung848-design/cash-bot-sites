@@ -299,7 +299,6 @@ class AgentDoctorApp:
                 self.say("Das Modul konnte nicht erweitert werden.")
 
         ttk.Button(frame, text="Anhängen", command=extend).pack(anchor="e", pady=5)
-
     # ----------------------------------------------------
     # OPTIMIERUNG
     # ----------------------------------------------------

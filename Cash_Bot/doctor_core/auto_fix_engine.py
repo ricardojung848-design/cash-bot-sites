@@ -1,94 +1,17 @@
 from pathlib import Path
-import shutil
-import datetime
-from typing import Optional, Tuple
+from datetime import datetime
+from typing import Tuple
+
+from doctor_core.logging import log_doctor
 
 
-# Basisverzeichnis: eine Ebene über doctor_core
-BASE_DIR = Path(__file__).resolve().parent.parent
-BACKUP_DIR = BASE_DIR / "backups"
-
-
-def ensure_backup_dir() -> None:
+def _make_backup_path(target_path: Path) -> Path:
     """
-    Stellt sicher, dass der Backup-Ordner existiert.
+    Erzeugt einen Backup-Pfad neben der Zieldatei.
+    Beispiel: worker.py -> worker.py.bak_2026-06-24_15-30-12
     """
-    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def get_backup_path_for_file(target_path: Path) -> Path:
-    """
-    Liefert den Pfad zur Backup-Datei für eine bestimmte Zieldatei.
-    Es gibt immer nur EIN letztes Backup pro Datei (Option 3).
-    Beispiel:
-        target:  /projekt/telegram_bot.py
-        backup:  /projekt/backups/telegram_bot.py.bak
-    """
-    ensure_backup_dir()
-    filename = target_path.name
-    backup_name = f"{filename}.bak"
-    return BACKUP_DIR / backup_name
-
-
-def has_backup(target_path: Path) -> bool:
-    """
-    Prüft, ob es für die angegebene Datei ein Backup gibt.
-    """
-    backup_path = get_backup_path_for_file(target_path)
-    return backup_path.is_file()
-
-
-def create_backup(target_path: Path) -> Optional[Path]:
-    """
-    Erstellt ein Backup der angegebenen Datei.
-    Überschreibt das alte Backup (Option 3: nur letztes Backup).
-    Gibt den Pfad zur Backup-Datei zurück oder None, wenn die Datei nicht existiert.
-    """
-    target_path = target_path.resolve()
-    if not target_path.is_file():
-        return None
-
-    backup_path = get_backup_path_for_file(target_path)
-    ensure_backup_dir()
-    shutil.copy2(str(target_path), str(backup_path))
-    return backup_path
-
-
-def restore_backup(target_path: Path) -> bool:
-    """
-    Stellt die Datei aus dem letzten Backup wieder her.
-    Gibt True zurück, wenn erfolgreich, sonst False.
-    """
-    target_path = target_path.resolve()
-    backup_path = get_backup_path_for_file(target_path)
-    if not backup_path.is_file():
-        return False
-
-    shutil.copy2(str(backup_path), str(target_path))
-    return True
-
-
-def read_file_safely(path: Path, encoding: str = "utf-8") -> Optional[str]:
-    """
-    Liest den Inhalt einer Datei sicher ein.
-    Gibt den Inhalt als String zurück oder None, wenn die Datei nicht existiert.
-    """
-    path = path.resolve()
-    if not path.is_file():
-        return None
-
-    with path.open("r", encoding=encoding) as f:
-        return f.read()
-
-
-def write_file_safely(path: Path, content: str, encoding: str = "utf-8") -> None:
-    """
-    Schreibt den Inhalt sicher in eine Datei.
-    """
-    path = path.resolve()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding=encoding) as f:
-        f.write(content)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    return target_path.with_suffix(target_path.suffix + f".bak_{timestamp}")
 
 
 def apply_fix_with_backup(
@@ -97,49 +20,87 @@ def apply_fix_with_backup(
     create_backup_before: bool = True,
 ) -> Tuple[bool, str]:
     """
-    Wendet einen Fix auf eine Datei an:
-    - optional: erstellt vorher ein Backup (Option 3: nur ein letztes Backup)
-    - schreibt den neuen Inhalt in die Datei
-
-    Rückgabe:
-        (erfolg: bool, nachricht: str)
+    PRO-Version:
+    - optionales Backup der bestehenden Datei
+    - schreibt neuen Inhalt
+    - gibt (ok, message) zurück
     """
-    target_path = target_path.resolve()
-
-    if create_backup_before:
-        backup_path = create_backup(target_path)
-        if backup_path is None:
-            return False, f"Backup fehlgeschlagen: Datei existiert nicht: {target_path}"
 
     try:
-        write_file_safely(target_path, new_content)
-        return True, f"Fix angewendet auf: {target_path}"
+        target_path = Path(target_path)
+
+        if not target_path.exists():
+            # Falls Datei nicht existiert, Verzeichnis anlegen
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            original_exists = False
+        else:
+            original_exists = True
+
+        backup_path = None
+
+        if create_backup_before and original_exists:
+            backup_path = _make_backup_path(target_path)
+            backup_path.write_text(target_path.read_text(encoding="utf-8"), encoding="utf-8")
+            log_doctor(f"AutoFix: Backup erstellt: {backup_path}")
+
+        # Neuen Inhalt schreiben
+        target_path.write_text(new_content, encoding="utf-8")
+        msg = f"AutoFix: Neuer Inhalt in {target_path} geschrieben."
+        if backup_path:
+            msg += f" Backup: {backup_path}"
+        return True, msg
+
     except Exception as e:
-        return False, f"Fehler beim Schreiben der Datei {target_path}: {e}"
+        msg = f"AutoFix: Fehler beim Anwenden des Fixes auf {target_path}: {e}"
+        log_doctor(msg)
+        return False, msg
+
+
+def _find_latest_backup(target_path: Path) -> Path | None:
+    """
+    Sucht das neueste Backup für die Zieldatei.
+    """
+    target_path = Path(target_path)
+    pattern = target_path.with_suffix(target_path.suffix + ".bak_")
+    parent = target_path.parent
+
+    if not parent.exists():
+        return None
+
+    candidates = [p for p in parent.iterdir() if p.name.startswith(pattern.name)]
+    if not candidates:
+        return None
+
+    # Nach Datum im Namen sortieren (lexikographisch reicht hier)
+    candidates.sort(reverse=True)
+    return candidates[0]
 
 
 def rollback_last_fix(target_path: Path) -> Tuple[bool, str]:
     """
-    Setzt die Datei auf die letzte Backup-Version zurück.
-    Rückgabe:
-        (erfolg: bool, nachricht: str)
+    PRO-Version:
+    - sucht das letzte Backup
+    - stellt es wieder her
+    - gibt (ok, message) zurück
     """
-    target_path = target_path.resolve()
-
-    if not has_backup(target_path):
-        return False, f"Kein Backup vorhanden für: {target_path}"
-
     try:
-        ok = restore_backup(target_path)
-        if not ok:
-            return False, f"Backup konnte nicht wiederhergestellt werden: {target_path}"
-        return True, f"Backup wiederhergestellt für: {target_path}"
+        target_path = Path(target_path)
+        backup_path = _find_latest_backup(target_path)
+
+        if backup_path is None or not backup_path.exists():
+            msg = f"Rollback: Kein Backup für {target_path} gefunden."
+            log_doctor(msg)
+            return False, msg
+
+        # Backup-Inhalt zurückschreiben
+        content = backup_path.read_text(encoding="utf-8")
+        target_path.write_text(content, encoding="utf-8")
+
+        msg = f"Rollback: Backup {backup_path} nach {target_path} wiederhergestellt."
+        log_doctor(msg)
+        return True, msg
+
     except Exception as e:
-        return False, f"Fehler beim Wiederherstellen des Backups für {target_path}: {e}"
-
-
-def timestamp() -> str:
-    """
-    Einfacher Zeitstempel-String, falls du ihn loggen willst.
-    """
-    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        msg = f"Rollback: Fehler beim Wiederherstellen von {target_path}: {e}"
+        log_doctor(msg)
+        return False, msg

@@ -11,16 +11,18 @@ TRACEBACK_FILE_RE = re.compile(r'File "(.+?)", line (\d+), in (.+)')
 class FixSuggestionEngine:
     """
     PRO-Version:
-    - erkennt ALLE Fehler (Error, Exception, Traceback)
-    - extrahiert automatisch Datei, Zeile, Funktion
-    - liefert perfekte Daten für Phase-7 PRO
+    - scannt alle Log-Dateien (.log, .txt)
+    - erkennt typische Fehler (Error, Exception, Traceback)
+    - extrahiert automatisch Datei, Zeile, Funktion aus Tracebacks
+    - speichert Vorschläge in einer JSON-State-Datei
+    - liefert perfekte Daten für Phase-7 Auto-Fix
     """
 
     KEYWORDS = {
         "SyntaxError": "Syntax prüfen (Klammern, Anführungszeichen, Einrückung).",
-        "ConnectionError": "Netzwerkverbindung, API‑URL und Zeitüberschreitungen prüfen.",
+        "ConnectionError": "Netzwerkverbindung, API-URL und Zeitüberschreitungen prüfen.",
         "Timeout": "Timeout erhöhen oder Last reduzieren.",
-        "KeyError": "Dictionary‑Zugriffe prüfen, .get() mit Default verwenden.",
+        "KeyError": "Dictionary-Zugriffe prüfen, .get() mit Default verwenden.",
         "FileNotFoundError": "Pfad und Dateinamen prüfen, Datei ggf. anlegen.",
     }
 
@@ -38,8 +40,8 @@ class FixSuggestionEngine:
 
     def __init__(self, logger=log_doctor, logs_dir=None, state_file=None):
         self.logger = logger
-        self.logs_dir = Path(logs_dir)
-        self.state_file = Path(state_file)
+        self.logs_dir = Path(logs_dir) if logs_dir is not None else Path("logs")
+        self.state_file = Path(state_file) if state_file is not None else Path("fix_suggestions.json")
 
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         if not self.state_file.exists():
@@ -58,7 +60,8 @@ class FixSuggestionEngine:
                 return {"last_update": None, "suggestions": []}
 
             return json.loads(raw)
-        except Exception:
+        except Exception as e:
+            self.logger(f"FixSuggestionEngine: Fehler beim Laden der State-Datei: {e}")
             return {"last_update": None, "suggestions": []}
 
     def _save_suggestions(self, data: dict):
@@ -68,6 +71,9 @@ class FixSuggestionEngine:
             self.logger(f"FixSuggestionEngine: Fehler beim Speichern: {e}")
 
     def _extract_traceback_info(self, content: str) -> dict | None:
+        """
+        Nimmt den letzten 'File "...", line X, in ...'-Block aus einem Traceback.
+        """
         matches = list(TRACEBACK_FILE_RE.finditer(content))
         if not matches:
             return None
@@ -117,7 +123,7 @@ class FixSuggestionEngine:
                     s = {
                         "log_file": str(f),
                         "keyword": pattern,
-                        "hint": "Allgemeiner Fehler erkannt. Traceback prüfen.",
+                        "hint": "Allgemeiner Fehler erkannt. Traceback und Fehlermeldung prüfen.",
                     }
                     if tb_info:
                         s.update(tb_info)

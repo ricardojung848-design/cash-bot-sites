@@ -11,7 +11,7 @@ class EngineManager:
     def __init__(self):
         self.predictive = None
         self.priority = None
-        self.fix = None
+        self.fix = None          # ⭐ FixEngine wird NICHT automatisch geladen
         self.optimizer = None
         self.learning = None
         self.planner = None
@@ -31,31 +31,35 @@ class EngineManager:
         return module
 
     def _load_all(self):
+        # Predictive Engine
         m_pred = self._load_module("engine_predictive")
         if m_pred and hasattr(m_pred, "PredictiveEngine"):
             self.predictive = m_pred.PredictiveEngine()
             log_doctor("PredictiveEngine geladen.")
 
+        # Priority Engine
         m_prio = self._load_module("engine_priority")
         if m_prio and hasattr(m_prio, "PriorityEngine"):
             self.priority = m_prio.PriorityEngine()
             log_doctor("PriorityEngine geladen.")
 
-        m_fix = self._load_module("engine_fix_suggestions")
-        if m_fix and hasattr(m_fix, "FixSuggestionEngine"):
-            self.fix = m_fix.FixSuggestionEngine()
-            log_doctor("FixSuggestionEngine geladen.")
+        # ⭐ FixSuggestionEngine NICHT automatisch laden ⭐
+        # Sie wird manuell im Agent_Doctor.py gesetzt.
+        self.fix = None
 
+        # Optimizer Engine
         m_opt = self._load_module("engine_optimizer")
         if m_opt and hasattr(m_opt, "OptimizerEngine"):
             self.optimizer = m_opt.OptimizerEngine()
             log_doctor("OptimizerEngine geladen.")
 
+        # Learning Engine
         m_learn = self._load_module("engine_learning")
         if m_learn and hasattr(m_learn, "LearningEngine"):
             self.learning = m_learn.LearningEngine()
             log_doctor("LearningEngine geladen.")
 
+        # Planner Engine
         m_plan = self._load_module("engine_planner")
         if m_plan and hasattr(m_plan, "PlannerEngine"):
             self.planner = m_plan.PlannerEngine()

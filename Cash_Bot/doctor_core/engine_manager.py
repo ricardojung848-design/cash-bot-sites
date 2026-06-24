@@ -11,7 +11,7 @@ class EngineManager:
     def __init__(self):
         self.predictive = None
         self.priority = None
-        self.fix = None          # ⭐ FixEngine wird NICHT automatisch geladen
+        self.fix = None          # FixEngine NICHT automatisch laden!
         self.optimizer = None
         self.learning = None
         self.planner = None

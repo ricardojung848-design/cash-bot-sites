@@ -361,12 +361,66 @@ class AgentDoctorApp:
         self.set_status("Status: Phase‑6‑Simulation abgeschlossen.")
 
     # Phase 7 – Auto‑Fix aus Logs (Vorschlag)
-    def _run_auto_fix_from_logs(self):
+        def _run_auto_fix_from_logs(self):
         self.set_status("Status: Auto‑Fix aus Logs läuft...")
         if not hasattr(self.engines, "fix") or self.engines.fix is None:
             self.say("Keine FixSuggestionEngine geladen.")
             self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
             return
+
+        suggestions = self.engines.fix.update()
+        if not suggestions:
+            self.say("Keine Fix‑Vorschläge in den Logs gefunden.")
+            self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
+            return
+
+        # Wir nehmen den ersten Vorschlag
+        s = suggestions[0]
+        log_file = s.get("log_file", s.get("file", ""))
+        keyword = s.get("keyword", "")
+        hint = s.get("hint", "")
+
+        source_file = s.get("source_file")
+        line = s.get("line")
+        function = s.get("function")
+
+        # Pfad relativ zum Projekt, falls möglich
+        prefill_path = ""
+        if source_file:
+            try:
+                src_path = Path(source_file).resolve()
+                prefill_path = str(src_path.relative_to(BASE_DIR))
+            except Exception:
+                prefill_path = ""
+
+        template = (
+            f"# Auto‑Fix‑Vorschlag basierend auf Log:\n"
+            f"# Log-Datei: {log_file}\n"
+            f"# Keyword: {keyword}\n"
+            f"# Hinweis: {hint}\n\n"
+        )
+
+        if source_file:
+            template += f"# Quell‑Datei: {source_file}\n"
+        if line:
+            template += f"# Zeile: {line}\n"
+        if function:
+            template += f"# Funktion: {function}\n"
+        template += "\n"
+
+        template += (
+            "# Vorschlag:\n"
+            "# 1. Öffne die angegebene Datei/Zeile.\n"
+            "# 2. Analysiere die Ursache (z. B. falscher Wert, fehlende Variable, falscher Typ).\n"
+            "# 3. Passe den Code hier so an, wie er final in der Datei stehen soll.\n\n"
+            "# Beispiel: Fehlerhafte Zeile durch robustere Variante ersetzen.\n"
+            "# alte_zeile = ...\n"
+            "# neue_zeile = ...\n"
+        )
+
+        self._open_auto_fix_window(prefill_path=prefill_path, prefill_code=template)
+        self.say("Ich habe einen Fix‑Vorschlag aus den Logs geladen. Pfad wurde automatisch vorbelegt.")
+        self.set_status("Status: Auto‑Fix aus Logs abgeschlossen.")
 
         suggestions = self.engines.fix.update()
         if not suggestions:

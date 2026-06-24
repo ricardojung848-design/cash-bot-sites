@@ -5,15 +5,17 @@ from pathlib import Path
 from doctor_core.logging import log_doctor
 
 
+TRACEBACK_FILE_RE = re.compile(r'File "(.+?)", line (\d+), in (.+)')
+
+
 class FixSuggestionEngine:
     """
-    Phase‑7 Engine (stärker):
+    Phase‑7 PRO:
     - scannt alle Logs (.log, .txt)
-    - erkennt generisch Exceptions, Tracebacks und typische Fehlermuster
-    - erzeugt Vorschläge auch dann, wenn kein spezielles Keyword hinterlegt ist
+    - erkennt Exceptions, Tracebacks, typische Fehlermuster
+    - versucht, die betroffene Quell‑Datei + Zeile zu ermitteln
     """
 
-    # Spezifische Muster (wie vorher, aber erweiterbar)
     KEYWORDS = {
         "SyntaxError": "Syntax prüfen (Klammern, Anführungszeichen, Einrückung).",
         "ConnectionError": "Netzwerkverbindung, API‑URL und Zeitüberschreitungen prüfen.",
@@ -22,7 +24,6 @@ class FixSuggestionEngine:
         "FileNotFoundError": "Pfad und Dateinamen prüfen, Datei ggf. anlegen.",
     }
 
-    # Generische Muster für „alles“
     GENERIC_PATTERNS = [
         r"Traceback \(most recent call last\):",
         r"\bException\b",
@@ -66,6 +67,20 @@ class FixSuggestionEngine:
         except Exception as e:
             self.logger(f"FixSuggestionEngine: Fehler beim Speichern: {e}")
 
+    def _extract_traceback_info(self, content: str) -> dict | None:
+        """
+        Nimmt den letzten 'File "...", line X, in ...' Block aus einem Traceback.
+        """
+        matches = list(TRACEBACK_FILE_RE.finditer(content))
+        if not matches:
+            return None
+        m = matches[-1]
+        return {
+            "source_file": m.group(1),
+            "line": int(m.group(2)),
+            "function": m.group(3),
+        }
+
     def _scan_logs(self) -> list:
         suggestions = []
 
@@ -85,27 +100,35 @@ class FixSuggestionEngine:
                 self.logger(f"FixSuggestionEngine: Fehler beim Lesen von {f}: {e}")
                 continue
 
-            # 1) Spezifische Keywords wie bisher
+            tb_info = self._extract_traceback_info(content)
+
+            # 1) Spezifische Keywords
             for kw, hint in self.KEYWORDS.items():
                 if kw in content:
-                    suggestions.append({
-                        "file": str(f),
+                    s = {
+                        "log_file": str(f),
                         "keyword": kw,
                         "hint": hint,
-                    })
+                    }
+                    if tb_info:
+                        s.update(tb_info)
+                    suggestions.append(s)
 
-            # 2) Generische Fehlererkennung
+            # 2) Generische Fehler
             for pattern in self.GENERIC_PATTERNS:
                 if re.search(pattern, content):
-                    suggestions.append({
-                        "file": str(f),
+                    s = {
+                        "log_file": str(f),
                         "keyword": pattern,
                         "hint": (
                             "Allgemeiner Fehler erkannt. "
                             "Traceback und Fehlermeldung genau lesen, "
                             "betroffene Funktion/Zeile im Code prüfen."
                         ),
-                    })
+                    }
+                    if tb_info:
+                        s.update(tb_info)
+                    suggestions.append(s)
 
         return suggestions
 

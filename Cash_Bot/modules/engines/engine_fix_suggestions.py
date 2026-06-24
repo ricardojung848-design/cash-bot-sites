@@ -1,36 +1,14 @@
 import time
 import json
 from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent  # .../Cash_Bot
-CONFIG_DIR = BASE_DIR / "config"
-FIX_SUGGESTIONS_FILE = CONFIG_DIR / "fix_suggestions.json"
-LOGS_DIR = BASE_DIR / "logs"
-
-
-def _safe_load_json(path: Path, default):
-    try:
-        if not path.exists():
-            return default
-        raw = path.read_text(encoding="utf-8")
-        if not raw.strip():
-            return default
-        return json.loads(raw)
-    except Exception:
-        return default
-
-
-def _safe_save_json(path: Path, data: dict):
-    try:
-        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+from doctor_core.logging import log_doctor
 
 
 class FixSuggestionEngine:
     """
-    Liest einfache Log-Dateien und erzeugt grobe Fix-Vorschläge
-    basierend auf Schlüsselwörtern.
+    Phase‑7 Engine:
+    Analysiert Logs, extrahiert Fehler, erzeugt Fix‑Vorschläge.
+    Kompatibel mit Agent_Doctor.py (logger, logs_dir, state_file).
     """
 
     KEYWORDS = {
@@ -41,39 +19,56 @@ class FixSuggestionEngine:
         "FileNotFoundError": "Pfad und Dateinamen prüfen, ggf. Datei anlegen.",
     }
 
-    def __init__(self):
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        if not FIX_SUGGESTIONS_FILE.exists():
-            _safe_save_json(
-                FIX_SUGGESTIONS_FILE,
-                {
-                    "last_update": None,
-                    "suggestions": [],
-                },
-            )
+    def __init__(self, logger=log_doctor, logs_dir=None, state_file=None):
+        self.logger = logger
+        self.logs_dir = Path(logs_dir)
+        self.state_file = Path(state_file)
 
-    def _load_suggestions(self) -> dict:
-        return _safe_load_json(
-            FIX_SUGGESTIONS_FILE,
-            {
+        # Sicherstellen, dass Datei existiert
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        if not self.state_file.exists():
+            self._save_suggestions({
                 "last_update": None,
                 "suggestions": [],
-            },
-        )
+            })
+
+    # -----------------------------
+    # JSON‑Handling
+    # -----------------------------
+    def _load_suggestions(self) -> dict:
+        try:
+            if not self.state_file.exists():
+                return {"last_update": None, "suggestions": []}
+
+            raw = self.state_file.read_text(encoding="utf-8")
+            if not raw.strip():
+                return {"last_update": None, "suggestions": []}
+
+            return json.loads(raw)
+        except Exception:
+            return {"last_update": None, "suggestions": []}
 
     def _save_suggestions(self, data: dict):
-        _safe_save_json(FIX_SUGGESTIONS_FILE, data)
+        try:
+            self.state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception as e:
+            self.logger(f"FixSuggestionEngine: Fehler beim Speichern: {e}")
 
+    # -----------------------------
+    # Log‑Analyse
+    # -----------------------------
     def _scan_logs(self) -> list:
         suggestions = []
-        if not LOGS_DIR.exists():
+
+        if not self.logs_dir.exists():
             return suggestions
 
-        for f in LOGS_DIR.iterdir():
+        for f in self.logs_dir.iterdir():
             if not f.is_file():
                 continue
             if f.suffix not in [".log", ".txt"]:
                 continue
+
             try:
                 content = f.read_text(encoding="utf-8", errors="ignore")
             except Exception:
@@ -81,20 +76,31 @@ class FixSuggestionEngine:
 
             for kw, hint in self.KEYWORDS.items():
                 if kw in content:
-                    suggestions.append(
-                        {
-                            "file": str(f),
-                            "keyword": kw,
-                            "hint": hint,
-                        }
-                    )
+                    suggestions.append({
+                        "file": str(f),
+                        "keyword": kw,
+                        "hint": hint,
+                    })
+
         return suggestions
 
+    # -----------------------------
+    # Öffentliche API
+    # -----------------------------
     def update(self) -> list:
+        """
+        Hauptfunktion:
+        - Logs scannen
+        - Vorschläge erzeugen
+        - JSON speichern
+        - Liste zurückgeben
+        """
         suggestions = self._scan_logs()
+
         data = {
             "last_update": time.strftime("%Y-%m-%d %H:%M:%S"),
             "suggestions": suggestions,
         }
+
         self._save_suggestions(data)
         return suggestions

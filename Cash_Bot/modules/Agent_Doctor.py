@@ -92,8 +92,10 @@ class AgentDoctorApp:
         # Die restlichen kognitiven Sub-Systeme:
         self.auto_docs = AutoDocs()
         self.test_runner = TestRunner()
-        self.phase5_brain = Phase5Brain()
-        self.background = BackgroundMonitor()
+        
+        # FIX: Übergabe des engine_managers an das Brain und den Monitor, um Isolation zu verhindern
+        self.phase5_brain = Phase5Brain(engine_manager=self.engines)
+        self.background = BackgroundMonitor(engine_manager=self.engines)
         self.auto_fix_engine = AutoFixEngine(engine_manager=self.engines)
 
         if FixSuggestionEngine:

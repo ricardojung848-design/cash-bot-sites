@@ -77,7 +77,7 @@ class AgentDoctorApp:
         self.engines.register("structure", self.structure_manager)
 
         # Voice-Ausgabe vorbereiten
-        self.voice = VoiceEngine(logger=log_doctor)
+        self.voice = VoiceEngine()
 
         # Unter-Engines registrieren
         self.system_checker = SystemChecker(

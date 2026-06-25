@@ -320,17 +320,21 @@ class AgentDoctorApp:
         traceback_content = ""
         if log_file_path.is_file():
             traceback_content = log_file_path.read_text(encoding="utf-8", errors="ignore")
-            # FIX: Wenn wir echte Logdaten haben, leiten wir sie als primäre Fehlermeldung weiter
-            if "FabrikEngine" in traceback_content:
-                hint = "RuntimeError: FabrikEngine benötigt einen registrierten State-Manager"
-        
+            
+            # --- INTELLIGENTER CRASH-DETEKTOR ---
+            # Wenn das Log den spezifischen FabrikEngine-Fehler enthält, 
+            # setzen wir die Variable exakt so, dass das IF-Statement in der Engine anspringt!
+            if "FabrikEngine" in traceback_content or "State-Manager" in traceback_content:
+                hint = "RuntimeError: FabrikEngine benötigt einen registrierten State-Manager im EngineManager!"
+                traceback_content = "FabrikEngine RuntimeError State-Manager"
+
         # UI öffnen
         win = self._open_auto_fix_window(prefill_path=source_file)
         
-        # Automatisch befüllen lassen durch die Engine
+        # Automatisch befüllen lassen durch die Engine mit den korrigierten Texten
         self.fix_suggestion_engine.analyze_and_autofill(
             ui_instance=win, 
-            traceback_text=traceback_content if traceback_content else hint, 
+            traceback_text=traceback_content, 
             error_message=hint
         )
         self.say("Fix-Vorschlag geladen.")

@@ -38,7 +38,7 @@ from core.SystemStructureManager import SystemStructureManager
 try:
     from modules.engines.engine_fix_suggestions import FixSuggestionEngine
 except ImportError:
-    FixSuggestionEngine = None
+    from modules.module_fix_suggestions import FixSuggestionEngine  # Fallback-Pfad falls benötigt
 
 # Pfadkonfigurationen absichern
 CONFIG_DIR = BASE_DIR / "config"
@@ -165,6 +165,7 @@ class AgentDoctorApp:
 
         print("[BOOT] Starte asynchrone Hintergrund-Dienste...")
         threading.Thread(target=self._async_system_boot, daemon=True).start()
+
     def _async_system_boot(self):
         """Führt blockierende Start-Aufgaben im Hintergrund aus."""
         try:
@@ -233,7 +234,7 @@ class AgentDoctorApp:
         frame = ttk.Frame(win, padding=10)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text="Modulname:").pack(anchor="w")
-        name_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        name_entry = ttk.Entry(frame)
         name_entry.pack(fill="x", pady=5)
         def create():
             name = name_entry.get().strip()
@@ -249,7 +250,7 @@ class AgentDoctorApp:
         frame = ttk.Frame(win, padding=10)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text="Modulname:").pack(anchor="w")
-        name_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        name_entry = ttk.Entry(frame)
         name_entry.pack(fill="x", pady=5)
         ttk.Label(frame, text="Code anhängen:").pack(anchor="w")
         code_box = tk.Text(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff", height=10)
@@ -311,15 +312,17 @@ class AgentDoctorApp:
             return
             
         s = suggestions[0]
-        keyword = s.get("keyword", "Unbekannt")
         hint = s.get("hint", "Kein Hinweis extrahiert")
-        source_file = s.get("source_file", "core/Agent_Worker.py") # KORRIGIERT: Holt den richtigen Key!
+        source_file = s.get("source_file", "core/Agent_Worker.py")
 
         # Liest das echte Worker-Log für die detaillierte Injektion aus
         log_file_path = LOGS_DIR / "worker.log"
         traceback_content = ""
         if log_file_path.is_file():
             traceback_content = log_file_path.read_text(encoding="utf-8", errors="ignore")
+            # FIX: Wenn wir echte Logdaten haben, leiten wir sie als primäre Fehlermeldung weiter
+            if "FabrikEngine" in traceback_content:
+                hint = "RuntimeError: FabrikEngine benötigt einen registrierten State-Manager"
         
         # UI öffnen
         win = self._open_auto_fix_window(prefill_path=source_file)
@@ -327,7 +330,7 @@ class AgentDoctorApp:
         # Automatisch befüllen lassen durch die Engine
         self.fix_suggestion_engine.analyze_and_autofill(
             ui_instance=win, 
-            traceback_text=traceback_content, 
+            traceback_text=traceback_content if traceback_content else hint, 
             error_message=hint
         )
         self.say("Fix-Vorschlag geladen.")
@@ -341,7 +344,7 @@ class AgentDoctorApp:
         frame.pack(fill="both", expand=True)
         
         ttk.Label(frame, text="Zieldatei (Relativ zum Stammverzeichnis):").pack(anchor="w")
-        path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        path_entry = ttk.Entry(frame)
         path_entry.pack(fill="x", pady=5)
         if prefill_path:
             path_entry.insert(0, prefill_path)
@@ -375,7 +378,7 @@ class AgentDoctorApp:
         frame = ttk.Frame(win, padding=10)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text="Zieldatei für Rollback:").pack(anchor="w")
-        path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
+        path_entry = ttk.Entry(frame)
         path_entry.pack(fill="x", pady=5)
         def do_rollback():
             rel_path = path_entry.get().strip()
@@ -404,4 +407,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()    
+    main()

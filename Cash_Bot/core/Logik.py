@@ -91,14 +91,11 @@ def clear_posting_queue() -> str:
 # ---------------------------------------------------------
 # Posting-Ausführung über Engines
 # ---------------------------------------------------------
-def perform_post(entry: Dict[str, Any], manager: Optional[EngineManager] = None) -> bool:
+def perform_post(entry: Dict[str, Any], manager: EngineManager) -> bool:
     """
     Führt den eigentlichen Upload- und Instagram-Posting-Prozess aus.
-    Nutzt den EngineManager für saubere Instanziierung.
+    Nutzt den übergebenen EngineManager für eine saubere Ressourcenverwaltung.
     """
-    if manager is None:
-        manager = EngineManager()
-
     video_path = entry["video_path"]
     caption = entry["caption"]
 
@@ -162,7 +159,7 @@ def perform_post(entry: Dict[str, Any], manager: Optional[EngineManager] = None)
 # ---------------------------------------------------------
 # Core-Schnittstellen für den Agent_Worker
 # ---------------------------------------------------------
-def auto_posting_tick() -> None:
+def auto_posting_tick(manager: EngineManager) -> None:
     """Überprüft zeitgesteuerte Einträge in der Queue und triggert fällige Uploads."""
     queue = load_posting_queue()
     if not queue:
@@ -170,7 +167,6 @@ def auto_posting_tick() -> None:
 
     now = datetime.now()
     changed = False
-    manager = EngineManager()
 
     for entry in queue:
         if entry["status"] in ("posted", "error"):
@@ -190,6 +186,7 @@ def auto_posting_tick() -> None:
 
         if auto and (sched_ok or not sched):
             log_doctor(f"Logik: ⏰ Auto-Posting-Event ausgelöst für ID {entry['id']}")
+            # Hier den Manager direkt an perform_post weitergeben
             perform_post(entry, manager)
             changed = True
 
@@ -202,8 +199,6 @@ def process_ki_anfrage(text: str) -> str:
     if not text:
         return "Kein Text übergeben."
 
-    # Engine über den globalen Manager beziehen
-    manager = EngineManager()
     try:
         from modules.dialog_engine import DialogEngine
         dialog_engine = DialogEngine()

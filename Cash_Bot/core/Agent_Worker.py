@@ -60,8 +60,8 @@ def worker_loop():
 
     while True:
         try:
-            # Automatisches Posting-Intervall prüfen
-            auto_posting_tick()
+            # Automatisches Posting-Intervall prüfen (Übergibt jetzt den zentralen Manager)
+            auto_posting_tick(manager)
 
             # Neue Aufgabe aus der JSON-Zentrale holen
             task = lade_aufgabe()

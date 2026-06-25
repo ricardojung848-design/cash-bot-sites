@@ -40,7 +40,6 @@ class AegisControlCenter(ctk.CTk):
         super().__init__()
 
         # --- CORE LOGIK INITIALISIERUNG ---
-        # Umbenannt von self.state zu self.doctor_state, um CustomTkinter-Konflikte zu vermeiden
         try:
             self.doctor_state = DoctorState()
         except Exception:
@@ -132,8 +131,12 @@ class AegisControlCenter(ctk.CTk):
         mod_eye.grid(row=0, column=1, padx=8, pady=8, sticky="nsew")
         self._add_module_title(mod_eye, "👁️ OPERATIONS COMMANDS")
         
-        ctk.CTkButton(mod_eye, text="⚡ SYSTEM CHECK", fg_color="#200505", border_color=self.color_border_glow, border_width=1, text_color="#ffffff", hover_color="#400a0a", command=self._cmd_system_check).pack(fill="x", padx=15, pady=4)
-        ctk.CTkButton(mod_eye, text="📊 LOGS ANALYSIEREN", fg_color="#200505", border_color=self.color_border_glow, border_width=1, text_color="#ffffff", hover_color="#400a0a", command=self._cmd_analyze_logs).pack(fill="x", padx=15, pady=4)
+        # Instanzvariablen für die Steuerung der Button-Zustände zugewiesen
+        self.btn_sys_check = ctk.CTkButton(mod_eye, text="⚡ SYSTEM CHECK", fg_color="#200505", border_color=self.color_border_glow, border_width=1, text_color="#ffffff", hover_color="#400a0a", command=self._cmd_system_check)
+        self.btn_sys_check.pack(fill="x", padx=15, pady=4)
+        
+        self.btn_log_analyze = ctk.CTkButton(mod_eye, text="📊 LOGS ANALYSIEREN", fg_color="#200505", border_color=self.color_border_glow, border_width=1, text_color="#ffffff", hover_color="#400a0a", command=self._cmd_analyze_logs)
+        self.btn_log_analyze.pack(fill="x", padx=15, pady=4)
 
         # Modul 3: Vektor-Speicher / KI-Heilung-Phasen
         mod_vector = ctk.CTkFrame(grid_container, fg_color=self.color_glass_bg, border_color=self.color_border_glow, border_width=1, corner_radius=12)
@@ -155,6 +158,69 @@ class AegisControlCenter(ctk.CTk):
         lbl = ctk.CTkLabel(frame, text=text, font=("Consolas", 11, "bold"), text_color="#aaaaaa")
         lbl.pack(anchor="w", padx=15, pady=10)
 
+    # --- ASYNCHRONOUS BUTTON OPERATIONS ---
+    def _cmd_system_check(self):
+        """Führt den System Check asynchron aus, um UI-Lag zu verhindern"""
+        def run_check():
+            self.after(0, lambda: self.btn_sys_check.configure(text="⚡ PRÜFE...", state="disabled", fg_color="#4a3010"))
+            self._log_ui("[CMD] Starte Systemstrukturprüfung...")
+            try:
+                if self.system_checker.run():
+                    self._log_ui("[INFO] SystemChecker: Datenstrukturen konsistent.")
+                else:
+                    self._log_ui("[WARN] SystemChecker: Anomalien im Core gefunden.")
+            except Exception as e:
+                self._log_ui(f"[FAIL] SystemChecker kritisch gescheitert: {e}")
+            self.after(0, lambda: self.btn_sys_check.configure(text="⚡ SYSTEM CHECK", state="normal", fg_color="#200505"))
+        
+        threading.Thread(target=run_check, daemon=True).start()
+
+    def _cmd_analyze_logs(self):
+        """Führt die Log-Analyse asynchron aus"""
+        def run_analyze():
+            self.after(0, lambda: self.btn_log_analyze.configure(text="📊 ANALYSIERE...", state="disabled", fg_color="#4a3010"))
+            self._log_ui("[CMD] Analysiere Log-Dateien...")
+            try:
+                if self.log_analyzer.run():
+                    self._log_ui("[INFO] LogAnalyzer: Analyse fehlerfrei abgeschlossen.")
+                else:
+                    self._log_ui("[WARN] LogAnalyzer: Verdächtige Log-Muster isoliert.")
+            except Exception as e:
+                self._log_ui(f"[FAIL] LogAnalyzer kritisch gescheitert: {e}")
+            self.after(0, lambda: self.btn_log_analyze.configure(text="📊 LOGS ANALYSIEREN", state="normal", fg_color="#200505"))
+        
+        threading.Thread(target=run_analyze, daemon=True).start()
+
+    # --- SPOTLIGHT COMMAND MATRIX PARSER ---
+    def _handle_spotlight_command(self, cmd_text):
+        """Verarbeitet eingegebene Befehle aus dem Spotlight-Overlay"""
+        cmd = cmd_text.strip().lower()
+        if not cmd:
+            return
+
+        self._log_ui(f"[👁️ COMMAND] Terminal-Input: '{cmd_text}'")
+
+        if cmd == "/help":
+            self._log_ui("--- AEGIS OVERLAY MANUAL ---")
+            self._log_ui(" /help    - Zeigt diese Hilfe an")
+            self._log_ui(" /clear   - Bereinigt den Telemetrie-Stream")
+            self._log_ui(" /check   - Triggert die Systemstrukturprüfung")
+            self._log_ui(" /analyze - Startet die Tiefenanalyse der Logs")
+            self._log_ui(" /status  - Gibt den aktuellen Matrix-Status aus")
+            self._log_ui("----------------------------")
+        elif cmd == "/clear":
+            self.log_box.delete("1.0", "end")
+            self._log_ui("[SYSTEM] Log-Matrix manuell zurückgesetzt.")
+        elif cmd == "/check":
+            self._cmd_system_check()
+        elif cmd == "/analyze":
+            self._cmd_analyze_logs()
+        elif cmd == "/status":
+            status = self.status_led.cget("text")
+            self._log_ui(f"[STATUS-REPORT] {status}")
+        else:
+            self._log_ui(f"[❌ ERROR] Befehl '{cmd_text}' nicht im Aegis-Zentralregister. Nutze /help")
+
     # --- ACTIONS & OPERATIONS ---
     def _async_core_boot(self):
         """Bootet die Hintergrund-Dienste und schaltet LEDs auf Grün"""
@@ -175,7 +241,7 @@ class AegisControlCenter(ctk.CTk):
         while self.is_monitoring:
             if log_path.is_file():
                 current_size = log_path.stat().st_size
-                if current_size < last_size: # Log wurde rotiert/geleert
+                if current_size < last_size:
                     last_size = 0
                 if current_size > last_size:
                     with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -190,16 +256,6 @@ class AegisControlCenter(ctk.CTk):
         if msg:
             self.log_box.insert("end", f"[{time.strftime('%H:%M:%S')}] {msg}\n")
             self.log_box.see("end")
-
-    def _cmd_system_check(self):
-        self._log_ui("[CMD] Starte Systemstrukturprüfung...")
-        if self.system_checker.run():
-            self._log_ui("[INFO] SystemChecker: Datenstrukturen konsistent.")
-
-    def _cmd_analyze_logs(self):
-        self._log_ui("[CMD] Analysiere Log-Dateien...")
-        if self.log_analyzer.run():
-            self._log_ui("[INFO] LogAnalyzer: Analyse abgeschlossen.")
 
     def _cmd_trigger_autofix(self):
         self._log_ui("[HEAL] Berechne Auto-Fix Muster für core/Agent_Worker.py...")
@@ -260,7 +316,8 @@ class AegisControlCenter(ctk.CTk):
         entry.focus_set()
         
         spotlight.bind("<Escape>", lambda e: spotlight.destroy())
-        entry.bind("<Return>", lambda e: [self._log_ui(f"[CMD-OVERLAY] {entry.get()}"), spotlight.destroy()])
+        # Übergibt den Text an den neuen Command-Parser
+        entry.bind("<Return>", lambda e: [self._handle_spotlight_command(entry.get()), spotlight.destroy()])
 
 if __name__ == "__main__":
     app = AegisControlCenter()

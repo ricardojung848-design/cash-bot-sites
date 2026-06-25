@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from typing import List, Dict, Any
 from doctor_core.logging import log_doctor
+from doctor_core.event_system import EventSystem  # Import für Phase 9 Integration
 
 
 class LogAnalyzer:
@@ -15,6 +16,7 @@ class LogAnalyzer:
 
     def __init__(self, engine_manager: Any = None):
         self.engines = engine_manager
+        self.events = EventSystem()  # Direktzugriff auf die Event-Zentrale (Phase 9)
         self.base_dir = Path(__file__).resolve().parent.parent
         self.logs_dir = self.base_dir / "logs"
         
@@ -52,19 +54,19 @@ class LogAnalyzer:
             for issue in issues:
                 log_doctor(f"LogAnalyzer: Kritischer Eintrag in '{file_path.name}' isoliert: {issue['message']}")
                 
-                if self.engines:
-                    # 1. In der Memory-Engine archivieren
-                    if self.engines.has("state"):
-                        self.engines.get("state").log_error(
-                            module_name=file_path.stem,
-                            error_message=issue["message"]
-                        )
-                    
-                    # 2. Event abfeuern für die Auto-Fix-Engine
-                    self.engines.trigger("new_error", {
-                        "module": file_path.stem,
-                        "error": issue["message"]
-                    })
+                # 1. In der Memory-Engine (Phase 8) archivieren
+                if self.engines and self.engines.has("state"):
+                    self.engines.get("state").log_error(
+                        module_name=file_path.stem,
+                        error_message=issue["message"]
+                    )
+                
+                # 2. Event über das echte EventSystem abfeuern (Phase 9)
+                # Verwende das Event-Label "new_error", worauf deine AutoFixEngine lauscht
+                self.events.trigger("new_error", {
+                    "module": file_path.stem,
+                    "error": issue["message"]
+                })
 
         log_doctor(f"LogAnalyzer: Analyse beendet. {found_issues} neue Probleme isoliert.")
         return True

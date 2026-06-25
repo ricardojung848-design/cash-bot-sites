@@ -1,12 +1,17 @@
-from pathlib import Path
 import sqlite3
 import json
 import time
 import threading
+from datetime import datetime
+from pathlib import Path
 
+from doctor_core.logging import log_doctor
+
+# Basis-Pfade
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = BASE_DIR / "config"
 DB_FILE = CONFIG_DIR / "doctor_memory.sqlite"
+
 
 class DoctorState:
     def __init__(self):
@@ -35,7 +40,7 @@ class DoctorState:
                     )
                 """)
                 
-                # 2. Langzeit-Fehlerhistorie (Wichtig für die Auto-Fix-Engine)
+                # 2. Langzeit-Fehlerhistorie (Erweitert für präzises Auto-Fix Tracking)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS error_history (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +49,8 @@ class DoctorState:
                         traceback TEXT,
                         timestamp TEXT,
                         fixed INTEGER DEFAULT 0,
-                        fix_applied TEXT
+                        fix_applied TEXT,
+                        fixed_at TEXT
                     )
                 """)
                 
@@ -60,14 +66,25 @@ class DoctorState:
                     )
                 """)
                 
-                # 4. Social Media Performance & Analytics
+                # 4. Social Media Performance & Analytics (Erweitert für präzise Beitrags-IDs)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS social_stats (
                         platform TEXT,
+                        content_id TEXT DEFAULT 'generic',
                         metric_key TEXT,
                         metric_value REAL,
                         timestamp TEXT,
-                        PRIMARY KEY (platform, metric_key, timestamp)
+                        PRIMARY KEY (platform, content_id, metric_key, timestamp)
+                    )
+                """)
+
+                # 5. ECHTE KNOWLEDGE-BASE (Ergänzung für Phase 8)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS knowledge_base (
+                        category TEXT,
+                        key TEXT PRIMARY KEY,
+                        value TEXT,
+                        updated_at TEXT
                     )
                 """)
                 
@@ -75,6 +92,7 @@ class DoctorState:
             
             # Migriere alte JSON-Dateien, falls vorhanden, um Abwärtskompatibilität zu sichern
             self._migrate_old_jsons()
+        log_doctor("Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.")
 
     def _migrate_old_jsons(self):
         """Migriert Daten aus alten JSON-Dateien automatisch in die DB, falls sie existieren."""
@@ -94,7 +112,6 @@ class DoctorState:
                     if raw.strip():
                         data = json.loads(raw)
                         self.set_state(key, data)
-                        # Datei umbenennen, um Mehrfach-Migration zu verhindern
                         path.rename(path.with_suffix(".json.bak"))
                 except Exception:
                     pass
@@ -147,7 +164,7 @@ class DoctorState:
         }
         self.set_state("planner_plan", data)
 
-    # --- NEUE PRO ENGINES MEMORY INTEGRATION ---
+    # --- MEMORY ENGINES ERWEITERUNGEN (PHASE 8) ---
 
     def log_error(self, module_name: str, error_message: str, traceback: str = ""):
         """Erfasst Systemfehler im Langzeitgedächtnis für die Auto-Fix-Engine."""
@@ -169,11 +186,47 @@ class DoctorState:
 
     def mark_error_fixed(self, error_id: int, fix_applied: str):
         """Markiert einen Fehler als behoben."""
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         with self._lock:
             with self._get_connection() as conn:
                 conn.execute("""
                     UPDATE error_history 
-                    SET fixed = 1, fix_applied = ? 
+                    SET fixed = 1, fix_applied = ?, fixed_at = ? 
                     WHERE id = ?
-                """, (fix_applied, error_id))
+                """, (fix_applied, timestamp, error_id))
+                conn.commit()
+
+    def store_knowledge(self, category: str, key: str, value: str):
+        """Speichert tiefes Modulwissen, Projekt-Kontexte oder Recherchen persistent ab."""
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with self._lock:
+            with self._get_connection() as conn:
+                conn.execute("""
+                    INSERT INTO knowledge_base (category, key, value, updated_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(key) DO UPDATE SET
+                        category = excluded.category,
+                        value = excluded.value,
+                        updated_at = excluded.updated_at
+                """, (category, key, value, timestamp))
+                conn.commit()
+
+    def get_knowledge(self, key: str) -> str:
+        """Sucht gezielt nach hinterlegtem Wissen in der Knowledge-Base."""
+        with self._lock:
+            with self._get_connection() as conn:
+                row = conn.execute("SELECT value FROM knowledge_base WHERE key = ?", (key,)).fetchone()
+                return row["value"] if row else ""
+
+    def log_social_performance(self, platform: str, content_id: str, metric_key: str, metric_value: float):
+        """Erfasst Social-Media-Erfolge zur KI-gestützten Inhaltsoptimierung."""
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with self._lock:
+            with self._get_connection() as conn:
+                conn.execute("""
+                    INSERT INTO social_stats (platform, content_id, metric_key, metric_value, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(platform, content_id, metric_key, timestamp) DO UPDATE SET
+                        metric_value = excluded.metric_value
+                """, (platform, content_id, metric_key, metric_value, timestamp))
                 conn.commit()

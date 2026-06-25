@@ -40,14 +40,15 @@ class AegisControlCenter(ctk.CTk):
         super().__init__()
 
         # --- CORE LOGIK INITIALISIERUNG ---
+        # Umbenannt von self.state zu self.doctor_state, um CustomTkinter-Konflikte zu vermeiden
         try:
-            self.state = DoctorState()
+            self.doctor_state = DoctorState()
         except Exception:
-            self.state = None
+            self.doctor_state = None
         
         self.engines = EngineManager()
-        if self.state:
-            self.engines.register("state", self.state)
+        if self.doctor_state:
+            self.engines.register("state", self.doctor_state)
 
         # Sub-Engines instanziieren
         self.system_checker = SystemChecker()
@@ -146,7 +147,6 @@ class AegisControlCenter(ctk.CTk):
         mod_log.grid(row=1, column=0, columnspan=3, padx=8, pady=8, sticky="nsew")
         self._add_module_title(mod_log, "⚡ REALTIME COGNITIVE TELEMETRY FLOW")
         
-        # FEHLER BEHOBEN: padding=10 entfernt und durch standardmäßiges padx/pady ersetzt
         self.log_box = tk.Text(mod_log, bg="#080101", fg=self.color_neon_red, insertbackground=self.color_neon_red, font=("Consolas", 10), bd=0, highlightthickness=0, padx=10, pady=10)
         self.log_box.pack(fill="both", expand=True, padx=12, pady=(0, 12))
         self.log_box.insert("end", "[AEGIS-BOOT] Signalmatrix aufgebaut. Warte auf Core-Stream...\n")

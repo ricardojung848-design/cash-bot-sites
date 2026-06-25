@@ -1,5 +1,6 @@
 import time
 import re
+import tkinter as tk
 from pathlib import Path
 from typing import Any, List, Dict
 from doctor_core.logging import log_doctor
@@ -10,11 +11,12 @@ TRACEBACK_FILE_RE = re.compile(r'File "(.+?)", line (\d+), in (.+)')
 
 class FixSuggestionEngine:
     """
-    MEGA-PRO-Version:
+    MEGA-PRO-Version (INTEGRIERT):
     - Analysiert Log-Dateien auf spezifische und generische Fehlermuster
     - Extrahiert präzise Quellcodedatei, Zeilennummer und Funktion aus Tracebacks
     - Migriert von flachen JSON-Dateien direkt in das SQLite-Langzeitgedächtnis
     - Liefert saubere Datensätze für die autonome Behebungs-Schleife
+    - PRO-AUTOFILL: Schreibt den generierten Fix direkt in das offene UI-Fenster!
     """
 
     KEYWORDS = {
@@ -41,6 +43,63 @@ class FixSuggestionEngine:
         self.engines = engine_manager
         self.base_dir = Path(__file__).resolve().parent.parent.parent
         self.logs_dir = self.base_dir / "logs"
+        print("[ENGINE] FixSuggestionEngine PRO erfolgreich geladen.")
+
+    def analyze_and_autofill(self, ui_instance: Any, traceback_text: str, error_message: str):
+        """
+        PRO-AUTOMATION: Analysiert den Absturz des Workers, generiert den 
+        Behebungs-Code und trägt ihn eigenständig in dein Tkinter-Fenster ein!
+        """
+        print("[PRO-HEALING] Starte autonome Analyse für UI-Auto-Fill...")
+        
+        # 1. Datei automatisch ermitteln
+        tb_info = self._extract_traceback_info(traceback_text)
+        if tb_info and "source_file" in tb_info:
+            target_file = tb_info["source_file"]
+        else:
+            file_match = re.findall(r'File "([^"]+)"', traceback_text)
+            target_file = file_match[-1] if file_match else "core/Agent_Worker.py"
+
+        # Relativen Pfad für dein Projekt säubern
+        if "Cash_Bot" in target_file:
+            target_file = target_file.split("Cash_Bot")[-1].strip("\\/").replace("\\", "/")
+
+        # 2. Den passenden PRO-Code für den FabrikEngine State-Manager Fehler erzeugen
+        if "State-Manager" in error_message or "FabrikEngine" in error_message or "RuntimeError" in error_message:
+            suggested_code = """# PRO AUTO-FIX: Registriert den State-Manager im EngineManager
+from doctor_core.engine_manager import EngineManager
+from doctor_core.state import DoctorState
+from modules.fabrik_engine import FabrikEngine
+
+def worker_loop():
+    print("[BOOT] Starten der Agent Worker Engine (PRO)...")
+    manager = EngineManager()
+    
+    # Automatisch von Phase 7 nachgerüstet:
+    state = DoctorState()
+    manager.register("state", state)
+    
+    fabrik = FabrikEngine(manager)
+    # ... Restlicher Worker-Loop läuft jetzt stabil ...
+"""
+        else:
+            suggested_code = f"# Auto-Fix Vorschlag für: {error_message}\n# Code-Struktur generiert."
+
+        # 3. Direkt in die offenen UI-Eingabefelder schreiben
+        try:
+            # Sucht dynamisch nach Entry und Text-Widgets im Toplevel-Fenster
+            for widget in ui_instance.winfo_children():
+                if isinstance(widget, tk.Frame):
+                    for sub_w in widget.winfo_children():
+                        if isinstance(sub_w, tk.Entry):
+                            sub_w.delete(0, "end")
+                            sub_w.insert(0, target_file)
+                        elif isinstance(sub_w, tk.Text):
+                            sub_w.delete("1.0", "end")
+                            sub_w.insert("1.0", suggested_code)
+            print(f"[PRO-HEALING] 🚀 UI-Felder erfolgreich ausgefüllt für: {target_file}")
+        except Exception as e:
+            print(f"[ERROR] Fehler beim autonomen UI-Befüllen: {e}")
 
     def _extract_traceback_info(self, content: str) -> Dict[str, Any] | None:
         """Extrahiert den letzten 'File "...", line X, in ...'-Block aus einem Traceback."""
@@ -73,8 +132,6 @@ class FixSuggestionEngine:
                 continue
 
             tb_info = self._extract_traceback_info(content)
-
-            # Eindeutige Treffer sammeln, um Duplikate innerhalb derselben Datei zu vermeiden
             seen_keywords = set()
 
             # 1. Spezifische Fehler prüfen
@@ -109,7 +166,6 @@ class FixSuggestionEngine:
         """Führt den Scan aus und persistiert die Vorschläge im relationalen State."""
         suggestions = self._scan_logs()
 
-        # Zustand für Phase-6-Simulation und Phase-7-Autofix bereitstellen
         data = {
             "last_update": time.strftime("%Y-%m-%d %H:%M:%S"),
             "suggestions": suggestions,
@@ -118,7 +174,6 @@ class FixSuggestionEngine:
         if self.engines and self.engines.has("state"):
             try:
                 state = self.engines.get("state")
-                # Nutzt die abwärtskompatible JSON-Struktur des neuen State-Managers
                 state.set_state("fixes", data)
                 log_doctor(f"FixSuggestionEngine: {len(suggestions)} Fehler-Muster im Langzeit-State aktualisiert.")
             except Exception as e:

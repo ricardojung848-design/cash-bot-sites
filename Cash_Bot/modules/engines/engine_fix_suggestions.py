@@ -62,8 +62,12 @@ class FixSuggestionEngine:
         if "Cash_Bot" in target_file:
             target_file = target_file.split("Cash_Bot")[-1].strip("\\/").replace("\\", "/")
 
-        # 2. Spezifischen Reparatur-Code generieren
-        if "State-Manager" in error_message or "FabrikEngine" in error_message or "RuntimeError" in error_message:
+        # Falls der Pfad absolut geblieben ist, auf den relativen Teil reduzieren
+        if ":" in target_file or target_file.startswith("/"):
+            target_file = "core/Agent_Worker.py"
+
+        # 2. Spezifischen Reparatur-Code generieren basierend auf dem Log-Inhalt
+        if "State-Manager" in traceback_text or "FabrikEngine" in traceback_text or "RuntimeError" in traceback_text or "State-Manager" in error_message:
             suggested_code = """# PRO AUTO-FIX: Registriert den State-Manager im EngineManager
 from doctor_core.engine_manager import EngineManager
 from doctor_core.state import DoctorState
@@ -81,19 +85,35 @@ def worker_loop():
     # Restlicher Loop läuft stabil weiter
 """
         else:
-            suggested_code = f"# Automatischer Code-Vorschlag für:\n# {error_message}"
+            suggested_code = f"# Automatischer Code-Vorschlag für:\n# {error_message}\n\n# Code hier anpassen..."
 
-        # 3. Widgets in der Benutzeroberfläche ermitteln und befüllen
+        # 3. Widgets rekursiv suchen, um Verschachtelungen sicher zu durchbrechen
+        entries = []
+        texts = []
+
+        def find_widgets(parent):
+            for widget in parent.winfo_children():
+                if isinstance(widget, tk.Entry):
+                    entries.append(widget)
+                elif isinstance(widget, tk.Text):
+                    texts.append(widget)
+                else:
+                    # Weiter in tiefere Frames eintauchen
+                    find_widgets(widget)
+
         try:
-            for widget in ui_instance.winfo_children():
-                if isinstance(widget, tk.Frame):
-                    for sub_w in widget.winfo_children():
-                        if isinstance(sub_w, tk.Entry):
-                            sub_w.delete(0, "end")
-                            sub_w.insert(0, target_file)
-                        elif isinstance(sub_w, tk.Text):
-                            sub_w.delete("1.0", "end")
-                            sub_w.insert("1.0", suggested_code)
+            find_widgets(ui_instance)
+
+            # Zielfeld für den Dateipfad befüllen
+            if entries:
+                entries[0].delete(0, tk.END)
+                entries[0].insert(0, target_file)
+            
+            # Zielfeld für den Quellcode befüllen
+            if texts:
+                texts[0].delete("1.0", tk.END)
+                texts[0].insert("1.0", suggested_code)
+
             print(f"[PRO-HEALING] UI-Felder erfolgreich ausgefüllt für: {target_file}")
         except Exception as e:
             print(f"[ERROR] Fehler beim UI-Befüllen: {e}")
@@ -131,6 +151,12 @@ def worker_loop():
             tb_info = self._extract_traceback_info(content)
             seen_keywords = set()
 
+            # Extrahiere eine präzisere Fehlermeldung am Ende des Tracebacks, falls vorhanden
+            extracted_hint = "Allgemeiner Fehler erkannt. Traceback und Fehlermeldung prüfen."
+            runtime_match = re.search(r"RuntimeError:\s*(.+)", content)
+            if runtime_match:
+                extracted_hint = f"RuntimeError: {runtime_match.group(1)}"
+
             for kw, hint in self.KEYWORDS.items():
                 if kw in content and kw not in seen_keywords:
                     seen_keywords.add(kw)
@@ -149,7 +175,7 @@ def worker_loop():
                     s = {
                         "log_file": f.name,
                         "keyword": pattern,
-                        "hint": "Allgemeiner Fehler erkannt. Traceback und Fehlermeldung prüfen.",
+                        "hint": extracted_hint if "RuntimeError" in pattern else "Allgemeiner Fehler erkannt. Traceback und Fehlermeldung prüfen.",
                     }
                     if tb_info:
                         s.update(tb_info)

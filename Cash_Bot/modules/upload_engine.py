@@ -1,50 +1,68 @@
-# modules/upload_engine.py
-
 import os
 import shutil
+from pathlib import Path
 from urllib.parse import quote
-from core.utils import log_worker, error_worker
+from typing import Optional
+
+from doctor_core.logging import log_doctor
+from doctor_core.engine_manager import EngineManager
 
 
 class UploadEngine:
-    def __init__(self) -> None:
-        # Basis-URL für GitHub Pages
+    """
+    PRO-Version der UploadEngine:
+    - Bereitet Mediendateien für das CDN (z. B. GitHub Pages) vor.
+    - Kopiert gerenderte Reels in das öffentliche Verzeichnis und generiert die Ziel-URLs.
+    - Arbeitet vollständig thread-sicher mit modernen Pathlib-Operationen.
+    """
+
+    def __init__(self, engine_manager: EngineManager):
+        self.engines = engine_manager
+        # Basis-URL für das CDN aus den Umgebungsvariablen laden
         self.base_cdn_url = os.environ.get("IG_CDN_BASE_URL", "").rstrip("/")
 
-    # ---------------------------------------------------------
-    # Lokaler Upload: Datei in public_reels kopieren
-    # ---------------------------------------------------------
-    def upload(self, file_path: str) -> str:
+    def upload(self, file_path: str) -> Optional[str]:
         """
         Kopiert das Reel in den Ordner public_reels und gibt die öffentliche URL zurück.
+        Gibt None zurück, falls ein Fehler auftritt oder Konfigurationen fehlen.
         """
-
         if not self.base_cdn_url:
-            error_worker("❌ IG_CDN_BASE_URL fehlt – kann keine öffentliche URL erzeugen.")
+            log_doctor("UploadEngine-Fehler: 'IG_CDN_BASE_URL' fehlt in den Umgebungsvariablen.")
             return None
 
-        if not os.path.exists(file_path):
-            error_worker(f"❌ Datei nicht gefunden: {file_path}")
+        source_file = Path(file_path).resolve()
+        if not source_file.exists():
+            log_doctor(f"UploadEngine-Fehler: Quelldatei nicht gefunden: {source_file}")
             return None
 
-        # Projektbasis ermitteln
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        public_dir = os.path.join(base_dir, "public_reels")
-
-        os.makedirs(public_dir, exist_ok=True)
-
-        filename = os.path.basename(file_path)
-        target_path = os.path.join(public_dir, filename)
+        # Projekt-Basisverzeichnis ermitteln (zwei Ebenen über dieser Datei)
+        base_dir = Path(__file__).resolve().parent.parent
+        public_dir = base_dir / "public_reels"
 
         try:
-            shutil.copy(file_path, target_path)
-            log_worker(f"📤 Datei kopiert nach public_reels: {target_path}")
+            # Zielverzeichnis erstellen, falls es noch nicht existiert
+            public_dir.mkdir(parents=True, exist_ok=True)
+
+            filename = source_file.name
+            target_path = public_dir / filename
+
+            # Datei kopieren
+            shutil.copy(str(source_file), str(target_path))
+            log_doctor(f"UploadEngine: Datei erfolgreich nach public_reels kopiert -> {target_path}")
+
+            # Öffentliche, URL-kodierte CDN-URL erzeugen
+            public_url = f"{self.base_cdn_url}/{quote(filename)}"
+            log_doctor(f"UploadEngine: 🌐 Bereitgestellte CDN-URL -> {public_url}")
+            
+            return public_url
+
         except Exception as e:
-            error_worker(f"❌ Fehler beim Kopieren: {e}")
+            log_doctor(f"UploadEngine-Kritisch: Fehler beim Kopieren der Datei: {e}")
             return None
 
-        # Öffentliche URL erzeugen
-        public_url = f"{self.base_cdn_url}/{quote(filename)}"
-        log_worker(f"🌐 Öffentliche URL: {public_url}")
 
-        return public_url
+# Abwärtskompatibler Einstiegspunkt für ältere Programmteile
+def upload_legacy(file_path: str, engine_manager: EngineManager) -> Optional[str]:
+    """Erlaubt Legacy-Modulen den Aufruf der neuen Upload-Logik."""
+    engine = UploadEngine(engine_manager)
+    return engine.upload(file_path)

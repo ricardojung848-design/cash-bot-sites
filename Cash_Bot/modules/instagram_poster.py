@@ -1,26 +1,52 @@
-# modules/instagram_poster.py
+from typing import Dict, Any, Optional
+from doctor_core.logging import log_doctor
+from doctor_core.engine_manager import EngineManager
 
-from typing import Dict, Any
-from core.utils import log_worker, error_worker
-from modules.instagram_api import InstagramAPI
 
 class InstagramPoster:
-    def __init__(self, access_token: str, ig_user_id: str) -> None:
-        self.api = InstagramAPI(access_token, ig_user_id)
+    """
+    PRO-Version des InstagramPosters:
+    - Fungiert als High-Level-Interface für die Content-Veröffentlichung
+    - Nutzt die asynchrone, modularisierte InstagramEngine über den EngineManager
+    - Gibt strukturierte Status-Dictionaries zurück, die perfekt von der DialogEngine verarbeitet werden können
+    """
 
-    def post_reel(self, video_url: str, caption: str) -> Dict[str, Any]:
-        log_worker("📤 Starte Instagram Reel Upload...")
+    def __init__(self, engine_manager: EngineManager):
+        self.engines = engine_manager
+        
+        # Holt die zugrundeliegende InstagramEngine aus dem globalen Manager
+        if not self.engines.has("instagram"):
+            raise RuntimeError("InstagramPoster benötigt eine registrierte InstagramEngine im EngineManager!")
+        self.instagram_engine = self.engines.get("instagram")
 
-        creation = self.api.upload_reel(video_url, caption)
-        if "id" not in creation:
-            error_worker(f"❌ Upload fehlgeschlagen: {creation}")
-            return creation
+    def post_reel(self, video_path: str, caption: str) -> Dict[str, Any]:
+        """
+        Initiiert den Veröffentlichungsprozess für ein Reel.
+        Kombiniert die Engine-Logik mit einer strukturierten API-Rückgabe für das System.
+        """
+        log_doctor(f"InstagramPoster: Starte automatisierten Reel-Upload für '{video_path}'...")
 
-        creation_id = creation["id"]
-        publish = self.api.publish_media(creation_id)
-        if "id" not in publish:
-            error_worker(f"❌ Publish fehlgeschlagen: {publish}")
-            return publish
+        # Ausführen des gekapselten Upload-, Polling- und Publish-Prozesses
+        success = self.instagram_engine.post_reel(video_path, caption)
 
-        log_worker(f"🎉 Reel veröffentlicht! ID: {publish['id']}")
-        return publish
+        if not success:
+            log_doctor("InstagramPoster-Fehler: Die Veröffentlichung des Reels ist fehlgeschlagen.")
+            return {
+                "status": "error",
+                "message": "Upload oder Validierung auf den Meta-Servern fehlgeschlagen. Siehe Log-Datei."
+            }
+
+        log_doctor("InstagramPoster: 🎉 Pipeline erfolgreich durchlaufen. Reel ist live.")
+        return {
+            "status": "success",
+            "video_path": video_path,
+            "caption": caption,
+            "message": "Reel wurde erfolgreich auf Instagram veröffentlicht."
+        }
+
+
+# Abwärtskompatibler Wrapper für ältere Skripte, die noch die alte Signatur erwarten
+def instagram_poster_legacy(video_url: str, caption: str, engine_manager: EngineManager) -> Dict[str, Any]:
+    """Erlaubt Legacy-Modulen den Aufruf der neuen Poster-Logik über den EngineManager."""
+    poster = InstagramPoster(engine_manager)
+    return poster.post_reel(video_url, caption)

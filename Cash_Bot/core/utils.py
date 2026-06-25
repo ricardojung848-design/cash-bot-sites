@@ -1,66 +1,93 @@
-import os
+import sys
 import json
 import datetime
+from pathlib import Path
+from typing import Any, Optional
 
-# === BASIS-PFADE ===
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-CONFIG_DIR = os.path.join(BASE_DIR, "config")
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
-DATA_DIR = os.path.join(BASE_DIR, "scraped_data")
-OUTPUT_DIR = os.path.join(BASE_DIR, "generated_content")
-SOCIAL_DIR = os.path.join(BASE_DIR, "social_media")
+# Zentrales Logging-System laden
+from doctor_core.logging import log_doctor
 
-# Ordner sicherstellen
-for d in [CONFIG_DIR, LOGS_DIR, DATA_DIR, OUTPUT_DIR, SOCIAL_DIR]:
-    os.makedirs(d, exist_ok=True)
+# === BASIS-PFADE (Modernisiert via Pathlib) ===
+# Ermittelt das Projekt-Hauptverzeichnis (eine Ebene über dem 'core'-Ordner)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# === LOGGING ===
-def _log(level, msg, logfile):
+CONFIG_DIR = BASE_DIR / "config"
+LOGS_DIR = BASE_DIR / "logs"
+DATA_DIR = BASE_DIR / "scraped_data"
+OUTPUT_DIR = BASE_DIR / "generated_content"
+SOCIAL_DIR = BASE_DIR / "social_media"
+
+# Automatische Absicherung der Verzeichnisstruktur beim Import des Moduls
+for directory in [CONFIG_DIR, LOGS_DIR, DATA_DIR, OUTPUT_DIR, SOCIAL_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
+
+
+# === LEGACY LOGGING INTERFACES (Kompatibilitäts-Layer an log_doctor) ===
+def _log_legacy_bridge(level: str, msg: str, target: str) -> None:
+    """Interne Brücke, die alte Log-Aufrufe standardisiert an das neue System übergibt."""
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] [{level}] {msg}"
-    print(line)
+    formatted_msg = f"[{level}] [{target}] {msg}"
+    
+    # Weiterleitung an den neuen Core-Logger
+    log_doctor(formatted_msg)
 
-    try:
-        with open(logfile, "a", encoding="utf-8") as f:
-            f.write(line + "\n")
-    except:
-        pass
 
-def log_worker(msg):
-    _log("INFO", msg, os.path.join(LOGS_DIR, "worker.log"))
+def log_worker(msg: str) -> None:
+    _log_legacy_bridge("INFO", msg, "Worker")
 
-def warn_worker(msg):
-    _log("WARN", msg, os.path.join(LOGS_DIR, "worker.log"))
+def warn_worker(msg: str) -> None:
+    _log_legacy_bridge("WARN", msg, "Worker")
 
-def error_worker(msg):
-    _log("ERROR", msg, os.path.join(LOGS_DIR, "worker.log"))
+def error_worker(msg: str) -> None:
+    _log_legacy_bridge("ERROR", msg, "Worker")
 
-def log_telegram(msg):
-    _log("INFO", msg, os.path.join(LOGS_DIR, "telegram.log"))
+def log_telegram(msg: str) -> None:
+    _log_legacy_bridge("INFO", msg, "Telegram")
 
-def warn_telegram(msg):
-    _log("WARN", msg, os.path.join(LOGS_DIR, "telegram.log"))
+def warn_telegram(msg: str) -> None:
+    _log_legacy_bridge("WARN", msg, "Telegram")
 
-def error_telegram(msg):
-    _log("ERROR", msg, os.path.join(LOGS_DIR, "telegram.log"))
+def error_telegram(msg: str) -> None:
+    _log_legacy_bridge("ERROR", msg, "Telegram")
 
-# === JSON HELFER ===
-def load_json(path, default=None):
-    if not os.path.exists(path):
+
+# === JSON HELFER (Sicher und Typisiert) ===
+def load_json(path: Any, default: Optional[Any] = None) -> Any:
+    """Lädt eine JSON-Datei sicher ein. Akzeptiert Strings und Path-Objekte."""
+    resolved_path = Path(path).resolve()
+    if not resolved_path.is_file():
         return default
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with resolved_path.open("r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception as e:
+        log_doctor(f"Utils-Fehler: JSON-Ladefehler bei {resolved_path.name}: {e}")
         return default
 
-def save_json(path, data):
+
+def save_json(path: Any, data: Any) -> None:
+    """Speichert Daten formatiert und atomar in eine JSON-Datei."""
+    resolved_path = Path(path).resolve()
     try:
-        with open(path, "w", encoding="utf-8") as f:
+        # Sicherstellen, dass der Zielordner existiert
+        resolved_path.parent.mkdir(parents=True, exist_ok=True)
+        with resolved_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        error_worker(f"Fehler beim Speichern von JSON: {e}")
+        error_worker(f"Fehler beim Speichern von JSON ({resolved_path.name}): {e}")
+
 
 # === ZEIT HELFER ===
-def timestamp():
+def timestamp() -> str:
+    """Erzeugt einen standardisierten ISO-Zeitstempel."""
     return datetime.datetime.now().isoformat()
+
+
+# Typ-Konvertierungen für externe Module, die OS-Strings als Pfad-Typen erwarten
+# Dies stellt sicher, dass os.path.join() in alten Modulen nicht abstürzt
+BASE_DIR = str(BASE_DIR)
+CONFIG_DIR = str(CONFIG_DIR)
+LOGS_DIR = str(LOGS_DIR)
+DATA_DIR = str(DATA_DIR)
+OUTPUT_DIR = str(OUTPUT_DIR)
+SOCIAL_DIR = str(SOCIAL_DIR)

@@ -1,38 +1,46 @@
 import os
 import time
 import requests
+from pathlib import Path
 from urllib.parse import quote
+from typing import Optional
 
-from core.utils import log_worker, warn_worker, error_worker
+from doctor_core.logging import log_doctor
+from doctor_core.engine_manager import EngineManager
 
 
-class InstagramAPI:
-    def __init__(self, access_token: str, ig_user_id: str, api_version: str = "v23.0") -> None:
-        self.access_token = access_token
-        self.ig_user_id = ig_user_id
+class InstagramEngine:
+    """
+    PRO-Version der Instagram-Schnittstelle:
+    - Wickelt den mehrstufigen Reels-Upload-Prozess über die Meta Graph API ab
+    - Vollständig thread-sicher konzipiert für die asynchrone Ausführung in der FabrikEngine
+    - Bezieht Umgebungsvariablen und Konfigurationen zentralisiert
+    """
+
+    def __init__(self, engine_manager: EngineManager, api_version: str = "v23.0"):
+        self.engines = engine_manager
         self.api_version = api_version
         self.base_url = f"https://graph.facebook.com/{self.api_version}"
 
-    # ---------------------------------------------------------
-    # Öffentliche Video-URL bauen
-    # ---------------------------------------------------------
+        # API-Credentials aus der Umgebung oder dem Config-System laden
+        self.access_token = os.environ.get("IG_ACCESS_TOKEN", "").strip()
+        self.ig_user_id = os.environ.get("IG_USER_ID", "").strip()
+
     def _build_public_video_url(self, video_path: str) -> str:
+        """Erzeugt aus einem lokalen Dateipfad eine über das CDN öffentlich erreichbare URL."""
         filename = os.path.basename(video_path)
         base_cdn_url = os.environ.get("IG_CDN_BASE_URL", "").strip()
 
         if not base_cdn_url:
-            error_worker("❌ IG_CDN_BASE_URL fehlt – kann keine öffentliche Video-URL erzeugen.")
+            log_doctor("Instagram-Fehler: 'IG_CDN_BASE_URL' fehlt in den Umgebungsvariablen.")
             return ""
 
         base_cdn_url = base_cdn_url.rstrip("/")
         return f"{base_cdn_url}/{quote(filename)}"
 
-    # ---------------------------------------------------------
-    # Container für Reel erstellen
-    # ---------------------------------------------------------
     def _create_reel_container(self, video_url: str, caption: str) -> str:
+        """Initiiert den Upload bei Meta und fordert eine Container-ID (creation_id) an."""
         url = f"{self.base_url}/{self.ig_user_id}/media"
-
         payload = {
             "media_type": "REELS",
             "video_url": video_url,
@@ -41,131 +49,105 @@ class InstagramAPI:
             "access_token": self.access_token
         }
 
-        log_worker("📦 Erstelle IG-Container für Reel...")
-
+        log_doctor("Instagram: Erstelle Video-Container auf den Meta-Servern...")
         try:
             resp = requests.post(url, data=payload, timeout=30)
+            if resp.status_code != 200:
+                log_doctor(f"Instagram-Fehler beim Container-Upload: {resp.status_code} - {resp.text}")
+                return ""
+            
+            creation_id = resp.json().get("id")
+            if creation_id:
+                log_doctor(f"Instagram: Container erfolgreich reserviert (ID: {creation_id})")
+                return str(creation_id)
         except Exception as e:
-            error_worker(f"❌ Netzwerkfehler beim Erstellen des Containers: {e}")
-            return ""
+            log_doctor(f"Instagram-Netzwerkfehler beim Container-Upload: {e}")
+        
+        return ""
 
-        if resp.status_code != 200:
-            error_worker(f"❌ Fehler beim Erstellen des Containers: {resp.status_code} – {resp.text}")
-            return ""
-
-        data = resp.json()
-        creation_id = data.get("id")
-
-        if not creation_id:
-            error_worker(f"❌ Keine creation_id im Response: {data}")
-            return ""
-
-        log_worker(f"✅ Container erstellt: {creation_id}")
-        return creation_id
-
-    # ---------------------------------------------------------
-    # Container-Status pollen
-    # ---------------------------------------------------------
     def _wait_for_container(self, creation_id: str, max_wait_seconds: int = 300, poll_interval: int = 5) -> bool:
+        """Pollt den Meta-Verarbeitungsstatus, bis das Video serverseitig encodiert wurde."""
         url = f"{self.base_url}/{creation_id}"
         params = {
             "fields": "status_code,status",
             "access_token": self.access_token
         }
 
-        log_worker("⏳ Warte auf IG-Container-Verarbeitung...")
-
+        log_doctor(f"Instagram: Warte auf serverseitige Videoverarbeitung für Container {creation_id}...")
         waited = 0
+        
         while waited < max_wait_seconds:
             try:
                 resp = requests.get(url, params=params, timeout=15)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    status_code = data.get("status_code")
+                    status = data.get("status")
+
+                    log_doctor(f"Instagram-Polling: {status_code} ({status})")
+
+                    if status_code == "FINISHED":
+                        log_doctor("Instagram: Videoverarbeitung abgeschlossen.")
+                        return True
+                    if status_code == "ERROR":
+                        log_doctor(f"Instagram-Kritisch: Meta meldet Encodierungsfehler: {data}")
+                        return False
             except Exception as e:
-                error_worker(f"❌ Netzwerkfehler beim Polling: {e}")
-                return False
-
-            if resp.status_code != 200:
-                error_worker(f"❌ Fehler beim Polling: {resp.status_code} – {resp.text}")
-                return False
-
-            data = resp.json()
-            status_code = data.get("status_code")
-            status = data.get("status")
-
-            log_worker(f"📡 Status: {status_code} ({status})")
-
-            if status_code == "FINISHED":
-                log_worker("✅ Container fertig verarbeitet.")
-                return True
-
-            if status_code == "ERROR":
-                error_worker(f"❌ Container-Fehler: {data}")
-                return False
+                log_doctor(f"Instagram-Polling-Warnung: Netzwerk-Timeout: {e}")
 
             time.sleep(poll_interval)
             waited += poll_interval
 
-        error_worker("❌ Timeout beim Warten auf Container.")
+        log_doctor("Instagram-Fehler: Timeout beim Warten auf die Videoverarbeitung erreicht.")
         return False
 
-    # ---------------------------------------------------------
-    # Container veröffentlichen
-    # ---------------------------------------------------------
     def _publish_container(self, creation_id: str) -> bool:
+        """Gibt den fertig verarbeiteten Container für den Live-Feed frei."""
         url = f"{self.base_url}/{self.ig_user_id}/media_publish"
         payload = {
             "creation_id": creation_id,
             "access_token": self.access_token
         }
 
-        log_worker("🚀 Veröffentliche Reel...")
-
+        log_doctor("Instagram: Schalte Reel live...")
         try:
             resp = requests.post(url, data=payload, timeout=30)
+            if resp.status_code == 200:
+                media_id = resp.json().get("id")
+                log_doctor(f"Instagram: 🎉 Reel erfolgreich veröffentlicht! (Media-ID: {media_id})")
+                return True
+            log_doctor(f"Instagram-Fehler bei Live-Schaltung: {resp.status_code} - {resp.text}")
         except Exception as e:
-            error_worker(f"❌ Netzwerkfehler beim Publish: {e}")
-            return False
+            log_doctor(f"Instagram-Netzwerkfehler bei Live-Schaltung: {e}")
+        
+        return False
 
-        if resp.status_code != 200:
-            error_worker(f"❌ Publish-Fehler: {resp.status_code} – {resp.text}")
-            return False
-
-        data = resp.json()
-        media_id = data.get("id")
-
-        if media_id:
-            log_worker(f"✅ Reel veröffentlicht: media_id={media_id}")
-        else:
-            warn_worker(f"⚠️ Kein media_id im Publish-Response: {data}")
-
-        return True
-
-    # ---------------------------------------------------------
-    # Öffentliche Methode: Reel posten
-    # ---------------------------------------------------------
     def post_reel(self, video_path: str, caption: str) -> bool:
+        """
+        Hauptmethode zum Veröffentlichen eines Reels.
+        Sollte vorzugsweise als Task in die FabrikEngine eingereiht werden.
+        """
         if not self.access_token or not self.ig_user_id:
-            error_worker("❌ Access Token oder ig_user_id fehlen.")
+            log_doctor("Instagram-Fehler: 'IG_ACCESS_TOKEN' oder 'IG_USER_ID' nicht konfiguriert.")
             return False
 
-        if not os.path.exists(video_path):
-            error_worker(f"❌ Videodatei nicht gefunden: {video_path}")
+        if not Path(video_path).exists():
+            log_doctor(f"Instagram-Fehler: Lokale Videodatei existiert nicht: {video_path}")
             return False
 
-        # 1) Öffentliche URL erzeugen
+        # 1. Öffentliche CDN-URL generieren
         video_url = self._build_public_video_url(video_path)
         if not video_url:
             return False
 
-        log_worker(f"🌐 Verwende Video-URL: {video_url}")
-
-        # 2) Container erstellen
+        # 2. Container bei Meta anlegen
         creation_id = self._create_reel_container(video_url, caption)
         if not creation_id:
             return False
 
-        # 3) Auf Verarbeitung warten
+        # 3. Asynchrones Polling (blockiert dank FabrikEngine nicht das Hauptsystem)
         if not self._wait_for_container(creation_id):
             return False
 
-        # 4) Veröffentlichen
+        # 4. Reel final publizieren
         return self._publish_container(creation_id)

@@ -1,59 +1,51 @@
-# core/Logik.py
-
 import os
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from core.utils import (
-    BASE_DIR,
-    load_json,
-    save_json,
-    log_worker,
-    warn_worker,
-    error_worker,
-)
+# Sicherstellen, dass das Root-Verzeichnis im Systempfad liegt
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
-from modules.upload_engine import UploadEngine
-from modules.instagram_poster import InstagramPoster
-from modules.dialog_engine import DialogEngine
+from doctor_core.logging import log_doctor
+from doctor_core.engine_manager import EngineManager
+from core.utils import load_json, save_json
 
-POSTING_QUEUE_FILE = os.path.join(BASE_DIR, "posting_queue.json")
+# Definition der Queue-Datei im Hauptverzeichnis
+POSTING_QUEUE_FILE = os.path.join(str(BASE_DIR), "posting_queue.json")
 
+# Token-Abfrage aus den System-Umgebungsvariablen
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN", "").strip()
 IG_USER_ID = os.environ.get("IG_USER_ID", "").strip()
 
-dialog_engine = DialogEngine()
-
 
 # ---------------------------------------------------------
-# Posting-Queue laden
+# Posting-Queue Operationen
 # ---------------------------------------------------------
 def load_posting_queue() -> List[Dict[str, Any]]:
+    """Lädt die anstehenden Instagram-Posts aus der JSON-Warteschlange."""
     queue = load_json(POSTING_QUEUE_FILE, [])
     if not isinstance(queue, list):
-        warn_worker("Posting-Queue war beschädigt – neu initialisiert.")
+        log_doctor("Logik-Warnung: Posting-Queue war beschädigt – neu initialisiert.")
         queue = []
         save_posting_queue(queue)
     return queue
 
 
-# ---------------------------------------------------------
-# Posting-Queue speichern
-# ---------------------------------------------------------
 def save_posting_queue(queue: List[Dict[str, Any]]) -> None:
+    """Speichert den aktuellen Zustand der Posting-Queue im Dateisystem."""
     save_json(POSTING_QUEUE_FILE, queue)
 
 
-# ---------------------------------------------------------
-# Eintrag zur Queue hinzufügen
-# ---------------------------------------------------------
 def add_to_posting_queue(
     video_path: str,
     caption: str,
     scheduled_at: Optional[str] = None,
     auto_post: bool = True,
 ) -> Dict[str, Any]:
-
+    """Erstellt einen neuen Eintrag und reiht ihn in die Warteschlange ein."""
     queue = load_posting_queue()
 
     entry = {
@@ -70,14 +62,12 @@ def add_to_posting_queue(
 
     queue.append(entry)
     save_posting_queue(queue)
-    log_worker(f"📝 Neuer Posting-Queue-Eintrag: {entry['id']}")
+    log_doctor(f"Logik: 📝 Neuer Posting-Queue-Eintrag registriert: {entry['id']}")
     return entry
 
 
-# ---------------------------------------------------------
-# Queue formatieren
-# ---------------------------------------------------------
 def format_posting_queue() -> str:
+    """Erstellt eine lesbare Zusammenfassung der Queue für Chat-Interfaces."""
     queue = load_posting_queue()
     if not queue:
         return "📭 Posting-Queue ist leer."
@@ -91,61 +81,66 @@ def format_posting_queue() -> str:
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------
-# Queue leeren
-# ---------------------------------------------------------
 def clear_posting_queue() -> str:
+    """Leert die gesamte Content-Pipeline."""
     save_posting_queue([])
-    log_worker("🧹 Posting-Queue geleert.")
+    log_doctor("Logik: 🧹 Posting-Queue vollständig geleert.")
     return "🧹 Posting-Queue wurde geleert."
 
 
 # ---------------------------------------------------------
-# InstagramPoster holen
+# Posting-Ausführung über Engines
 # ---------------------------------------------------------
-def get_instagram_poster() -> Optional[InstagramPoster]:
-    if not IG_ACCESS_TOKEN or not IG_USER_ID:
-        error_worker("❌ IG_ACCESS_TOKEN oder IG_USER_ID fehlt – kein Instagram-Posting möglich.")
-        return None
-    return InstagramPoster(IG_ACCESS_TOKEN, IG_USER_ID)
+def perform_post(entry: Dict[str, Any], manager: Optional[EngineManager] = None) -> bool:
+    """
+    Führt den eigentlichen Upload- und Instagram-Posting-Prozess aus.
+    Nutzt den EngineManager für saubere Instanziierung.
+    """
+    if manager is None:
+        manager = EngineManager()
 
-
-# ---------------------------------------------------------
-# Einzelnen Post wirklich ausführen
-# ---------------------------------------------------------
-def perform_post(entry: Dict[str, Any]) -> bool:
     video_path = entry["video_path"]
     caption = entry["caption"]
 
     if not os.path.exists(video_path):
         msg = f"Video-Datei nicht gefunden: {video_path}"
-        error_worker(msg)
+        log_doctor(f"Logik-Fehler: {msg}")
         entry["status"] = "error"
         entry["last_error"] = msg
         return False
 
-    uploader = UploadEngine()
-    public_url = uploader.upload(video_path)
+    # 1) Video über UploadEngine ins öffentliche CDN schieben
+    try:
+        from modules.upload_engine import UploadEngine
+        uploader = UploadEngine(manager)
+        public_url = uploader.upload(video_path)
+    except Exception as e:
+        public_url = None
+        log_doctor(f"Logik-Fehler: UploadEngine konnte nicht geladen werden: {e}")
+
     if not public_url:
-        msg = "Konnte öffentliche URL nicht erzeugen."
-        error_worker(msg)
+        msg = "Konnte öffentliche CDN-URL nicht erzeugen."
+        log_doctor(f"Logik-Fehler: {msg}")
         entry["status"] = "error"
         entry["last_error"] = msg
         return False
 
-    poster = get_instagram_poster()
-    if not poster:
-        msg = "InstagramPoster nicht verfügbar."
-        error_worker(msg)
+    # 2) Video über InstagramPoster via Meta Graph API veröffentlichen
+    if not IG_ACCESS_TOKEN or not IG_USER_ID:
+        msg = "Instagram-Credentials (Token/ID) fehlen in den Umgebungsvariablen."
+        log_doctor(f"Logik-Fehler: {msg}")
         entry["status"] = "error"
         entry["last_error"] = msg
         return False
 
     try:
+        from modules.instagram_poster import InstagramPoster
+        poster = InstagramPoster(IG_ACCESS_TOKEN, IG_USER_ID)
         result = poster.post_reel(public_url, caption)
+        
         if "id" not in result:
             msg = f"Instagram-API-Fehler: {result}"
-            error_worker(msg)
+            log_doctor(f"Logik-Fehler: {msg}")
             entry["status"] = "error"
             entry["last_error"] = msg
             return False
@@ -153,27 +148,29 @@ def perform_post(entry: Dict[str, Any]) -> bool:
         entry["status"] = "posted"
         entry["posted_at"] = datetime.now().isoformat()
         entry["last_error"] = None
-        log_worker(f"🎉 Reel veröffentlicht: {result['id']}")
+        log_doctor(f"Logik: 🎉 Reel erfolgreich auf Instagram veröffentlicht! ID: {result['id']}")
         return True
 
     except Exception as e:
-        msg = f"Exception beim Posten: {e}"
-        error_worker(msg)
+        msg = f"Exception beim Instagram-Posting-Vorgang: {e}"
+        log_doctor(f"Logik-Kritisch: {msg}")
         entry["status"] = "error"
         entry["last_error"] = msg
         return False
 
 
 # ---------------------------------------------------------
-# Auto-Posting Tick
+# Core-Schnittstellen für den Agent_Worker
 # ---------------------------------------------------------
 def auto_posting_tick() -> None:
+    """Überprüft zeitgesteuerte Einträge in der Queue und triggert fällige Uploads."""
     queue = load_posting_queue()
     if not queue:
         return
 
     now = datetime.now()
     changed = False
+    manager = EngineManager()
 
     for entry in queue:
         if entry["status"] in ("posted", "error"):
@@ -189,23 +186,30 @@ def auto_posting_tick() -> None:
                 if now >= sched_dt:
                     sched_ok = True
             except Exception:
-                warn_worker(f"⚠️ Ungültiges Datum: {sched}")
+                log_doctor(f"Logik-Warnung: Ungültiges ISO-Datum in Queue gefunden: {sched}")
 
         if auto and (sched_ok or not sched):
-            log_worker(f"⏰ Auto-Posting fällig für ID {entry['id']}")
-            perform_post(entry)
+            log_doctor(f"Logik: ⏰ Auto-Posting-Event ausgelöst für ID {entry['id']}")
+            perform_post(entry, manager)
             changed = True
 
     if changed:
         save_posting_queue(queue)
 
 
-# ---------------------------------------------------------
-# KI-Anfrage verarbeiten (DialogEngine integriert)
-# ---------------------------------------------------------
 def process_ki_anfrage(text: str) -> str:
+    """Verarbeitet eingehende Chatanfragen mithilfe der DialogEngine NLP-Struktur."""
     if not text:
         return "Kein Text übergeben."
+
+    # Engine über den globalen Manager beziehen
+    manager = EngineManager()
+    try:
+        from modules.dialog_engine import DialogEngine
+        dialog_engine = DialogEngine()
+    except Exception as e:
+        log_doctor(f"Logik-Kritisch: DialogEngine konnte nicht initialisiert werden: {e}")
+        return "🤖 Interner Systemfehler: DialogEngine offline."
 
     intent = dialog_engine.detect_intent(text)
 
@@ -223,12 +227,9 @@ def process_ki_anfrage(text: str) -> str:
         clear_posting_queue()
         return dialog_engine.generate_response("queue_clear")
 
-    if intent in ("ping", "greeting", "thanks", "identity", "role", "capabilities"):
-        return dialog_engine.generate_response(intent, text)
-
-    # WICHTIG: Intent NICHT überschreiben!
+    # Fallback für alle Standard-Intents (ping, greeting, thanks, etc.)
     return dialog_engine.generate_response(intent, text)
 
 
-# Worker-Kompatibilität
+# Abwärtskompatibilität für alternative CamelCase-Schreibweisen im Altsystem sichern
 process_ki_Anfrage = process_ki_anfrage

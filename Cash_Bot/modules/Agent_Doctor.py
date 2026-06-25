@@ -76,12 +76,11 @@ class AgentDoctorApp:
         self.structure_manager = SystemStructureManager(self.engines)
         self.engines.register("structure", self.structure_manager)
 
-        # Voice-Ausgabe vorbereiten
+        # Voice-Ausgabe vorbereiten (Logger-Argument entfernt)
         self.voice = VoiceEngine()
 
-        # Unter-Engines registrieren
+        # Unter-Engines registrieren (Logger-Argumente überall entfernt)
         self.system_checker = SystemChecker(
-            logger=log_doctor,
             config_dir=CONFIG_DIR,
             logs_dir=LOGS_DIR,
             modules_dir=MODULES_DIR,
@@ -94,15 +93,15 @@ class AgentDoctorApp:
             ],
         )
 
-        self.log_analyzer = LogAnalyzer(logger=log_doctor, logs_dir=LOGS_DIR)
-        self.module_builder = ModuleBuilder(logger=log_doctor, modules_dir=MODULES_DIR)
-        self.module_extender = ModuleExtender(logger=log_doctor, modules_dir=MODULES_DIR)
-        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)
-        self.telegram_optimizer = TelegramOptimizer(logger=log_doctor)
-        self.auto_docs = AutoDocs(logger=log_doctor, modules_dir=MODULES_DIR)
-        self.test_runner = TestRunner(logger=log_doctor)
-        self.phase5_brain = Phase5Brain(logger=log_doctor)
-        self.background = BackgroundMonitor(logger=log_doctor)
+        self.log_analyzer = LogAnalyzer(logs_dir=LOGS_DIR)
+        self.module_builder = ModuleBuilder(modules_dir=MODULES_DIR)
+        self.module_extender = ModuleExtender(modules_dir=MODULES_DIR)
+        self.worker_optimizer = WorkerOptimizer()
+        self.telegram_optimizer = TelegramOptimizer()
+        self.auto_docs = AutoDocs(modules_dir=MODULES_DIR)
+        self.test_runner = TestRunner()
+        self.phase5_brain = Phase5Brain()
+        self.background = BackgroundMonitor()
         self.auto_fix_engine = AutoFixEngine(engine_manager=self.engines)
 
         if FixSuggestionEngine:

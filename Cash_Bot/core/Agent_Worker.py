@@ -1,5 +1,3 @@
-# core/Agent_Worker.py
-
 import os
 import time
 from datetime import datetime
@@ -22,9 +20,6 @@ AUFGABEN_DATEI = os.path.join(BASE_DIR, "aufgaben.json")
 RUECKGABE_DATEI = os.path.join(BASE_DIR, "rueckgabe.json")
 
 
-# ---------------------------------------------------------
-# Aufgabe laden
-# ---------------------------------------------------------
 def lade_aufgabe():
     tasks = load_json(AUFGABEN_DATEI, [])
     if not tasks:
@@ -35,9 +30,6 @@ def lade_aufgabe():
     return task
 
 
-# ---------------------------------------------------------
-# Antwort speichern
-# ---------------------------------------------------------
 def speichere_antwort(chat_id, antwort):
     save_json(RUECKGABE_DATEI, {
         "chat_id": chat_id,
@@ -46,18 +38,13 @@ def speichere_antwort(chat_id, antwort):
     log_worker(f"Antwort gespeichert für Chat {chat_id}")
 
 
-# ---------------------------------------------------------
-# Worker Loop
-# ---------------------------------------------------------
 def worker_loop():
     log_worker("Agent Worker gestartet...")
 
     while True:
         try:
-            # Auto-Posting Tick
             auto_posting_tick()
 
-            # Aufgabe prüfen
             task = lade_aufgabe()
             if not task:
                 time.sleep(0.2)
@@ -69,18 +56,15 @@ def worker_loop():
 
             log_worker(f"Aufgabe empfangen: {befehl} | Chat {chat_id}")
 
-            # KI-Anfrage
             if befehl == "KI_ANFRAGE":
                 antwort = process_ki_anfrage(text)
                 speichere_antwort(chat_id, antwort)
                 continue
 
-            # Systemcheck
             if befehl == "CHECK_SYSTEM":
                 speichere_antwort(chat_id, "System läuft stabil.")
                 continue
 
-            # Architektur / Code / Run / Logbuch (Platzhalter)
             if befehl in ("ARCHITEKT", "RUN", "LOGBUCH"):
                 speichere_antwort(chat_id, f"Befehl '{befehl}' ist noch nicht implementiert.")
                 continue
@@ -91,8 +75,5 @@ def worker_loop():
         time.sleep(0.2)
 
 
-# ---------------------------------------------------------
-# MAIN
-# ---------------------------------------------------------
 if __name__ == "__main__":
     worker_loop()

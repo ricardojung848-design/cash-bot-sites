@@ -79,26 +79,15 @@ class AgentDoctorApp:
         # Voice-Ausgabe vorbereiten (Logger-Argument entfernt)
         self.voice = VoiceEngine()
 
-        # Unter-Engines registrieren (Logger-Argumente überall entfernt)
-        self.system_checker = SystemChecker(
-            config_dir=CONFIG_DIR,
-            logs_dir=LOGS_DIR,
-            modules_dir=MODULES_DIR,
-            engines_dir=ENGINES_DIR,
-            files_to_check=[
-                TELEGRAM_TOKEN_FILE,
-                TELEGRAM_CHAT_ID_FILE,
-                CREDENTIALS_FILE,
-                SYSTEM_MAP_FILE,
-            ],
-        )
-
-        self.log_analyzer = LogAnalyzer(logs_dir=LOGS_DIR)
-        self.module_builder = ModuleBuilder(modules_dir=MODULES_DIR)
-        self.module_extender = ModuleExtender(modules_dir=MODULES_DIR)
+        # Unter-Engines registrieren – Argumente entfernt für Standard-Initialisierung
+        self.system_checker = SystemChecker()
+        self.log_analyzer = LogAnalyzer()
+        self.module_builder = ModuleBuilder()
+        self.module_extender = ModuleExtender()
+        
         self.worker_optimizer = WorkerOptimizer()
         self.telegram_optimizer = TelegramOptimizer()
-        self.auto_docs = AutoDocs(modules_dir=MODULES_DIR)
+        self.auto_docs = AutoDocs()
         self.test_runner = TestRunner()
         self.phase5_brain = Phase5Brain()
         self.background = BackgroundMonitor()

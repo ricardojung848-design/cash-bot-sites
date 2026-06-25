@@ -76,17 +76,20 @@ class AgentDoctorApp:
         self.structure_manager = SystemStructureManager(self.engines)
         self.engines.register("structure", self.structure_manager)
 
-        # Voice-Ausgabe vorbereiten (Logger-Argument entfernt)
+        # Voice-Ausgabe vorbereiten (Erwartet kein Logger-Argument)
         self.voice = VoiceEngine()
 
-        # Unter-Engines registrieren – Argumente entfernt für Standard-Initialisierung
-        self.system_checker = SystemChecker()
-        self.log_analyzer = LogAnalyzer()
-        self.module_builder = ModuleBuilder()
-        self.module_extender = ModuleExtender()
+        # Unter-Engines registrieren 
+        self.system_checker = SystemChecker()  # Erwartet keine Argumente
+        self.log_analyzer = LogAnalyzer()      # Erwartet keine Argumente
+        self.module_builder = ModuleBuilder()  # Erwartet keine Argumente
+        self.module_extender = ModuleExtender()# Erwartet keine Argumente
         
-        self.worker_optimizer = WorkerOptimizer()
-        self.telegram_optimizer = TelegramOptimizer()
+        # Diese Engines benötigen die Übergabe des Loggers:
+        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)
+        self.telegram_optimizer = TelegramOptimizer(logger=log_doctor)
+        
+        # Die restlichen kognitiven Sub-Systeme:
         self.auto_docs = AutoDocs()
         self.test_runner = TestRunner()
         self.phase5_brain = Phase5Brain()

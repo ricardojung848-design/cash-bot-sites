@@ -1,126 +1,103 @@
 import time
-import json
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent  # .../Cash_Bot
-CONFIG_DIR = BASE_DIR / "config"
-PRIORITY_FILE = CONFIG_DIR / "priority_plan.json"
-DOCTOR_STATE_FILE = CONFIG_DIR / "doctor_state.json"
-
-
-def _safe_load_json(path: Path, default):
-    try:
-        if not path.exists():
-            return default
-        raw = path.read_text(encoding="utf-8")
-        if not raw.strip():
-            return default
-        return json.loads(raw)
-    except Exception:
-        return default
-
-
-def _safe_save_json(path: Path, data: dict):
-    try:
-        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+from typing import Any, List, Dict
+from doctor_core.logging import log_doctor
 
 
 class PriorityEngine:
     """
-    Priorisiert Aufgaben basierend auf:
-    - Risiko
-    - Anzahl Logs
-    - Anzahl Commands
+    MEGA-PRO-Version:
+    - Priorisiert System-Operationen autonom anhand des aktuellen Risiko-Zustands
+    - Liest Echtzeit-Metriken direkt aus dem zentralen SQLite-Langzeitgedächtnis
+    - Sortiert Aufgaben aufsteigend nach ihrer Prioritätsstufe (1 = Kritisch)
+    - Vollständig thread-sicher über die Engine-Manager-Infrastruktur orchestriert
     """
 
-    def __init__(self):
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        if not PRIORITY_FILE.exists():
-            _safe_save_json(
-                PRIORITY_FILE,
-                {
-                    "last_update": None,
-                    "tasks": [],
-                },
-            )
+    def __init__(self, engine_manager: Any = None):
+        self.engines = engine_manager
 
-    def _load_doctor_state(self) -> dict:
-        return _safe_load_json(
-            DOCTOR_STATE_FILE,
-            {
-                "status": "unknown",
-                "last_logs": [],
-                "last_commands": [],
-                "risk_score": 0.0,
-            },
-        )
-
-    def _load_priority(self) -> dict:
-        return _safe_load_json(
-            PRIORITY_FILE,
-            {
-                "last_update": None,
-                "tasks": [],
-            },
-        )
-
-    def _save_priority(self, data: dict):
-        _safe_save_json(PRIORITY_FILE, data)
-
-    def build_priority_list(self) -> list:
-        ds = self._load_doctor_state()
-        logs = ds.get("last_logs", [])
-        cmds = ds.get("last_commands", [])
-        risk = float(ds.get("risk_score", 0.0))
-
+    def build_priority_list(self) -> List[Dict[str, Any]]:
+        """Analysiert den prädiktiven Risiko-Score und leitet dringende Aufgaben ab."""
         tasks = []
 
-        if risk >= 4.0:
-            tasks.append(
-                {
+        if not self.engines or not self.engines.has("state"):
+            log_doctor("PriorityEngine: State-Manager nicht erreichbar. Generiere Standard-Task.")
+            return [{"name": "Standard-Routine", "reason": "System läuft isoliert.", "priority": 4}]
+
+        try:
+            state = self.engines.get("state")
+            
+            # 1. Prädiktiven Risiko-Score direkt aus dem DB-State laden
+            predictive_data = state.get_state("predictive", {"last_score": 0.0})
+            risk = float(predictive_data.get("last_score", 0.0))
+
+            # 2. Offene Fehler zur Quantifizierung heranziehen
+            unfixed_errors = state.get_unfixed_errors()
+            error_count = len(unfixed_errors)
+
+            # --- Dynamische Priorisierungslogik ---
+            
+            # Prio 1: Hohes Risiko oder offene Code-Fehler verlangen sofortiges Self-Healing
+            if risk >= 4.0 or error_count > 0:
+                tasks.append({
                     "name": "Systemprüfung & Self-Healing",
-                    "reason": "Erhöhtes Risiko erkannt",
+                    "reason": f"Erhöhtes Risiko ({risk:.1f}/10.0) oder offene Patches ({error_count}) erkannt.",
                     "priority": 1,
-                }
-            )
+                })
 
-        if len(logs) > 20:
-            tasks.append(
-                {
+            # Prio 2: Auslastung der Roadmap analysieren
+            planner_data = state.get_state("planner", {"roadmap": []})
+            roadmap_len = len(planner_data.get("roadmap", []))
+            if roadmap_len > 15:
+                tasks.append({
                     "name": "Loganalyse & Optimierung",
-                    "reason": "Viele Log-Einträge vorhanden",
+                    "reason": f"Hohe kognitive Dichte auf der Roadmap ({roadmap_len} Einträge).",
                     "priority": 2,
-                }
-            )
+                })
 
-        if len(cmds) > 10:
-            tasks.append(
-                {
-                    "name": "Review der letzten Befehle",
-                    "reason": "Viele Interaktionen mit Doctor",
+            # Prio 3: Routineüberwachung bei mäßiger Aktivität
+            if roadmap_len > 5:
+                tasks.append({
+                    "name": "Review der System-Protokolle",
+                    "reason": "Regelmäßige Analyse der laufenden Worker-Aktivitäten.",
                     "priority": 3,
-                }
-            )
+                })
 
-        if not tasks:
-            tasks.append(
-                {
+            # Fallback: Wenn alles absolut stabil und leer ist
+            if not tasks:
+                tasks.append({
                     "name": "Regelmäßige Wartung",
-                    "reason": "Keine akuten Probleme, aber Routine sinnvoll",
+                    "reason": "Keine akuten Probleme. System befindet sich im optimalen Idle-Status.",
                     "priority": 4,
-                }
-            )
+                })
 
-        tasks.sort(key=lambda t: t["priority"])
+            # Nach Priorität aufsteigend sortieren (1 kommt zuerst)
+            tasks.sort(key=lambda t: t["priority"])
+
+        except Exception as e:
+            log_doctor(f"PriorityEngine: Fehler beim Berechnen der Prioritäten-Liste: {e}")
+            # Ausfallsicherer Standard-Task
+            tasks = [{"name": "Sicherheits-Routine", "reason": "Berechnungsfehler im Core.", "priority": 1}]
+
         return tasks
 
-    def update(self) -> list:
+    def update(self) -> List[Dict[str, Any]]:
+        """Führt den Priorisierungslauf aus und schreibt das Ergebnis in die Datenbank."""
+        log_doctor("PriorityEngine: Starte autonome Aufgaben-Priorisierung.")
         tasks = self.build_priority_list()
+
         data = {
             "last_update": time.strftime("%Y-%m-%d %H:%M:%S"),
             "tasks": tasks,
         }
-        self._save_priority(data)
+
+        if self.engines and self.engines.has("state"):
+            try:
+                state = self.engines.get("state")
+                state.set_state("priority", data)
+                log_doctor(f"PriorityEngine: {len(tasks)} Aufgaben priorisiert und im Langzeitgedächtnis abgelegt.")
+            except Exception as e:
+                log_doctor(f"PriorityEngine: Fehler beim Schreiben in den SQLite-State: {e}")
+        else:
+            log_doctor(f"PriorityEngine: State-Manager fehlt. Prioritätenliste temporär im RAM.")
+
         return tasks

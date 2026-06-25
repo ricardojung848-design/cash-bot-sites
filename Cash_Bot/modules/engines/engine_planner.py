@@ -1,134 +1,83 @@
 import time
-import json
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent  # .../Cash_Bot
-CONFIG_DIR = BASE_DIR / "config"
-PLANNER_FILE = CONFIG_DIR / "planner_plan.json"
-PRIORITY_FILE = CONFIG_DIR / "priority_plan.json"
-OPTIMIZER_PLAN_FILE = CONFIG_DIR / "optimizer_plan.json"
-FIX_SUGGESTIONS_FILE = CONFIG_DIR / "fix_suggestions.json"
-
-
-def _safe_load_json(path: Path, default):
-    try:
-        if not path.exists():
-            return default
-        raw = path.read_text(encoding="utf-8")
-        if not raw.strip():
-            return default
-        return json.loads(raw)
-    except Exception:
-        return default
-
-
-def _safe_save_json(path: Path, data: dict):
-    try:
-        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+from typing import Any, List, Dict
+from doctor_core.logging import log_doctor
 
 
 class PlannerEngine:
     """
-    Baut eine einfache Roadmap aus:
-    - Prioritäten
-    - Optimierungsdaten
-    - Fix-Vorschlägen
+    MEGA-PRO-Version:
+    - Synthetisiert die Roadmap direkt aus dem SQLite-Langzeitgedächtnis
+    - Konsolidiert Prioritäten, Optimierungsziele und offene Fix-Meldungen
+    - Verhindert Overheads durch intelligentes Slicing der Datensätze (Top 5)
+    - Vollständig thread-sicher in die Engine-Manager-Infrastruktur integriert
     """
 
-    def __init__(self):
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        if not PLANNER_FILE.exists():
-            _safe_save_json(
-                PLANNER_FILE,
-                {
-                    "last_update": None,
-                    "roadmap": [],
-                },
-            )
+    def __init__(self, engine_manager: Any = None):
+        self.engines = engine_manager
 
-    def _load_priority(self) -> dict:
-        return _safe_load_json(
-            PRIORITY_FILE,
-            {
-                "last_update": None,
-                "tasks": [],
-            },
-        )
-
-    def _load_optimizer(self) -> dict:
-        return _safe_load_json(
-            OPTIMIZER_PLAN_FILE,
-            {
-                "last_update": None,
-                "modules": [],
-            },
-        )
-
-    def _load_fixes(self) -> dict:
-        return _safe_load_json(
-            FIX_SUGGESTIONS_FILE,
-            {
-                "last_update": None,
-                "suggestions": [],
-            },
-        )
-
-    def _load_planner(self) -> dict:
-        return _safe_load_json(
-            PLANNER_FILE,
-            {
-                "last_update": None,
-                "roadmap": [],
-            },
-        )
-
-    def _save_planner(self, data: dict):
-        _safe_save_json(PLANNER_FILE, data)
-
-    def build_roadmap(self) -> list:
-        priority = self._load_priority()
-        optimizer = self._load_optimizer()
-        fixes = self._load_fixes()
-
+    def build_roadmap(self) -> List[Dict[str, Any]]:
+        """Sammelt Zustände aus allen registrierten Domänen und generiert die Handlungs-Roadmap."""
         roadmap = []
 
-        for t in priority.get("tasks", []):
-            roadmap.append(
-                {
+        if not self.engines or not self.engines.has("state"):
+            log_doctor("PlannerEngine: State-Manager nicht verfügbar. Generierung abgebrochen.")
+            return roadmap
+
+        try:
+            state = self.engines.get("state")
+
+            # 1. Prioritäten laden
+            priority_data = state.get_state("priority", {"tasks": []})
+            for t in priority_data.get("tasks", []):
+                roadmap.append({
                     "type": "priority_task",
                     "name": t.get("name"),
                     "reason": t.get("reason"),
-                }
-            )
+                })
 
-        for m in optimizer.get("modules", [])[:5]:
-            roadmap.append(
-                {
+            # 2. Code-Optimierungsziele laden (Top 5 komplexe Module)
+            optimizer_data = state.get_state("optimizer", {"modules": []})
+            for m in optimizer_data.get("modules", [])[:5]:
+                roadmap.append({
                     "type": "module_optimize",
                     "name": m.get("name"),
                     "info": f"Komplexität: {m.get('complexity')}, Zeilen: {m.get('lines')}",
-                }
-            )
+                })
 
-        for s in fixes.get("suggestions", [])[:5]:
-            roadmap.append(
-                {
+            # 3. Strukturierte Fix-Vorschläge laden (Top 5 Fehler-Muster)
+            fixes_data = state.get_state("fixes", {"suggestions": []})
+            for s in fixes_data.get("suggestions", [])[:5]:
+                roadmap.append({
                     "type": "fix_suggestion",
-                    "file": s.get("file"),
+                    "file": s.get("file") or s.get("log_file"),
                     "keyword": s.get("keyword"),
                     "hint": s.get("hint"),
-                }
-            )
+                })
+
+        except Exception as e:
+            log_doctor(f"PlannerEngine: Kritischer Fehler beim Aggregieren der Roadmap-Daten: {e}")
 
         return roadmap
 
-    def update(self) -> list:
+    def update(self) -> List[Dict[str, Any]]:
+        """Aktualisiert die Roadmap und persistiert sie transaktionssicher in der Datenbank."""
+        log_doctor("PlannerEngine: Generiere konsolidierten System-Zukunftsplan (Roadmap).")
         roadmap = self.build_roadmap()
+
         data = {
             "last_update": time.strftime("%Y-%m-%d %H:%M:%S"),
             "roadmap": roadmap,
         }
-        self._save_planner(data)
+
+        if self.engines and self.engines.has("state"):
+            try:
+                state = self.engines.get("state")
+                # Persistiert den finalen kombinierten Zustand unter dem Key 'planner'
+                state.set_state("planner", data)
+                log_doctor(f"PlannerEngine: Roadmap mit {len(roadmap)} Einträgen erfolgreich im Langzeitgedächtnis aktualisiert.")
+            except Exception as e:
+                log_doctor(f"PlannerEngine: Fehler beim Schreiben in das SQLite-System: {e}")
+        else:
+            log_doctor(f"PlannerEngine: State-Manager fehlt. {len(roadmap)} Einträge temporär gepuffert.")
+
         return roadmap

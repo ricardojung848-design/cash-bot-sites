@@ -58,7 +58,7 @@ class AgentDoctorApp:
         
         # Abgesicherter Start des SQLite-Langzeitgedächtnisses
         try:
-            print("[BOOT] Verbinde mit SQLite-Langzeitgedächtnis (DoctorState)...")
+            print("[BOOT] Verbindung mit SQLite-Langzeitgedächtnis (DoctorState)...")
             self.state = DoctorState()
             print("[BOOT] DoctorState erfolgreich geladen.")
         except Exception as db_err:
@@ -76,32 +76,30 @@ class AgentDoctorApp:
         self.structure_manager = SystemStructureManager(self.engines)
         self.engines.register("structure", self.structure_manager)
 
-        # Voice-Ausgabe vorbereiten (Erwartet kein Logger-Argument)
+        # Voice-Ausgabe vorbereiten
         self.voice = VoiceEngine()
 
         # Unter-Engines registrieren 
-        self.system_checker = SystemChecker()  # Erwartet keine Argumente
-        self.log_analyzer = LogAnalyzer()      # Erwartet keine Argumente
-        self.module_builder = ModuleBuilder()  # Erwartet keine Argumente
-        self.module_extender = ModuleExtender()# Erwartet keine Argumente
+        self.system_checker = SystemChecker()
+        self.log_analyzer = LogAnalyzer()
+        self.module_builder = ModuleBuilder()
+        self.module_extender = ModuleExtender()
         
-        # Präzise Trennung der Initialisierungs-Parameter:
-        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)  # Benötigt den Logger zwingend!
-        self.telegram_optimizer = TelegramOptimizer()                # Darf KEINEN Logger übergeben bekommen!
+        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)
+        self.telegram_optimizer = TelegramOptimizer()
         
-        # Die restlichen kognitiven Sub-Systeme:
         self.auto_docs = AutoDocs()
         self.test_runner = TestRunner()
         
-        # FIX: Übergabe des engine_managers an das Brain und den Monitor, um Isolation zu verhindern
         self.phase5_brain = Phase5Brain(engine_manager=self.engines)
         self.background = BackgroundMonitor(engine_manager=self.engines)
         self.auto_fix_engine = AutoFixEngine(engine_manager=self.engines)
 
         if FixSuggestionEngine:
-            self.engines.fix = FixSuggestionEngine(self.engines)
+            self.fix_suggestion_engine = FixSuggestionEngine(self.engines)
+            self.engines.register("fix", self.fix_suggestion_engine)
         else:
-            self.engines.fix = None
+            self.fix_suggestion_engine = None
 
         print("[BOOT] Erstelle GUI-Fenster...")
         # --- UI-SETUP (Tkinter Dark Mode) ---
@@ -167,7 +165,6 @@ class AgentDoctorApp:
 
         print("[BOOT] Starte asynchrone Hintergrund-Dienste...")
         threading.Thread(target=self._async_system_boot, daemon=True).start()
-
     def _async_system_boot(self):
         """Führt blockierende Start-Aufgaben im Hintergrund aus."""
         try:
@@ -182,13 +179,11 @@ class AgentDoctorApp:
             self.voice.startup_greeting()
             print("[BOOT-THREAD] Sprachausgabe bereit.")
 
-            # UI updaten
             self.root.after(0, lambda: self.set_status("Status: Online – Engines geladen."))
             self.root.after(0, lambda: self._log_ui("Agent_Doctor PRO: Alle Hintergrund-Dienste etabliert."))
         except Exception as e:
             print(f"[BOOT-THREAD] FEHLER beim asynchronen Booten: {e}")
 
-        # Thread für Log-Überwachung im Hintergrund starten
         self.is_monitoring = True
         self.monitor_thread = threading.Thread(target=self._background_log_watcher, daemon=True)
         self.monitor_thread.start()
@@ -197,7 +192,7 @@ class AgentDoctorApp:
         log_path = LOGS_DIR / "worker.log"
         while self.is_monitoring:
             try:
-                if hasattr(self.engines, "fix") and self.engines.fix and log_path.is_file():
+                if self.fix_suggestion_engine and log_path.is_file():
                     pass
             except Exception as e:
                 pass
@@ -306,24 +301,35 @@ class AgentDoctorApp:
 
     def _run_auto_fix_from_logs(self):
         self.set_status("Status: Auto‑Fix‑Vorschläge werden berechnet...")
-        if not hasattr(self.engines, "fix") or self.engines.fix is None:
+        if not self.fix_suggestion_engine:
             self.say("Keine FixSuggestionEngine verfügbar.")
             return
-        suggestions = self.engines.fix.update()
+            
+        suggestions = self.fix_suggestion_engine.update()
         if not suggestions:
             self.say("Keine akuten Korrektur-Empfehlungen in den DB-Logs hinterlegt.")
             return
+            
         s = suggestions[0]
         keyword = s.get("keyword", "Unbekannt")
         hint = s.get("hint", "Kein Hinweis extrahiert")
-        source_file = s.get("file", "")
-        template = (
-            f"# Auto‑Fix‑Vorschlag aus SQLite-Zeitreihe\n"
-            f"# Trigger-Muster: {keyword}\n"
-            f"# Empfehlung: {hint}\n\n"
-            f"# Bitte passe den Code unten für '{source_file}' an.\n"
+        source_file = s.get("source_file", "core/Agent_Worker.py") # KORRIGIERT: Holt den richtigen Key!
+
+        # Liest das echte Worker-Log für die detaillierte Injektion aus
+        log_file_path = LOGS_DIR / "worker.log"
+        traceback_content = ""
+        if log_file_path.is_file():
+            traceback_content = log_file_path.read_text(encoding="utf-8", errors="ignore")
+        
+        # UI öffnen
+        win = self._open_auto_fix_window(prefill_path=source_file)
+        
+        # Automatisch befüllen lassen durch die Engine
+        self.fix_suggestion_engine.analyze_and_autofill(
+            ui_instance=win, 
+            traceback_text=traceback_content, 
+            error_message=hint
         )
-        self._open_auto_fix_window(prefill_path=source_file, prefill_code=template)
         self.say("Fix-Vorschlag geladen.")
         self.set_status("Status: Vorschlag geladen.")
 
@@ -333,16 +339,19 @@ class AgentDoctorApp:
         win.configure(bg="#111111")
         frame = ttk.Frame(win, padding=10)
         frame.pack(fill="both", expand=True)
+        
         ttk.Label(frame, text="Zieldatei (Relativ zum Stammverzeichnis):").pack(anchor="w")
         path_entry = tk.Entry(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff")
         path_entry.pack(fill="x", pady=5)
         if prefill_path:
             path_entry.insert(0, prefill_path)
+            
         ttk.Label(frame, text="Neuer Quellcode-Inhalt:").pack(anchor="w")
         code_box = tk.Text(frame, bg="#000000", fg="#ffffff", insertbackground="#ffffff", height=12)
         code_box.pack(fill="both", pady=5)
         if prefill_code:
             code_box.insert("1.0", prefill_code)
+            
         def apply_fix():
             rel_path = path_entry.get().strip()
             if not rel_path:
@@ -355,7 +364,9 @@ class AgentDoctorApp:
             if ok:
                 self.say("Patch erfolgreich eingespielt.")
                 win.destroy()
+                
         ttk.Button(frame, text="Fix anwenden", command=apply_fix).pack(anchor="e", pady=5)
+        return win
 
     def _open_rollback_window(self):
         win = tk.Toplevel(self.root)
@@ -393,4 +404,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()    

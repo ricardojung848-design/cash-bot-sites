@@ -20,79 +20,88 @@ class DoctorState:
         self._init_db()
 
     def _get_connection(self):
-        """Erstellt eine thread-sichere Verbindung zur SQLite-Datenbank."""
-        conn = sqlite3.connect(DB_FILE, timeout=30.0)
+        """Erstellt eine thread-sichere Verbindung zur SQLite-Datenbank mit schnellem Timeout."""
+        # KORREKTUR: timeout=5.0 verhindert das unendliche Einfrieren bei Windows-Dateisperren
+        conn = sqlite3.connect(DB_FILE, timeout=5.0)
         conn.row_factory = sqlite3.Row
         return conn
 
     def _init_db(self):
         """Initialisiert die relationale Enterprise-Datenstruktur."""
+        print(f"[DATABASE] Versuche Verbindung aufzubauen unter: {DB_FILE}")
         with self._lock:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                
-                # 1. Tabelle für Modul-Zustände und Kontexte
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS system_states (
-                        key TEXT PRIMARY KEY,
-                        data TEXT,
-                        last_update TEXT
-                    )
-                """)
-                
-                # 2. Langzeit-Fehlerhistorie (Erweitert für präzises Auto-Fix Tracking)
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS error_history (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        module_name TEXT,
-                        error_message TEXT,
-                        traceback TEXT,
-                        timestamp TEXT,
-                        fixed INTEGER DEFAULT 0,
-                        fix_applied TEXT,
-                        fixed_at TEXT
-                    )
-                """)
-                
-                # 3. Optimierungs-Historie
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS optimization_history (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        module_name TEXT,
-                        metric_improved TEXT,
-                        old_value REAL,
-                        new_value REAL,
-                        timestamp TEXT
-                    )
-                """)
-                
-                # 4. Social Media Performance & Analytics (Erweitert für präzise Beitrags-IDs)
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS social_stats (
-                        platform TEXT,
-                        content_id TEXT DEFAULT 'generic',
-                        metric_key TEXT,
-                        metric_value REAL,
-                        timestamp TEXT,
-                        PRIMARY KEY (platform, content_id, metric_key, timestamp)
-                    )
-                """)
+            try:
+                with self._get_connection() as conn:
+                    cursor = conn.cursor()
+                    
+                    # 1. Tabelle für Modul-Zustände und Kontexte
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS system_states (
+                            key TEXT PRIMARY KEY,
+                            data TEXT,
+                            last_update TEXT
+                        )
+                    """)
+                    
+                    # 2. Langzeit-Fehlerhistorie (Erweitert für präzises Auto-Fix Tracking)
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS error_history (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            module_name TEXT,
+                            error_message TEXT,
+                            traceback TEXT,
+                            timestamp TEXT,
+                            fixed INTEGER DEFAULT 0,
+                            fix_applied TEXT,
+                            fixed_at TEXT
+                        )
+                    """)
+                    
+                    # 3. Optimierungs-Historie
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS optimization_history (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            module_name TEXT,
+                            metric_improved TEXT,
+                            old_value REAL,
+                            new_value REAL,
+                            timestamp TEXT
+                        )
+                    """)
+                    
+                    # 4. Social Media Performance & Analytics
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS social_stats (
+                            platform TEXT,
+                            content_id TEXT DEFAULT 'generic',
+                            metric_key TEXT,
+                            metric_value REAL,
+                            timestamp TEXT,
+                            PRIMARY KEY (platform, content_id, metric_key, timestamp)
+                        )
+                    """)
 
-                # 5. ECHTE KNOWLEDGE-BASE (Ergänzung für Phase 8)
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS knowledge_base (
-                        category TEXT,
-                        key TEXT PRIMARY KEY,
-                        value TEXT,
-                        updated_at TEXT
-                    )
-                """)
+                    # 5. ECHTE KNOWLEDGE-BASE (Ergänzung für Phase 8)
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS knowledge_base (
+                            category TEXT,
+                            key TEXT PRIMARY KEY,
+                            value TEXT,
+                            updated_at TEXT
+                        )
+                    """)
+                    
+                    conn.commit()
                 
-                conn.commit()
-            
-            # Migriere alte JSON-Dateien, falls vorhanden, um Abwärtskompatibilität zu sichern
-            self._migrate_old_jsons()
-        log_doctor("Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.")
+                print("[DATABASE] SQLite-Verbindung erfolgreich etabliert.")
+                # Migriere alte JSON-Dateien, falls vorhanden
+                self._migrate_old_jsons()
+                log_doctor("Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.")
+                
+            except Exception as e:
+                print(f"\n[CRITICAL DATABASE ERROR] Schloss-Blockade aufgetreten: {e}")
+                print("[CRITICAL] Bitte Task-Manager öffnen (STRG+SHIFT+ESC) und alle 'python.exe' Tasks beenden!\n")
+                raise e
 
     def _migrate_old_jsons(self):
         """Migriert Daten aus alten JSON-Dateien automatisch in die DB, falls sie existieren."""

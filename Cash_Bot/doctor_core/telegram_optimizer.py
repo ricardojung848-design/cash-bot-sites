@@ -2,9 +2,10 @@ from pathlib import Path
 import time
 from typing import Any, Dict, List
 from doctor_core.logging import log_doctor
+from doctor_core.event_system import EventSystem
 
 
-class WorkerOptimizer:
+class TelegramOptimizer:
     """
     MEGA-PRO-Version:
     - Steuert und optimiert die Task-Verteilung aller Worker
@@ -15,6 +16,7 @@ class WorkerOptimizer:
 
     def __init__(self, engine_manager: Any = None):
         self.engines = engine_manager
+        self.events = EventSystem()  # Direktzugriff auf Phase 9 Nachrichtenzentrale
         self.base_dir = Path(__file__).resolve().parent.parent
         
         # Performance-Metriken im RAM halten, bevor sie persistiert werden
@@ -25,7 +27,7 @@ class WorkerOptimizer:
 
     def run_optimization_cycle(self) -> bool:
         """Der zentrale Optimierungs-Lauf, der vom BackgroundMonitor aufgerufen wird."""
-        log_doctor("WorkerOptimizer: Starte autonomen Optimierungs- und Analysezyklus.")
+        log_doctor("TelegramOptimizer: Starte autonomen Optimierungs- und Analysezyklus.")
         
         # 1. Analysiere bestehende Fehler aus der Memory-Engine
         has_critical_load = self._analyze_system_load()
@@ -51,10 +53,10 @@ class WorkerOptimizer:
                 
                 # Wenn mehr als 3 ungelöste Fehler vorliegen, gilt das System als überlastet
                 if len(unfixed_errors) > 3:
-                    log_doctor(f"WorkerOptimizer: Hohe Systemlast erkannt ({len(unfixed_errors)} offene Fehler). Safe-Mode empfohlen.")
+                    log_doctor(f"TelegramOptimizer: Hohe Systemlast erkannt ({len(unfixed_errors)} offene Fehler). Safe-Mode empfohlen.")
                     return True
             except Exception as e:
-                log_doctor(f"WorkerOptimizer: Fehler beim Lesen der Systemlast: {e}")
+                log_doctor(f"TelegramOptimizer: Fehler beim Lesen der Systemlast: {e}")
         return False
 
     def optimize_telegram_pipeline(self, reduce_load: bool) -> bool:
@@ -62,13 +64,13 @@ class WorkerOptimizer:
         Analysiert die Queue und passt das Verhalten der Telegram-Engines an.
         Verhindert aktiv '429 Too Many Requests' Fehler von der Telegram API.
         """
-        log_doctor("WorkerOptimizer: Analysiere Telegram-Bot-Schnittstellen...")
+        log_doctor("TelegramOptimizer: Analysiere Telegram-Bot-Schnittstellen...")
         
         avg_latency = 0.0
         times = self.metrics_cache["telegram_response_time"]
         if times:
             avg_latency = sum(times) / len(times)
-            log_doctor(f"WorkerOptimizer: Mittlere Telegram-Latenz beträgt {avg_latency:.2f}s.")
+            log_doctor(f"TelegramOptimizer: Mittlere Telegram-Latenz beträgt {avg_latency:.2f}s.")
 
         # Dynamische Anpassung des Intervalls im Scheduler, falls verfügbar
         if self.engines and self.engines.has("state"):
@@ -87,8 +89,11 @@ class WorkerOptimizer:
                 }
                 
                 state.set_state("optimizer_plan", optimization_entry)
-                log_doctor(f"WorkerOptimizer: Telegram-Pipeline optimiert. Ziel-Delay gesetzt auf: {suggested_delay}s.")
+                log_doctor(f"TelegramOptimizer: Telegram-Pipeline optimiert. Ziel-Delay gesetzt auf: {suggested_delay}s.")
                 
+                # Event abfeuern, damit die Bots das geänderte Delay sofort dynamisch adaptieren
+                self.events.trigger("pipeline_optimized", {"target_delay": suggested_delay})
+
                 # Historischen Eintrag in die relationale DB schreiben
                 with state._get_connection() as conn:
                     conn.execute("""
@@ -98,7 +103,7 @@ class WorkerOptimizer:
                     conn.commit()
 
             except Exception as e:
-                log_doctor(f"WorkerOptimizer: Fehler beim Speichern des Optimierungsplans: {e}")
+                log_doctor(f"TelegramOptimizer: Fehler beim Speichern des Optimierungsplans: {e}")
                 return False
 
         return True
@@ -118,14 +123,15 @@ class WorkerOptimizer:
         try:
             state = self.engines.get("state")
             with state._get_connection() as conn:
+                # REPARIERT: content_id hinzugefügt, um der Tabellenstruktur aus Phase 8 zu entsprechen
                 conn.execute("""
-                    INSERT INTO social_stats (platform, metric_key, metric_value, timestamp)
-                    VALUES (?, ?, ?, ?)
-                """, ("telegram", metric_key, avg_value, timestamp))
+                    INSERT INTO social_stats (platform, content_id, metric_key, metric_value, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                """, ("telegram", "generic", metric_key, avg_value, timestamp))
                 conn.commit()
             
             # Cache leeren
             self.metrics_cache[metric_key] = []
-            log_doctor(f"WorkerOptimizer: Metrik '{metric_key}' erfolgreich in Langzeit-DB persistiert (Schnittwert: {avg_value:.4f}).")
+            log_doctor(f"TelegramOptimizer: Metrik '{metric_key}' erfolgreich in Langzeit-DB persistiert (Schnittwert: {avg_value:.4f}).")
         except Exception as e:
-            log_doctor(f"WorkerOptimizer: Fehler beim Schreiben der Metrik in DB: {e}")
+            log_doctor(f"TelegramOptimizer: Fehler beim Schreiben der Metrik in DB: {e}")

@@ -55,12 +55,22 @@ SYSTEM_MAP_FILE = CONFIG_DIR / "system_map.json"
 class AgentDoctorApp:
     def __init__(self):
         print("[BOOT] Initialisiere AgentDoctorApp Klassen-Struktur...")
-        # 1. SQLite-Langzeitgedächtnis initialisieren
-        self.state = DoctorState()
+        
+        # Abgesicherter Start des SQLite-Langzeitgedächtnisses
+        try:
+            print("[BOOT] Verbinde mit SQLite-Langzeitgedächtnis (DoctorState)...")
+            self.state = DoctorState()
+            print("[BOOT] DoctorState erfolgreich geladen.")
+        except Exception as db_err:
+            print(f"\n[CRITICAL] Fehler beim Laden der Datenbank: {db_err}")
+            print("[CRITICAL] Bitte prüfen, ob die DB-Datei von einem anderen Prozess blockiert wird.\n")
+            self.state = None
         
         # 2. Globalen Engine-Manager aufbauen und initialen State registrieren
+        print("[BOOT] Baue EngineManager auf...")
         self.engines = EngineManager()
-        self.engines.register("state", self.state)
+        if self.state:
+            self.engines.register("state", self.state)
 
         # 3. Struktur-Checker anbinden
         self.structure_manager = SystemStructureManager(self.engines)
@@ -163,7 +173,6 @@ class AgentDoctorApp:
         self.log_box.pack(fill="both", expand=True)
 
         print("[BOOT] Starte asynchrone Hintergrund-Dienste...")
-        # KORRIGIERT: Schwere Boot-Prozeduren in einen Thread auslagern, damit die UI sofort erscheint!
         threading.Thread(target=self._async_system_boot, daemon=True).start()
 
     def _async_system_boot(self):

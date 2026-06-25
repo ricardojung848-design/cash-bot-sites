@@ -13,8 +13,8 @@ except ImportError:
     os.system('pip install customtkinter')
     import customtkinter as ctk
 
-# Stammverzeichnis im Systempfad absichern
-BASE_DIR = Path(__file__).resolve().parent
+# Stammverzeichnis absichern (Schaut eine Ebene höher, da Datei im modules-Ordner liegt)
+BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
@@ -63,7 +63,7 @@ class AegisControlCenter(ctk.CTk):
 
         # --- UI DESIGN SYSTEM SETUP (Aegis-Rot) ---
         self.title("AEGIS // QUANTUM INTELLIGENCE CONTROL CENTER")
-        self.geometry("1200://780")
+        self.geometry("1200x780")  # Syntax-Fehler behoben (:// zu x)
         self.configure(fg_color="#040406") # Weltraum-Tiefschwarz
         ctk.set_appearance_mode("dark")
         
@@ -202,7 +202,6 @@ class AegisControlCenter(ctk.CTk):
 
     def _cmd_trigger_autofix(self):
         self._log_ui("[HEAL] Berechne Auto-Fix Muster für core/Agent_Worker.py...")
-        # Nutzt deinen stabilisierten Fallback-Muster-Trigger
         hint = "RuntimeError: FabrikEngine benötigt einen registrierten State-Manager im EngineManager!"
         traceback_content = (
             "Traceback (most recent call last):\n"
@@ -264,4 +263,4 @@ class AegisControlCenter(ctk.CTk):
 
 if __name__ == "__main__":
     app = AegisControlCenter()
-    app.run()
+    app.mainloop()  # Fehler behoben (.run() zu .mainloop())

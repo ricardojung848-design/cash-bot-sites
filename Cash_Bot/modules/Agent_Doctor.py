@@ -30,10 +30,8 @@ from doctor_core.tests import TestRunner
 from doctor_core.phase5_brain import Phase5Brain
 from doctor_core.background import BackgroundMonitor
 
-from doctor_core.auto_fix_engine import (
-    apply_fix_with_backup,
-    rollback_last_fix,
-)
+# KORRIGIERT: Nur die Klasse importieren, da es keine globalen Funktionen sind
+from doctor_core.auto_fix_engine import AutoFixEngine
 
 # PRO-Version FixSuggestionEngine & SystemStructure
 from core.SystemStructureManager import SystemStructureManager
@@ -95,6 +93,9 @@ class AgentDoctorApp:
         self.test_runner = TestRunner(logger=log_doctor)
         self.phase5_brain = Phase5Brain(logger=log_doctor)
         self.background = BackgroundMonitor(logger=log_doctor)
+
+        # KORRIGIERT: Instanziierung der AutoFixEngine, um auf die Methoden zuzugreifen
+        self.auto_fix_engine = AutoFixEngine(engine_manager=self.engines)
 
         # Phase-7 Auto-Fix-Vorschläge laden
         if FixSuggestionEngine:
@@ -362,7 +363,8 @@ class AgentDoctorApp:
             target_path = (BASE_DIR / rel_path).resolve()
             new_content = code_box.get("1.0", "end").rstrip("\n")
 
-            ok, msg = apply_fix_with_backup(target_path, new_content, create_backup_before=True)
+            # KORRIGIERT: Aufruf über die instanziierte Engine
+            ok, msg = self.auto_fix_engine.apply_fix_with_backup(target_path, new_content, create_backup_before=True)
             log_doctor(msg)
             self._log_ui(msg)
             if ok:
@@ -387,7 +389,9 @@ class AgentDoctorApp:
             if not rel_path:
                 return
             target_path = (BASE_DIR / rel_path).resolve()
-            ok, msg = rollback_last_fix(target_path)
+            
+            # KORRIGIERT: Aufruf über die instanziierte Engine
+            ok, msg = self.auto_fix_engine.rollback_last_fix(target_path)
             log_doctor(msg)
             self._log_ui(msg)
             if ok:

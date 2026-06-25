@@ -85,9 +85,9 @@ class AgentDoctorApp:
         self.module_builder = ModuleBuilder()  # Erwartet keine Argumente
         self.module_extender = ModuleExtender()# Erwartet keine Argumente
         
-        # Diese Engines benötigen die Übergabe des Loggers:
-        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)
-        self.telegram_optimizer = TelegramOptimizer(logger=log_doctor)
+        # Präzise Trennung der Initialisierungs-Parameter:
+        self.worker_optimizer = WorkerOptimizer(logger=log_doctor)  # Benötigt den Logger zwingend!
+        self.telegram_optimizer = TelegramOptimizer()                # Darf KEINEN Logger übergeben bekommen!
         
         # Die restlichen kognitiven Sub-Systeme:
         self.auto_docs = AutoDocs()
@@ -310,7 +310,6 @@ class AgentDoctorApp:
         suggestions = self.engines.fix.update()
         if not suggestions:
             self.say("Keine akuten Korrektur-Empfehlungen in den DB-Logs hinterlegt.")
-            self.set_status("Status: Keine Vorschläge vorhanden.")
             return
         s = suggestions[0]
         keyword = s.get("keyword", "Unbekannt")

@@ -11,12 +11,10 @@ TRACEBACK_FILE_RE = re.compile(r'File "(.+?)", line (\d+), in (.+)')
 
 class FixSuggestionEngine:
     """
-    MEGA-PRO-Version (INTEGRIERT):
-    - Analysiert Log-Dateien auf spezifische und generische Fehlermuster
-    - Extrahiert präzise Quellcodedatei, Zeilennummer und Funktion aus Tracebacks
-    - Migriert von flachen JSON-Dateien direkt in das SQLite-Langzeitgedächtnis
-    - Liefert saubere Datensätze für die autonome Behebungs-Schleife
-    - PRO-AUTOFILL: Schreibt den generierten Fix direkt in das offene UI-Fenster!
+    PRO-Version mit Auto-Fill Integration:
+    - Analysiert Logs nach Systemfehlern
+    - Extrahiert Fehlerquellen und generiert Patches
+    - Befüllt die Benutzeroberfläche direkt ohne manuelle Eingaben
     """
 
     KEYWORDS = {
@@ -43,16 +41,16 @@ class FixSuggestionEngine:
         self.engines = engine_manager
         self.base_dir = Path(__file__).resolve().parent.parent.parent
         self.logs_dir = self.base_dir / "logs"
-        print("[ENGINE] FixSuggestionEngine PRO erfolgreich geladen.")
+        print("[ENGINE] FixSuggestionEngine mit Auto-Fill bereit.")
 
     def analyze_and_autofill(self, ui_instance: Any, traceback_text: str, error_message: str):
         """
-        PRO-AUTOMATION: Analysiert den Absturz des Workers, generiert den 
-        Behebungs-Code und trägt ihn eigenständig in dein Tkinter-Fenster ein!
+        Analysiert den Fehler der Engine und füllt die Eingabefelder
+        der Benutzeroberfläche autonom aus.
         """
-        print("[PRO-HEALING] Starte autonome Analyse für UI-Auto-Fill...")
+        print("[PRO-HEALING] Analysiere Log-Daten für UI-Auto-Fill...")
         
-        # 1. Datei automatisch ermitteln
+        # 1. Quellcodedatei ermitteln
         tb_info = self._extract_traceback_info(traceback_text)
         if tb_info and "source_file" in tb_info:
             target_file = tb_info["source_file"]
@@ -60,11 +58,11 @@ class FixSuggestionEngine:
             file_match = re.findall(r'File "([^"]+)"', traceback_text)
             target_file = file_match[-1] if file_match else "core/Agent_Worker.py"
 
-        # Relativen Pfad für dein Projekt säubern
+        # Relativen Pfad bereinigen
         if "Cash_Bot" in target_file:
             target_file = target_file.split("Cash_Bot")[-1].strip("\\/").replace("\\", "/")
 
-        # 2. Den passenden PRO-Code für den FabrikEngine State-Manager Fehler erzeugen
+        # 2. Spezifischen Reparatur-Code generieren
         if "State-Manager" in error_message or "FabrikEngine" in error_message or "RuntimeError" in error_message:
             suggested_code = """# PRO AUTO-FIX: Registriert den State-Manager im EngineManager
 from doctor_core.engine_manager import EngineManager
@@ -75,19 +73,18 @@ def worker_loop():
     print("[BOOT] Starten der Agent Worker Engine (PRO)...")
     manager = EngineManager()
     
-    # Automatisch von Phase 7 nachgerüstet:
+    # Automatisch nachgerüstet:
     state = DoctorState()
     manager.register("state", state)
     
     fabrik = FabrikEngine(manager)
-    # ... Restlicher Worker-Loop läuft jetzt stabil ...
+    # Restlicher Loop läuft stabil weiter
 """
         else:
-            suggested_code = f"# Auto-Fix Vorschlag für: {error_message}\n# Code-Struktur generiert."
+            suggested_code = f"# Automatischer Code-Vorschlag für:\n# {error_message}"
 
-        # 3. Direkt in die offenen UI-Eingabefelder schreiben
+        # 3. Widgets in der Benutzeroberfläche ermitteln und befüllen
         try:
-            # Sucht dynamisch nach Entry und Text-Widgets im Toplevel-Fenster
             for widget in ui_instance.winfo_children():
                 if isinstance(widget, tk.Frame):
                     for sub_w in widget.winfo_children():
@@ -97,9 +94,9 @@ def worker_loop():
                         elif isinstance(sub_w, tk.Text):
                             sub_w.delete("1.0", "end")
                             sub_w.insert("1.0", suggested_code)
-            print(f"[PRO-HEALING] 🚀 UI-Felder erfolgreich ausgefüllt für: {target_file}")
+            print(f"[PRO-HEALING] UI-Felder erfolgreich ausgefüllt für: {target_file}")
         except Exception as e:
-            print(f"[ERROR] Fehler beim autonomen UI-Befüllen: {e}")
+            print(f"[ERROR] Fehler beim UI-Befüllen: {e}")
 
     def _extract_traceback_info(self, content: str) -> Dict[str, Any] | None:
         """Extrahiert den letzten 'File "...", line X, in ...'-Block aus einem Traceback."""
@@ -134,7 +131,6 @@ def worker_loop():
             tb_info = self._extract_traceback_info(content)
             seen_keywords = set()
 
-            # 1. Spezifische Fehler prüfen
             for kw, hint in self.KEYWORDS.items():
                 if kw in content and kw not in seen_keywords:
                     seen_keywords.add(kw)
@@ -147,7 +143,6 @@ def worker_loop():
                         s.update(tb_info)
                     suggestions.append(s)
 
-            # 2. Generische Fehler prüfen
             for pattern in self.GENERIC_PATTERNS:
                 if pattern not in seen_keywords and re.search(pattern, content):
                     seen_keywords.add(pattern)
@@ -179,6 +174,6 @@ def worker_loop():
             except Exception as e:
                 log_doctor(f"FixSuggestionEngine: Fehler beim Speichern im System-State: {e}")
         else:
-            log_doctor(f"FixSuggestionEngine: State-Manager nicht registriert. {len(suggestions)} Vorschläge im RAM.")
+            log_doctor(f"FixSuggestionEngine: State-Manager nicht registriert.")
 
         return suggestions

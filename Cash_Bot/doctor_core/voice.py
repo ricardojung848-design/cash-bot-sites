@@ -88,3 +88,53 @@ class VoiceEngine:
             "Sag mir einfach, was ich als nächstes tun soll."
         )
         self.speak(text)
+
+
+class ProVoiceExtension:
+    def __init__(self, voice_engine_instance):
+        self.engine = voice_engine_instance
+        self.speech_queue = queue.Queue()
+        self.is_running = True
+        
+        # Starte den asynchronen Audio-Thread, damit das Hauptsystem nie blockiert
+        self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
+        self.worker_thread.start()
+
+    def speak_pro(self, text, priority="INFO"):
+        """
+        Fügt Text der Warteschlange hinzu und passt die Stimme der Priorität an.
+        Prioritäten: INFO, WARNING, CRITICAL
+        """
+        self.speech_queue.put((text, priority))
+
+    def _process_queue(self):
+        while self.is_running:
+            try:
+                text, priority = self.speech_queue.get(timeout=1)
+                self._configure_voice_by_priority(priority)
+                
+                # Text-to-Speech ausführen
+                self.engine.say(text)
+                self.engine.runAndWait()
+                
+                self.speech_queue.task_done()
+            except queue.Empty:
+                continue
+
+    def _configure_voice_by_priority(self, priority):
+        """ PRO-Feature: Ändert Sprechgeschwindigkeit und Lautstärke basierend auf System-Status """
+        try:
+            if priority == "CRITICAL":
+                self.engine.setProperty('rate', 140)   # Langsam und deutlich bei Fehlern
+                self.engine.setProperty('volume', 1.0) # Maximale Lautstärke
+            elif priority == "WARNING":
+                self.engine.setProperty('rate', 165)   # Leicht erhöhtes Tempo
+                self.engine.setProperty('volume', 0.8)
+            else:
+                self.engine.setProperty('rate', 180)   # Standard PRO-Geschwindigkeit (flüssig)
+                self.engine.setProperty('volume', 0.7) # Angenehme Hintergrund-Lautstärke
+        except Exception:
+            pass
+
+    def shutdown_voice(self):
+        self.is_running = False

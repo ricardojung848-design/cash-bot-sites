@@ -1,3 +1,12 @@
+import os
+import sys
+from pathlib import Path
+
+# Stammverzeichnis (CASH_BOT) absolut absichern, damit doctor_core gefunden wird
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 import json
 import urllib.request
 import urllib.parse

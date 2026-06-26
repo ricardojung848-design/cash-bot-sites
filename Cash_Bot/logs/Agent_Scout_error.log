@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules\Agent_Scout.py", line 8, in <module>
+    from doctor_core.logging import log_doctor
+ModuleNotFoundError: No module named 'doctor_core'

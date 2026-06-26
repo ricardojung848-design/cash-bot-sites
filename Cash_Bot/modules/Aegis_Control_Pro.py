@@ -289,18 +289,35 @@ class AegisOSDashboard(ctk.CTk):
                 status_icon = "[OFFEN]" if t[2] == "OPEN" else "[ERLEDIGT]"
                 txt_tasks.insert("end", f"{status_icon} ID #{t[0]}: {t[1]}\n")
 
+    def _log_ui(self, message: str):
+        """Erlaubt es dem AgentScout, Text live in das rechte Textfeld zu schreiben."""
+        if hasattr(self, "scout_log_box") and self.scout_log_box.winfo_exists():
+            self.scout_log_box.insert("end", message + "\n")
+            self.scout_log_box.see("end")
+
     def _build_agent_app_view(self, app_name):
-        """Steuer-Zentrale für dedizierte Hintergrund-Agenten"""
+        """Steuer-Zentrale für dedizierte Hintergrund-Agenten mit Live-Logbox"""
         app_info = self.apps[app_name]
         
         lbl_info = ctk.CTkLabel(self.right_screen, text=f"Skriptpfad: {app_info['path']}", font=("Consolas", 12))
         lbl_info.pack(anchor="w", padx=20, pady=5)
 
+        # Spezialansicht für den Agent Scout mit integrierter Log-Box
         if app_name == "Agent Scout":
             btn_start = ctk.CTkButton(self.right_screen, text="SCOUT JAGD STARTEN ▶", fg_color="#103510", hover_color="#154515",
-                                       command=self._start_scout_jagd)
+                                      command=self._start_scout_jagd)
             btn_start.pack(fill="x", padx=20, pady=10)
+
+            # Das schicke schwarze Log-Terminal für den Scout
+            ctk.CTkLabel(self.right_screen, text="LIVE DEPLOYMENT LOGS:", font=("Consolas", 11, "bold"), text_color="#7777aa").pack(anchor="w", padx=20, pady=(10, 2))
+            
+            # Speicher die Referenz ab, damit _log_ui darauf zugreifen kann
+            self.scout_log_box = tk.Text(self.right_screen, bg="#0d0d11", fg="#00ffaa", font=("Consolas", 11), bd=0, highlightthickness=0)
+            self.scout_log_box.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+            self.scout_log_box.insert("end", "[SYSTEM] Scout-Konsole initialisiert. Warte auf Jagd-Befehl...\n")
+            
         else:
+            # Standard-Ansicht für die restlichen Agenten
             btn_start = ctk.CTkButton(self.right_screen, text="STARTEN ▶", fg_color="#103510", hover_color="#154515", 
                                        command=lambda: self.pm.start_agent(app_name, app_info["path"]))
             btn_start.pack(fill="x", padx=20, pady=10)

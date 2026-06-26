@@ -3,44 +3,52 @@ import sys
 import subprocess
 from pathlib import Path
 
-# BASE_DIR zeigt fest auf das Hauptverzeichnis (Cash_Bot)
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOG_DIR = BASE_DIR / "logs"
 
 class AgentProcessManager:
     def __init__(self, engine_manager):
         self.engines = engine_manager
         self.running_processes = {}  # Struktur: { "Agenten_Name": subprocess.Popen }
+        os.makedirs(str(LOG_DIR), exist_ok=True)
 
     def start_agent(self, agent_name, script_path):
-        """Startet einen Agenten parallel über einen absolut abgesicherten Windows-Pfad"""
+        """Startet einen Agenten und schreibt Fehler bei Misserfolg in ein Logfile"""
         clean_name = agent_name.replace(" ", "_")
 
         if clean_name in self.running_processes:
             if self.running_processes[clean_name].poll() is None:
                 return f"[INFO] {agent_name} läuft bereits aktiv."
 
-        # ABSICHERUNG: Macht aus 'core/Agent_Worker.py' einen absoluten Windows-Pfad
         full_path = (BASE_DIR / script_path).resolve()
-        
         if not full_path.exists():
             return f"[ERROR] Datei existiert nicht unter: {full_path}"
 
+        # Logdatei für diesen spezifischen Agenten definieren
+        log_file_path = LOG_DIR / f"{clean_name}_error.log"
+
         try:
-            # Aufruf mit deiner exakten Python-Version und absolutem Pfad
-            proc = subprocess.Popen(
-                ["py", "-3.13-64", str(full_path)],
-                cwd=str(BASE_DIR),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
+            # Wir fangen stderr (Fehler) in einer echten Datei ab!
+            with open(log_file_path, "w", encoding="utf-8") as log_file:
+                proc = subprocess.Popen(
+                    ["py", "-3.13-64", str(full_path)],
+                    cwd=str(BASE_DIR),
+                    stdout=subprocess.DEVNULL,
+                    stderr=log_file  # Fehler werden hier reingeschrieben
+                )
             
-            # Kurzer Verifizierungs-Check
+            # Kurzer Check, ob der Prozess die Startphase überlebt
             try:
-                proc.wait(timeout=0.4)
+                proc.wait(timeout=0.5)
                 exit_code = proc.poll()
                 if exit_code is not None and exit_code != 0:
-                    return f"[CRASH] Agent startete, brach aber sofort ab (Code {exit_code})."
+                    # Lies den Fehler direkt aus dem Log aus
+                    err_msg = "Unbekannter Fehler"
+                    if log_file_path.exists():
+                        err_msg = log_file_path.read_text(encoding="utf-8").strip() or f"Exit-Code {exit_code}"
+                    return f"[CRASH] {agent_name} abgebrochen: {err_msg}"
             except subprocess.TimeoutExpired:
+                # Prozess läuft stabil im Hintergrund!
                 pass
 
             self.running_processes[clean_name] = proc
@@ -50,7 +58,6 @@ class AgentProcessManager:
             return f"[ERROR] Windows-Startfehler für {agent_name}: {e}"
 
     def stop_agent(self, agent_name):
-        """Stoppt einen spezifischen Agenten sauber"""
         clean_name = agent_name.replace(" ", "_")
         if clean_name in self.running_processes:
             proc = self.running_processes[clean_name]
@@ -65,13 +72,11 @@ class AgentProcessManager:
         return f"[INFO] {agent_name} ist bereits offline."
 
     def stop_all(self):
-        """Zentraler Notschalter für alle Agenten"""
         for name in list(self.running_processes.keys()):
             self.stop_agent(name)
         return "ALL PROCESSES TERMINATED"
 
     def get_statuses(self):
-        """Liefert den Live-Status für die iPhone-App-Kacheln"""
         status_dict = {}
         for name, proc in list(self.running_processes.items()):
             exit_code = proc.poll()

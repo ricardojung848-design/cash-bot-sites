@@ -1,5 +1,10 @@
 import os
 import sys
+
+# Windows global zwingen, Python im UTF-8 Modus auszuführen
+os.environ["PYTHONUTF8"] = "1"
+
+# Hier folgen deine restlichen, bestehenden Imports...
 import json
 import threading
 import tkinter as tk

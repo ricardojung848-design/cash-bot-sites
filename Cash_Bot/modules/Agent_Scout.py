@@ -30,11 +30,19 @@ OLLAMA_DEEP = "llama3"
 
 KI_STRATEGIE = "fallback"
 
-# Absoluter Pfad zur lokalen RSS-Datei, falls vorhanden
-RSS_PFAD = BASE_DIR / "modules" / "crypto" / "rss.xml"
+# Pfade relativ zum Scout-Modul (robust gegen Arbeitsverzeichnis-Verschiebungen)
+SCOUT_DIR = Path(__file__).resolve().parent
+LOCAL_XML = SCOUT_DIR / "crypto-rss.xml"
+RSS_PFAD = LOCAL_XML
+
+# Versuche, 'requests' zu verwenden, wenn installiert (besseres Browser-Simulating)
+try:
+    import requests  # type: ignore
+except Exception:
+    requests = None
 
 ZIEL_QUELLEN = [
-    str(RSS_PFAD),
+    str(LOCAL_XML),
     "https://www.bundesweit-kreativ.de/feeder/rss/rss.xml",
 ]
 
@@ -67,26 +75,53 @@ class AgentScout:
         return " ".join(text.split())
 
     def _seite_abrufen(self, url: str) -> str:
-        """Lädt den Inhalt einer lokalen Datei oder einer Webseite stabil ohne externe Abhängigkeiten."""
+        """Lädt den Inhalt einer lokalen Datei oder einer Webseite absolut stabil."""
+        # 1. Fall: Es handelt sich um einen lokalen Systempfad
         try:
-            if not url:
-                return ""
+            if url and (url.startswith("C:") or url.startswith("/") or "\\" in url or (not url.startswith("http"))):
+                try:
+                    from pathlib import Path as _Path
+                    lokaler_pfad = _Path(url).resolve()
+                    if lokaler_pfad.exists():
+                        return lokaler_pfad.read_text(encoding="utf-8", errors="ignore")
+                    else:
+                        self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Lokale Quelle existiert nicht: {lokaler_pfad}")
+                        return ""
+                except Exception as e:
+                    self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Fehler beim Lesen der lokalen Datei: {e}")
+                    return ""
 
-            if "://" not in url:
-                pfad = Path(url)
-                if not pfad.is_absolute():
-                    pfad = (BASE_DIR / pfad).resolve()
-                if pfad.exists() and pfad.is_file():
-                    return pfad.read_text(encoding="utf-8", errors="ignore")
+            # 2. Fall: Es ist eine externe Web-URL
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
 
-            req = urllib.request.Request(
-                url,
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) DETO-Art-Scout/2.0'}
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                return response.read().decode('utf-8', errors='ignore')
+            # Falls 'requests' installiert ist (bevorzugte, stabilere Methode)
+            if requests is not None:
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        return response.text
+                    else:
+                        self._log_to_ui(f"[SCOUT ENGINE] ⚠️ HTTP-Fehler {response.status_code} für {url}")
+                        return ""
+                except Exception as e:
+                    self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Netzwerk-Timeout/Fehler bei Web-Quelle: {e}")
+                    return ""
+
+            # Fallback auf urllib, falls requests fehlt
+            else:
+                try:
+                    import urllib.request as _ur
+                    req = _ur.Request(url, headers=headers)
+                    with _ur.urlopen(req, timeout=10) as response:
+                        return response.read().decode('utf-8', errors='ignore')
+                except Exception as e:
+                    self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Urllib-Fallback fehlgeschlagen für {url}: {e}")
+                    return ""
         except Exception as e:
-            log_doctor(f"AgentScout: Fehler beim Abrufen von {url}: {e}")
+            self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Unbekannter Fehler beim Abruf von {url}: {e}")
             return ""
 
     def _hole_installierte_ollama_modelle(self) -> List[str]:

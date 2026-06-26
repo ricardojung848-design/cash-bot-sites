@@ -222,102 +222,119 @@ class AgentDoctorApp:
     def say(self, text: str):
         threading.Thread(target=lambda: self.voice.speak(text), daemon=True).start()
 
+    def _run_in_thread(self, target_func):
+        """Führt eine UI-Aktion in einem separaten Thread aus, damit die Log-Box live aktualisiert wird."""
+        threading.Thread(target=target_func, daemon=True).start()
+
     def _run_system_check(self):
-        self.set_status("Status: Systemprüfung läuft...")
-        ok = self.system_checker.run()
-        if ok:
-            self.say("Die Systemstruktur wirkt konsistent.")
-        else:
-            self._log_ui("[SYSTEM CHECK] WARNUNG: Inkonsistenzen entdeckt!")
-            self.say("Ich habe Probleme im System erkannt.")
-        self.set_status("Status: Systemprüfung abgeschlossen.")
+        def action():
+            self.set_status("Status: Systemprüfung läuft...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[SYSTEM CHECK] Starte strukturelle Systemprüfung...")
+
+            ok = self.system_checker.run()
+            if ok:
+                self._log_ui("[SYSTEM CHECK] Ergebnis: NOMINAL. Alle Pfade verifiziert.")
+                self.say("Die Systemstruktur wirkt konsistent.")
+            else:
+                self._log_ui("[SYSTEM CHECK] WARNUNG: Inkonsistenzen entdeckt!")
+                self.say("Ich habe Probleme im System erkannt.")
+            self.set_status("Status: Systemprüfung abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _run_log_analysis(self):
-        self.set_status("Status: Loganalyse läuft...")
-        self._log_ui("\n" + "="*40)
-        self._log_ui("[LOG ANALYZER] Scanne System-Logs nach Fehlermeldungen...")
-        if self.root: self.root.update_idletasks()
-        
-        ok = self.log_analyzer.run()
-        if ok:
-            self._log_ui("[LOG ANALYZER] Scan beendet: Relevante Einträge indiziert.")
-            self.say("Ich habe Log Dateien gefunden.")
-        else:
-            self._log_ui("[LOG ANALYZER] Scan beendet: Keine Fehler-Logs isoliert.")
-            self.say("Ich habe keine Log Dateien gefunden.")
-            
-        self.set_status("Status: Loganalyse abgeschlossen.")
+        def action():
+            self.set_status("Status: Loganalyse läuft...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[LOG ANALYZER] Scanne System-Logs nach Fehlermeldungen...")
+
+            ok = self.log_analyzer.run()
+            if ok:
+                self._log_ui("[LOG ANALYZER] Scan beendet: Relevante Einträge indiziert.")
+                self.say("Ich habe Log Dateien gefunden.")
+            else:
+                self._log_ui("[LOG ANALYZER] Scan beendet: Keine Fehler-Logs isoliert.")
+                self.say("Ich habe keine Log Dateien gefunden.")
+            self.set_status("Status: Loganalyse abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _run_worker_opt(self):
-        self.set_status("Status: Worker-Optimierung läuft...")
-        self._log_ui("\n" + "="*40)
-        self._log_ui("[OPTIMIZER] Analysiere Performance-Metriken des Agent_Worker...")
-        if self.root: self.root.update_idletasks()
-        
-        if self.worker_optimizer.optimize():
-            self._log_ui("[OPTIMIZER] Optimierung erfolgreich: Threads angepasst.")
-            self.say("Worker-Optimierung abgeschlossen.")
-        else:
-            self._log_ui("[OPTIMIZER] Worker läuft bereits im Effizienz-Maximum.")
-            
-        self.set_status("Status: Worker-Optimierung abgeschlossen.")
+        def action():
+            self.set_status("Status: Worker-Optimierung läuft...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[OPTIMIZER] Analysiere Performance-Metriken des Agent_Worker...")
+
+            if self.worker_optimizer.optimize():
+                self._log_ui("[OPTIMIZER] Optimierung erfolgreich: Threads angepasst.")
+                self.say("Worker-Optimierung abgeschlossen.")
+            else:
+                self._log_ui("[OPTIMIZER] Worker läuft bereits im Effizienz-Maximum.")
+            self.set_status("Status: Worker-Optimierung abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _run_telegram_opt(self):
-        self.set_status("Status: Telegram-Optimierung läuft...")
-        self._log_ui("\n" + "="*40)
-        self._log_ui("[TELEGRAM ENGINE] Überprüfe API-Durchsatz...")
-        if self.root: self.root.update_idletasks()
-        
-        if self.telegram_optimizer.optimize():
-            self._log_ui("[TELEGRAM ENGINE] Synchronisation abgeschlossen.")
-            self.say("Telegram-Optimierung abgeschlossen.")
-        else:
-            self._log_ui("[TELEGRAM ENGINE] Keine Anpassung notwendig.")
-            
-        self.set_status("Status: Telegram-Optimierung abgeschlossen.")
+        def action():
+            self.set_status("Status: Telegram-Optimierung läuft...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[TELEGRAM ENGINE] Überprüfe API-Durchsatz...")
+
+            if self.telegram_optimizer.optimize():
+                self._log_ui("[TELEGRAM ENGINE] Synchronisation abgeschlossen.")
+                self.say("Telegram-Optimierung abgeschlossen.")
+            else:
+                self._log_ui("[TELEGRAM ENGINE] Keine Anpassung notwendig.")
+            self.set_status("Status: Telegram-Optimierung abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _run_auto_docs(self):
-        self.set_status("Status: Auto-Doku läuft...")
-        self._log_ui("\n" + "="*40)
-        self._log_ui("[AUTO DOCS] Generiere technische Dokumentation...")
-        if self.root: self.root.update_idletasks()
-        
-        if self.auto_docs.generate():
-            self._log_ui("[AUTO DOCS] Markdown-Dateien in 'docs/' aktualisiert.")
-            self.say("Auto-Dokumentation abgeschlossen.")
-        else:
-            self._log_ui("[AUTO DOCS] Dokumentation ist bereits aktuell.")
-            
-        self.set_status("Status: Auto-Doku abgeschlossen.")
+        def action():
+            self.set_status("Status: Auto-Doku läuft...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[AUTO DOCS] Generiere technische Dokumentation...")
+
+            if self.auto_docs.generate():
+                self._log_ui("[AUTO DOCS] Markdown-Dateien in 'docs/' aktualisiert.")
+                self.say("Auto-Dokumentation abgeschlossen.")
+            else:
+                self._log_ui("[AUTO DOCS] Dokumentation ist bereits aktuell.")
+            self.set_status("Status: Auto-Doku abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _run_tests(self):
-        self.set_status("Status: Tests laufen...")
-        self._log_ui("\n" + "="*40)
-        self._log_ui("[TEST RUNNER] Starte automatisierte Test-Suites...")
-        if self.root: self.root.update_idletasks()
-        
-        if self.test_runner.run():
-            self._log_ui("[TEST RUNNER] ALLE TESTS BESTANDEN (100% Core Coverage).")
-            self.say("Testläufe abgeschlossen.")
-        else:
-            self._log_ui("[TEST RUNNER] ALARM: Einige Unit-Tests haben Fehler aufgeworfen!")
-            self.say("Testläufe fehlgeschlagen.")
-            
-        self.set_status("Status: Tests abgeschlossen.")
+        def action():
+            self.set_status("Status: Tests laufen...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[TEST RUNNER] Starte automatisierte Test-Suites...")
+
+            if self.test_runner.run():
+                self._log_ui("[TEST RUNNER] ALLE TESTS BESTANDEN (100% Core Coverage).")
+                self.say("Testläufe abgeschlossen.")
+            else:
+                self._log_ui("[TEST RUNNER] ALARM: Einige Unit-Tests haben Fehler aufgeworfen!")
+                self.say("Testläufe fehlgeschlagen.")
+            self.set_status("Status: Tests abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _run_phase5_brain(self):
-        self.set_status("Status: Phase-5-Brain Update läuft...")
-        self._log_ui("\n" + "="*40)
-        self._log_ui("[PHASE 5 BRAIN] Synchronisiere kognitives Modell...")
-        if self.root: self.root.update_idletasks()
-        
-        if self.phase5_brain.update():
-            self._log_ui("[PHASE 5 BRAIN] Wissens-Graph erfolgreich neu berechnet.")
-            self.say("Kognitiver Kern aktualisiert.")
-        else:
-            self._log_ui("[PHASE 5 BRAIN] Keine neuen Datenpunkte vorhanden.")
-            
-        self.set_status("Status: Phase-5-Brain abgeschlossen.")
+        def action():
+            self.set_status("Status: Phase-5-Brain Update läuft...")
+            self._log_ui("\n" + "="*40)
+            self._log_ui("[PHASE 5 BRAIN] Synchronisiere kognitives Modell...")
+
+            if self.phase5_brain.update():
+                self._log_ui("[PHASE 5 BRAIN] Wissens-Graph erfolgreich neu berechnet.")
+                self.say("Kognitiver Kern aktualisiert.")
+            else:
+                self._log_ui("[PHASE 5 BRAIN] Keine neuen Datenpunkte vorhanden.")
+            self.set_status("Status: Phase-5-Brain abgeschlossen.")
+
+        self._run_in_thread(action)
 
     def _open_module_builder_window(self):
         parent = self.root if self.root else tk.Tk()

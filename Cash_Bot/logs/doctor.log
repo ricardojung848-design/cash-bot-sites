@@ -5656,3 +5656,35 @@
 [2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain 'www.bundesweit-kreativ.de' nicht erreichbar.
 [2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] ❌ DNS-Fehler: Domain 'www.bundesweit-kreativ.de' konnte nicht aufgelöst werden.
 [2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.
+[2026-06-26 16:47:06] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-26 16:47:06] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-26 16:47:13] [DOCTOR] 
+========================================
+[2026-06-26 16:47:13] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: fallback).
+[2026-06-26 16:47:13] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: crypto-rss.xml
+[2026-06-26 16:47:13] [DOCTOR] [SCOUT ENGINE] Sende Textfragment an KI zur Analyse...
+[2026-06-26 16:47:15] [DOCTOR] AgentScout: Modell 'gemma2:2b' fehlt lokal. Verwende Fallback 'llama3'.
+[2026-06-26 16:47:19] [DOCTOR] AgentScout: LM Studio offline. Wechsle zu Ollama-Backup...
+[2026-06-26 16:47:21] [DOCTOR] AgentScout: Modell 'llama3' fehlt lokal. Verwende Fallback 'llama3'.
+[2026-06-26 16:47:23] [DOCTOR] AgentScout: Beide KI-Backends ausgefallen! HTTP Error 404: Not Found
+[2026-06-26 16:47:23] [DOCTOR] [SCOUT ENGINE] Fragment geprüft: Kein Match für DETO.
+[2026-06-26 16:47:23] [DOCTOR] [SCOUT ENGINE] Sende Textfragment an KI zur Analyse...
+[2026-06-26 16:47:26] [DOCTOR] AgentScout: Modell 'gemma2:2b' fehlt lokal. Verwende Fallback 'llama3'.
+[2026-06-26 16:47:30] [DOCTOR] AgentScout: LM Studio offline. Wechsle zu Ollama-Backup...
+[2026-06-26 16:47:32] [DOCTOR] AgentScout: Modell 'llama3' fehlt lokal. Verwende Fallback 'llama3'.
+[2026-06-26 16:47:34] [DOCTOR] AgentScout: Beide KI-Backends ausgefallen! HTTP Error 404: Not Found
+[2026-06-26 16:47:34] [DOCTOR] [SCOUT ENGINE] Fragment geprüft: Kein Match für DETO.
+[2026-06-26 16:47:34] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: https://www.bundesweit-kreativ.de/feeder/rss/rss.xml
+[2026-06-26 16:47:34] [DOCTOR] [SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain 'www.bundesweit-kreativ.de' nicht erreichbar.
+[2026-06-26 16:47:34] [DOCTOR] [SCOUT ENGINE] ❌ DNS-Fehler: Domain 'www.bundesweit-kreativ.de' konnte nicht aufgelöst werden.
+[2026-06-26 16:47:34] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.
+[2026-06-26 17:08:17] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-26 17:08:17] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-26 17:08:22] [DOCTOR] 
+========================================
+[2026-06-26 17:08:22] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: fallback).
+[2026-06-26 17:08:22] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: crypto-rss.xml
+[2026-06-26 17:08:22] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: https://www.bundesweit-kreativ.de/feeder/rss/rss.xml
+[2026-06-26 17:08:23] [DOCTOR] [SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain 'www.bundesweit-kreativ.de' nicht erreichbar.
+[2026-06-26 17:08:23] [DOCTOR] [SCOUT ENGINE] ❌ DNS-Fehler: Domain 'www.bundesweit-kreativ.de' konnte nicht aufgelöst werden.
+[2026-06-26 17:08:23] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.

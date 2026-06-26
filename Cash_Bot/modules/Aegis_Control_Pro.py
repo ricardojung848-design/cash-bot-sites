@@ -4,10 +4,10 @@ import sys
 # Windows global zwingen, Python im UTF-8 Modus auszuführen
 os.environ["PYTHONUTF8"] = "1"
 
-# Hier folgen deine restlichen, bestehenden Imports...
 import json
 import threading
 import tkinter as tk
+import tkinter.ttk as ttk
 from pathlib import Path
 
 try:
@@ -35,7 +35,7 @@ class AegisOSDashboard(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # 1. Core Engines initialisieren
+        # 1. Core Engines & Zustands-Flags initialisieren
         self.doctor_state = DoctorState()
         self.engines = EngineManager()
         self.engines.register("state", self.doctor_state)
@@ -44,6 +44,9 @@ class AegisOSDashboard(ctk.CTk):
         self.storage = AegisStorage()
         self.dialog_engine = AegisDialogEngine(self.engines)
         self.scout_worker = AgentScout(self.engines, ui_instance=self)
+
+        # Internes Tracking für asynchrone Worker (Verhindert LED-Aussetzer bei Ansichtswechseln)
+        self.scout_active_flag = False
 
         # 2. Fenster-Konfiguration
         self.title("Aegis OS // COGNITIVE COMMAND SYSTEM")
@@ -106,7 +109,6 @@ class AegisOSDashboard(ctk.CTk):
             with open(LAYOUT_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         
-        # Standard-Anordnung falls neu: Zuweisung [Row, Column]
         positions = {}
         for i, app_name in enumerate(self.apps.keys()):
             row = i // 2
@@ -121,71 +123,56 @@ class AegisOSDashboard(ctk.CTk):
             json.dump(self.app_positions, f, indent=4)
 
     def _start_scout_jagd(self):
-        # 1. LED für den Agent Scout sofort manuell auf Grün schalten
+        """Aktiviert die Scout-Steuerung über einen Thread-sicheren Zustands-Marker"""
+        self.scout_active_flag = True
         if "Agent Scout" in self.tiles:
             self.tiles["Agent Scout"]["led"].configure(text_color="#00ffaa")
         
-        # 2. Den Hintergrund-Thread für die eigentliche Arbeit starten
-        threading.Thread(target=self.scout_worker.scout_jagd_starten, daemon=True).start()
-
+        threading.Thread(target=self.scout_worker.scout_jagd_starten, daemon=True).start()                      
     def _build_main_layout(self):
         """Erstellt die iPhone-Splitscreen-Struktur"""
-        # HEADER
         header = ctk.CTkFrame(self, fg_color="transparent", height=40)
         header.pack(fill="x", padx=20, pady=10)
         ctk.CTkLabel(header, text="📱 Aegis OS v2.0", font=("Consolas", 16, "bold")).pack(side="left")
         self.lbl_global_status = ctk.CTkLabel(header, text="SYSTEM NOMINAL", text_color="#00ffaa", font=("Consolas", 12, "bold"))
         self.lbl_global_status.pack(side="right")
 
-        # NOTSCHALTER (Kill Switch)
         btn_kill = ctk.CTkButton(header, text="🛑 ALL KILL", fg_color="#401010", hover_color="#601010", width=80, command=self._global_kill)
         btn_kill.pack(side="right", padx=20)
 
-        # MAIN CONTAINER
         main_container = ctk.CTkFrame(self, fg_color="transparent")
         main_container.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Links: iPhone Grid-Fläche
         self.left_screen = ctk.CTkScrollableFrame(main_container, width=400, fg_color="#121216", border_width=1, border_color="#22222a")
         self.left_screen.pack(side="left", fill="both", expand=False, padx=5)
         
-        # Rechts: Großes Display für fokussierte App
         self.right_screen = ctk.CTkFrame(main_container, fg_color="#181820", border_width=1, border_color="#22222a")
         self.right_screen.pack(side="right", fill="both", expand=True, padx=5)
 
     def _render_app_grid(self):
         """Baut das Grid basierend auf den Layout-Koordinaten auf"""
-        # Bestehende Widgets im linken Screen löschen
         for widget in self.left_screen.winfo_children():
             widget.destroy()
 
-        # Grid konfigurieren
         self.left_screen.grid_columnconfigure((0, 1), weight=1, minsize=180)
 
         self.tiles = {}
         for app_name, pos in self.app_positions.items():
             row, col = pos[0], pos[1]
             
-            # App-Kachel (Container)
             tile = ctk.CTkFrame(self.left_screen, fg_color="#22222e", border_width=1, border_color="#333344", height=120)
             tile.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
             tile.grid_propagate(False)
 
-            # Linksklick -> App rechts öffnen
             tile.bind("<Button-1>", lambda event, name=app_name: self._open_app_view(name))
-            
-            # Rechtsklick -> Kachel für Verschieben auswählen
             tile.bind("<Button-3>", lambda event, name=app_name: self._select_for_move(name))
 
-            # Status LED (An/Aus)
             led = ctk.CTkLabel(tile, text="●", text_color="#ff5555", font=("Consolas", 14))
             led.place(x=15, y=10)
 
-            # App Name
             lbl_name = ctk.CTkLabel(tile, text=app_name, font=("Consolas", 13, "bold"))
             lbl_name.place(x=35, y=8)
             
-            # Event-Weiterleitung für Klick auf Label/LED
             lbl_name.bind("<Button-1>", lambda event, name=app_name: self._open_app_view(name))
             led.bind("<Button-1>", lambda event, name=app_name: self._open_app_view(name))
 
@@ -198,7 +185,6 @@ class AegisOSDashboard(ctk.CTk):
             self.tiles[app_name]["frame"].configure(border_color="#ffaa00", border_width=2)
             self.lbl_global_status.configure(text=f"Verschiebe Modus: Klicke jetzt Rechts auf die Zielposition!", text_color="#ffaa00")
         else:
-            # Tausche Positionen zwischen zuvor gewählter und dieser geklickten Kachel
             target_pos = self.app_positions[app_name].copy()
             source_pos = self.app_positions[self.selected_app_key].copy()
             
@@ -215,18 +201,15 @@ class AegisOSDashboard(ctk.CTk):
         for widget in self.right_screen.winfo_children():
             widget.destroy()
 
-        # Titel der App oben rechts anzeigen
         title_frame = ctk.CTkFrame(self.right_screen, fg_color="transparent")
         title_frame.pack(fill="x", padx=20, pady=15)
         ctk.CTkLabel(title_frame, text=f"📂 APP // {app_name.upper()}", font=("Consolas", 16, "bold")).pack(side="left")
 
-        # Fallunterscheidung: Welche App wurde geklickt?
         if app_name == "AI Voice Chat":
             self._build_voice_app_view()
         elif app_name == "Task Manager":
             self._build_task_app_view()
         else:
-            # Dynamische Agenten-Steuerung (Start/Stopp-Fläche)
             self._build_agent_app_view(app_name)
 
     def _build_voice_app_view(self):
@@ -249,12 +232,8 @@ class AegisOSDashboard(ctk.CTk):
             if text:
                 self.chat_history.insert("end", f"👤 DU: {text}\n")
                 
-                # 🛠️ LOGIK-BRÜCKE: Erkennt den Startbefehl im Chat
                 if text.lower().startswith("starte "):
-                    # Extrahiert den Namen (z.B. "worker")
                     target_agent = text[7:].strip().lower()
-                    
-                    # Sucht den passenden Eintrag in deiner Registry
                     found_app_name = None
                     for app_name in self.apps.keys():
                         if target_agent in app_name.lower():
@@ -263,7 +242,6 @@ class AegisOSDashboard(ctk.CTk):
                     
                     if found_app_name:
                         script_path = self.apps[found_app_name]["path"]
-                        # Startet den Prozess über den ProcessManager!
                         res = self.pm.start_agent(found_app_name, script_path)
                         if res == "SUCCESS":
                             self.chat_history.insert("end", f"🤖 AEGIS: [{found_app_name}] wurde erfolgreich gestartet!\n\n")
@@ -272,7 +250,6 @@ class AegisOSDashboard(ctk.CTk):
                     else:
                         self.chat_history.insert("end", f"🤖 AEGIS: Agent '{target_agent}' wurde in der registry.json nicht gefunden.\n\n")
                 else:
-                    # Normaler Dialog falls kein Startbefehl
                     reply = self.dialog_engine.process_command(text)
                     self.chat_history.insert("end", f"🤖 AEGIS: {reply}\n\n")
                 
@@ -300,10 +277,12 @@ class AegisOSDashboard(ctk.CTk):
                 txt_tasks.insert("end", f"{status_icon} ID #{t[0]}: {t[1]}\n")
 
     def _log_ui(self, message: str):
-        """Erlaubt es dem AgentScout, Text live in das rechte Textfeld zu schreiben."""
-        if hasattr(self, "scout_log_box") and self.scout_log_box.winfo_exists():
-            self.scout_log_box.insert("end", message + "\n")
-            self.scout_log_box.see("end")
+        """Schreibt Logs absolut Thread-sicher über die .after() Methode der UI Engine"""
+        def thread_safe_insert():
+            if hasattr(self, "scout_log_box") and self.scout_log_box.winfo_exists():
+                self.scout_log_box.insert("end", message + "\n")
+                self.scout_log_box.see("end")
+        self.after(0, thread_safe_insert)
 
     def _build_agent_app_view(self, app_name):
         """Steuer-Zentrale für dedizierte Hintergrund-Agenten mit Live-Logbox"""
@@ -312,22 +291,18 @@ class AegisOSDashboard(ctk.CTk):
         lbl_info = ctk.CTkLabel(self.right_screen, text=f"Skriptpfad: {app_info['path']}", font=("Consolas", 12))
         lbl_info.pack(anchor="w", padx=20, pady=5)
 
-        # Spezialansicht für den Agent Scout mit integrierter Log-Box
         if app_name == "Agent Scout":
             btn_start = ctk.CTkButton(self.right_screen, text="SCOUT JAGD STARTEN ▶", fg_color="#103510", hover_color="#154515",
                                       command=self._start_scout_jagd)
             btn_start.pack(fill="x", padx=20, pady=10)
 
-            # Das schicke schwarze Log-Terminal für den Scout
             ctk.CTkLabel(self.right_screen, text="LIVE DEPLOYMENT LOGS:", font=("Consolas", 11, "bold"), text_color="#7777aa").pack(anchor="w", padx=20, pady=(10, 2))
             
-            # Speicher die Referenz ab, damit _log_ui darauf zugreifen kann
             self.scout_log_box = tk.Text(self.right_screen, bg="#0d0d11", fg="#00ffaa", font=("Consolas", 11), bd=0, highlightthickness=0)
             self.scout_log_box.pack(fill="both", expand=True, padx=20, pady=(0, 20))
             self.scout_log_box.insert("end", "[SYSTEM] Scout-Konsole initialisiert. Warte auf Jagd-Befehl...\n")
             
         else:
-            # Standard-Ansicht für die restlichen Agenten
             btn_start = ctk.CTkButton(self.right_screen, text="STARTEN ▶", fg_color="#103510", hover_color="#154515", 
                                        command=lambda: self.pm.start_agent(app_name, app_info["path"]))
             btn_start.pack(fill="x", padx=20, pady=10)
@@ -336,20 +311,54 @@ class AegisOSDashboard(ctk.CTk):
                                       command=lambda: self.pm.stop_agent(app_name))
             btn_stop.pack(fill="x", padx=20, pady=10)
 
+    def _erzeuge_scout_treffer_ui(self, parent_layout):
+        """Erstellt eine saubere Tabelle im Dashboard für die gefundenen DETO-Ausschreibungen."""
+        
+        # Überschrift für die Treffer
+        self.treffer_label = tk.Label(parent_layout, text="🎯 GEFUNDENE AUSSCHREIBUNGEN (DETO-PROFIL):", fg="#00ffcc", bg="#181820", font=("Consolas", 12, "bold"))
+        self.treffer_label.pack(anchor="w", padx=10, pady=(10, 4))
+        
+        # Tabelle initialisieren
+        self.treffer_tabelle = ttk.Treeview(parent_layout, columns=("titel", "ort", "zeitstempel"), show="headings", height=8)
+        self.treffer_tabelle.heading("titel", text="Titel")
+        self.treffer_tabelle.heading("ort", text="Ort")
+        self.treffer_tabelle.heading("zeitstempel", text="Zeitstempel")
+        self.treffer_tabelle.column("titel", anchor="w", width=380)
+        self.treffer_tabelle.column("ort", anchor="w", width=140)
+        self.treffer_tabelle.column("zeitstempel", anchor="w", width=130)
+        
+        # Darkstyle per Treeview
+        style = ttk.Style()
+        style.configure("Scout.Treeview", background="#1a1a24", foreground="#ffffff", fieldbackground="#1a1a24", bordercolor="#2d2d3d", borderwidth=1)
+        style.configure("Scout.Treeview.Heading", background="#2d2d3d", foreground="#00ffcc", relief="flat")
+        self.treffer_tabelle.configure(style="Scout.Treeview")
+        
+        self.treffer_tabelle.pack(fill="x", padx=10, pady=(0, 16))
+
+    def update_treffer_tabelle(self, treffer_liste):
+        """Wird aufgerufen, sobald der Scout-Lauf beendet ist, um die GUI live zu füttern."""
+        for item in self.treffer_tabelle.get_children():
+            self.treffer_tabelle.delete(item)
+
+        for treffer in treffer_liste:
+            self.treffer_tabelle.insert("", "end", values=(
+                treffer.get("titel", "Unbekannt"),
+                treffer.get("ort", "Aachen"),
+                treffer.get("zeitstempel", "")
+            ))
+
     def _global_kill(self):
         self.pm.stop_all()
+        self.scout_active_flag = False
         self.lbl_global_status.configure(text="ALLE AGENTEN GESTOPPT", text_color="#ff3333")
 
     def _update_loop(self):
         """Fragt den ProcessManager ab und prüft manuelle Threads/Fenster"""
         statuses = self.pm.get_statuses()
-        
-        # Wir vereinheitlichen die Keys der Live-Prozesse für den Vergleich
         normalized_statuses = {str(k).strip().lower(): v for k, v in statuses.items()}
         
         for app_name in self.apps.keys():
             if app_name in self.tiles:
-                # Sucht den Status im ProcessManager
                 app_key_lower = app_name.strip().lower()
                 status = "OFFLINE"
                 
@@ -358,20 +367,10 @@ class AegisOSDashboard(ctk.CTk):
                         status = stat_val
                         break
                 
-                # 🛠️ ERWEITERUNG: Manuelle Überprüfung für den Agent Scout
-                if app_name == "Agent Scout":
-                    # Wenn die Log-Box existiert und Text drin steht, erzwinge RUNNING
-                    if hasattr(self, "scout_log_box") and self.scout_log_box.winfo_exists():
-                        log_content = self.scout_log_box.get("1.0", "end")
-                        if "Aufklärungsflug" in log_content or "Matches gesichtet" in log_content:
-                            status = "RUNNING"
+                # 🛠️ MANUELLE KORREKTUR: Ermittelt den Scout-Status über das krisensichere interne Tracking-Flag
+                if app_name == "Agent Scout" and self.scout_active_flag:
+                    status = "RUNNING"
                 
-                # 🛠️ ERWEITERUNG: Manuelle Überprüfung für den Agent Doctor
-                if app_name == "Agent Doctor":
-                    # Falls dein Doctor ein offenes UI-Fenster hat, das nicht im PM läuft
-                    # Kannst du hier den Status auf "RUNNING" setzen, sobald das Fenster geladen ist
-                    pass
-
                 # LED-Farbe basierend auf dem gefundenen Status setzen
                 if status == "RUNNING":
                     self.tiles[app_name]["led"].configure(text_color="#00ffaa")  # Hellgrün
@@ -384,4 +383,4 @@ class AegisOSDashboard(ctk.CTk):
 
 if __name__ == "__main__":
     app = AegisOSDashboard()
-    app.mainloop()
+    app.mainloop()    

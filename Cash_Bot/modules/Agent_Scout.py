@@ -89,12 +89,16 @@ class AgentScout:
 
         # 1. Fall: Echte HTTP/HTTPS Web-Adresse
         if url_clean.lower().startswith("http://") or url_clean.lower().startswith("https://"):
+        # 2. Fall: Externer Web-Abruf mit robuster Browser-Tarnung
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+                "Cache-Control": "max-age=0"
             }
 
             domain = url_clean.split('/')[2] if len(url_clean.split('/')) >= 3 else url_clean
-            timeout_seconds = 15
+            timeout_seconds = 10
 
             if requests is not None:
                 try:

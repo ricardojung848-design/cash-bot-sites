@@ -34,11 +34,18 @@ class AgentScout:
     - Speichert Funde transaktionssicher direkt in der SQLite-Zustandsdatenbank
     """
 
-    def __init__(self, engine_manager: EngineManager):
+    def __init__(self, engine_manager: EngineManager, ui_instance=None):
         self.engines = engine_manager
         if not self.engines.has("state"):
             raise RuntimeError("AgentScout benötigt einen registrierten State-Manager im EngineManager!")
         self.state = self.engines.get("state")
+        self.ui = ui_instance  # Optionale GUI-Referenz für Live-Logs
+
+    def _log_to_ui(self, message: str):
+        """Hilfsmethode, um Logs sowohl in die DB als auch live ins UI zu schreiben."""
+        log_doctor(message)
+        if self.ui and hasattr(self.ui, "_log_ui"):
+            self.ui._log_ui(message)
 
     def _html_bereinigen(self, html_text: str) -> str:
         """Entfernt HTML-Tags und bereinigt Whitespaces."""
@@ -167,7 +174,8 @@ class AgentScout:
 
     def scout_jagd_starten(self) -> List[Dict[str, Any]]:
         """Startet den synchronisierten Scraping- und Analyse-Durchlauf."""
-        log_doctor(f"AgentScout: Aufklärungslauf gestartet (Strategie: {KI_STRATEGIE}).")
+        self._log_to_ui("\n" + "="*40)
+        self._log_to_ui(f"[SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: {KI_STRATEGIE}).")
         
         # Zustände aus der SQLite-Datenbank laden
         scout_data = self.state.get_state("scout_engine", {"bekannte_links": [], "treffer": []})
@@ -175,8 +183,10 @@ class AgentScout:
         gefundene_treffer = []
 
         for url in ZIEL_QUELLEN:
+            self._log_to_ui(f"[SCOUT ENGINE] Scanne Quelle: {url}")
             roh_inhalt = self._seite_abrufen(url)
             if not roh_inhalt:
+                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.")
                 continue
                 
             eintraege = re.findall(r"<item>(.*?)</item>", roh_inhalt, re.DOTALL)
@@ -195,6 +205,7 @@ class AgentScout:
                 if not rein_text:
                     continue
                     
+                self._log_to_ui(f"[SCOUT ENGINE] Sende Textfragment an KI zur Analyse...")
                 analyse = self._analysiere_textauszug(rein_text)
                 
                 if analyse.get("passt_profil") is True:
@@ -204,7 +215,9 @@ class AgentScout:
                     
                     gefundene_treffer.append(analyse)
                     scout_data["treffer"].append(analyse)
-                    log_doctor(f"AgentScout: 🎯 TREFFER GEFUNDEN -> '{analyse.get('titel')}' ({analyse.get('ort')})")
+                    self._log_to_ui(f"[SCOUT ENGINE] 🎯 TREFFER GEFUNDEN -> '{analyse.get('titel')}' ({analyse.get('ort')})")
+                else:
+                    self._log_to_ui(f"[SCOUT ENGINE] Fragment geprüft: Kein Match für DETO.")
                     
                 if link != url:
                     bekannte_links.add(link)
@@ -213,7 +226,9 @@ class AgentScout:
         scout_data["bekannte_links"] = list(bekannte_links)
         self.state.set_state("scout_engine", scout_data)
         
-        log_doctor(f"AgentScout: Aufklärungslauf beendet. {len(gefundene_treffer)} neue Matches gesichert.")
+        self._log_to_ui(f"[SCOUT ENGINE] Aufklärungslauf beendet. {len(gefundene_treffer)} neue Matches gesichert.")
+        if self.ui and hasattr(self.ui, "say"):
+            self.ui.say(f"Scout-Lauf beendet. {len(gefundene_treffer)} neue Treffer.")
         return gefundene_treffer
 
 

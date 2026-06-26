@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import threading
 import tkinter as tk
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from doctor_core.state import DoctorState
 from doctor_core.process_manager import AgentProcessManager
 from doctor_core.aegis_storage import AegisStorage
 from doctor_core.dialog_engine import AegisDialogEngine
+from modules.Agent_Scout import AgentScout
 
 LAYOUT_FILE = BASE_DIR / "config" / "layout.json"
 REGISTRY_FILE = BASE_DIR / "config" / "registry.json"
@@ -36,6 +38,7 @@ class AegisOSDashboard(ctk.CTk):
         self.pm = AgentProcessManager(self.engines)
         self.storage = AegisStorage()
         self.dialog_engine = AegisDialogEngine(self.engines)
+        self.scout_worker = AgentScout(self.engines, ui_instance=self)
 
         # 2. Fenster-Konfiguration
         self.title("Aegis OS // COGNITIVE COMMAND SYSTEM")
@@ -111,6 +114,9 @@ class AegisOSDashboard(ctk.CTk):
         os.makedirs(LAYOUT_FILE.parent, exist_ok=True)
         with open(LAYOUT_FILE, "w", encoding="utf-8") as f:
             json.dump(self.app_positions, f, indent=4)
+
+    def _start_scout_jagd(self):
+        threading.Thread(target=self.scout_worker.scout_jagd_starten, daemon=True).start()
 
     def _build_main_layout(self):
         """Erstellt die iPhone-Splitscreen-Struktur"""
@@ -290,13 +296,18 @@ class AegisOSDashboard(ctk.CTk):
         lbl_info = ctk.CTkLabel(self.right_screen, text=f"Skriptpfad: {app_info['path']}", font=("Consolas", 12))
         lbl_info.pack(anchor="w", padx=20, pady=5)
 
-        btn_start = ctk.CTkButton(self.right_screen, text="STARTEN ▶", fg_color="#103510", hover_color="#154515", 
-                                   command=lambda: self.pm.start_agent(app_name, app_info["path"]))
-        btn_start.pack(fill="x", padx=20, pady=10)
+        if app_name == "Agent Scout":
+            btn_start = ctk.CTkButton(self.right_screen, text="SCOUT JAGD STARTEN ▶", fg_color="#103510", hover_color="#154515",
+                                       command=self._start_scout_jagd)
+            btn_start.pack(fill="x", padx=20, pady=10)
+        else:
+            btn_start = ctk.CTkButton(self.right_screen, text="STARTEN ▶", fg_color="#103510", hover_color="#154515", 
+                                       command=lambda: self.pm.start_agent(app_name, app_info["path"]))
+            btn_start.pack(fill="x", padx=20, pady=10)
 
-        btn_stop = ctk.CTkButton(self.right_screen, text="STOPPEN 🛑", fg_color="#401515", hover_color="#551515", 
-                                  command=lambda: self.pm.stop_agent(app_name))
-        btn_stop.pack(fill="x", padx=20, pady=10)
+            btn_stop = ctk.CTkButton(self.right_screen, text="STOPPEN 🛑", fg_color="#401515", hover_color="#551515", 
+                                      command=lambda: self.pm.stop_agent(app_name))
+            btn_stop.pack(fill="x", padx=20, pady=10)
 
     def _global_kill(self):
         self.pm.stop_all()

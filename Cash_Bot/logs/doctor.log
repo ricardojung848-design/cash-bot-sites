@@ -5560,3 +5560,14 @@
 [2026-06-26 15:22:29] [DOCTOR] AgentScout: Fehler beim Abrufen von https://www.bundesweit-kreativ.de/feeder/rss/rss.xml: <urlopen error [Errno 11001] getaddrinfo failed>
 [2026-06-26 15:22:29] [DOCTOR] [SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.
 [2026-06-26 15:22:29] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.
+[2026-06-26 15:26:13] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-26 15:26:13] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-26 15:26:40] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-26 15:26:40] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-26 15:26:40] [DOCTOR] 
+========================================
+[2026-06-26 15:26:40] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: fallback).
+[2026-06-26 15:26:40] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: https://www.bundesweit-kreativ.de/feeder/rss/rss.xml
+[2026-06-26 15:26:40] [DOCTOR] AgentScout: Fehler beim Abrufen von https://www.bundesweit-kreativ.de/feeder/rss/rss.xml: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-06-26 15:26:40] [DOCTOR] [SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.
+[2026-06-26 15:26:40] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.

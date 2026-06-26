@@ -121,6 +121,11 @@ class AegisOSDashboard(ctk.CTk):
             json.dump(self.app_positions, f, indent=4)
 
     def _start_scout_jagd(self):
+        # 1. LED für den Agent Scout sofort manuell auf Grün schalten
+        if "Agent Scout" in self.tiles:
+            self.tiles["Agent Scout"]["led"].configure(text_color="#00ffaa")
+        
+        # 2. Den Hintergrund-Thread für die eigentliche Arbeit starten
         threading.Thread(target=self.scout_worker.scout_jagd_starten, daemon=True).start()
 
     def _build_main_layout(self):

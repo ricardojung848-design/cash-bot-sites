@@ -123,12 +123,27 @@ class AegisOSDashboard(ctk.CTk):
             json.dump(self.app_positions, f, indent=4)
 
     def _start_scout_jagd(self):
-        """Aktiviert die Scout-Steuerung über einen Thread-sicheren Zustands-Marker"""
+        """Aktiviert die Scout-Steuerung und übergibt das GUI-Update als sicheren Callback"""
         self.scout_active_flag = True
         if "Agent Scout" in self.tiles:
             self.tiles["Agent Scout"]["led"].configure(text_color="#00ffaa")
         
-        threading.Thread(target=self.scout_worker.scout_jagd_starten, daemon=True).start()                      
+        # Leere die Tabelle vor dem neuen Lauf
+        if hasattr(self, "treffer_tabelle"):
+            for item in self.treffer_tabelle.get_children():
+                self.treffer_tabelle.delete(item)
+        
+        # Wir übergeben eine Lambda-Funktion, die das Update absolut Thread-sicher über .after() einreiht
+        def jagd_finished_callback(treffer_liste):
+            self.after(0, lambda: self.update_treffer_tabelle(treffer_liste))
+            self.scout_active_flag = False
+        
+        # Thread starten und den Callback mitgeben
+        threading.Thread(
+            target=self.scout_worker.scout_jagd_starten, 
+            kwargs={"callback": jagd_finished_callback}, 
+            daemon=True
+        ).start()
     def _build_main_layout(self):
         """Erstellt die iPhone-Splitscreen-Struktur"""
         header = ctk.CTkFrame(self, fg_color="transparent", height=40)
@@ -285,7 +300,7 @@ class AegisOSDashboard(ctk.CTk):
         self.after(0, thread_safe_insert)
 
     def _build_agent_app_view(self, app_name):
-        """Steuer-Zentrale für dedizierte Hintergrund-Agenten mit Live-Logbox"""
+        """Steuer-Zentrale für dedizierte Hintergrund-Agenten mit Live-Logbox und Treffer-Anzeige"""
         app_info = self.apps[app_name]
         
         lbl_info = ctk.CTkLabel(self.right_screen, text=f"Skriptpfad: {app_info['path']}", font=("Consolas", 12))
@@ -295,6 +310,9 @@ class AegisOSDashboard(ctk.CTk):
             btn_start = ctk.CTkButton(self.right_screen, text="SCOUT JAGD STARTEN ▶", fg_color="#103510", hover_color="#154515",
                                       command=self._start_scout_jagd)
             btn_start.pack(fill="x", padx=20, pady=10)
+
+            # --- ERWEITERUNG: Treffer-Tabelle direkt ins Dashboard einbetten ---
+            self._erzeuge_scout_treffer_ui(self.right_screen)
 
             ctk.CTkLabel(self.right_screen, text="LIVE DEPLOYMENT LOGS:", font=("Consolas", 11, "bold"), text_color="#7777aa").pack(anchor="w", padx=20, pady=(10, 2))
             

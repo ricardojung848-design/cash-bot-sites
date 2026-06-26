@@ -254,7 +254,7 @@ class AgentScout:
 
         return {"passt_profil": False}
 
-    def scout_jagd_starten(self) -> List[Dict[str, Any]]:
+    def scout_jagd_starten(self, callback=None) -> List[Dict[str, Any]]:
         """Startet den synchronisierten Scraping- und Analyse-Durchlauf."""
         self._log_to_ui("\n" + "="*40)
         self._log_to_ui(f"[SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: {KI_STRATEGIE}).")
@@ -271,12 +271,12 @@ class AgentScout:
             if not roh_inhalt:
                 continue
                 
-            eintraege = re.findall(r"<item>(.*?)</item>", roh_inhalt, re.DOTALL)
+            eintraege = re.findall(r"(.*?)", roh_inhalt, re.DOTALL)
             if not eintraege:
                 eintraege = [roh_inhalt]
 
             for block in eintraege:
-                link_match = re.search(r"<link>(.*?)</link>", block)
+                link_match = re.search(r"(.*?)", block)
                 link = link_match.group(1) if link_match else url
                 
                 if link in bekannte_links and link != url:
@@ -307,8 +307,14 @@ class AgentScout:
         self.state.set_state("scout_engine", scout_data)
         
         self._log_to_ui(f"[SCOUT ENGINE] Aufklärungslauf beendet. {len(gefundene_treffer)} neue Matches gesichert.")
+        
         if self.ui and hasattr(self.ui, "say"):
             self.ui.say(f"Scout-Lauf beendet. {len(gefundene_treffer)} neue Treffer.")
+            
+        # --- THREAD-SICHERER RUN-COMPLETED CALLBACK AN DIE GUI ---
+        if callback:
+            callback(gefundene_treffer)
+            
         return gefundene_treffer
 
 

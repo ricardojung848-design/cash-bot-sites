@@ -30,7 +30,11 @@ OLLAMA_DEEP = "llama3"
 
 KI_STRATEGIE = "fallback"
 
+# Absoluter Pfad zur lokalen RSS-Datei, falls vorhanden
+RSS_PFAD = BASE_DIR / "modules" / "crypto" / "rss.xml"
+
 ZIEL_QUELLEN = [
+    str(RSS_PFAD),
     "https://www.bundesweit-kreativ.de/feeder/rss/rss.xml",
 ]
 
@@ -63,10 +67,20 @@ class AgentScout:
         return " ".join(text.split())
 
     def _seite_abrufen(self, url: str) -> str:
-        """Lädt den Inhalt einer Webseite stabil ohne externe Abhängigkeiten."""
+        """Lädt den Inhalt einer lokalen Datei oder einer Webseite stabil ohne externe Abhängigkeiten."""
         try:
+            if not url:
+                return ""
+
+            if "://" not in url:
+                pfad = Path(url)
+                if not pfad.is_absolute():
+                    pfad = (BASE_DIR / pfad).resolve()
+                if pfad.exists() and pfad.is_file():
+                    return pfad.read_text(encoding="utf-8", errors="ignore")
+
             req = urllib.request.Request(
-                url, 
+                url,
                 headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) DETO-Art-Scout/2.0'}
             )
             with urllib.request.urlopen(req, timeout=10) as response:

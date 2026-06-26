@@ -229,11 +229,37 @@ class AegisOSDashboard(ctk.CTk):
         entry_cmd.pack(side="left", fill="x", expand=True, padx=(0, 10))
         
         def send_voice_cmd():
-            text = entry_cmd.get()
+            text = entry_cmd.get().strip()
             if text:
                 self.chat_history.insert("end", f"👤 DU: {text}\n")
-                reply = self.dialog_engine.process_command(text)
-                self.chat_history.insert("end", f"🤖 AEGIS: {reply}\n\n")
+                
+                # 🛠️ LOGIK-BRÜCKE: Erkennt den Startbefehl im Chat
+                if text.lower().startswith("starte "):
+                    # Extrahiert den Namen (z.B. "worker")
+                    target_agent = text[7:].strip().lower()
+                    
+                    # Sucht den passenden Eintrag in deiner Registry
+                    found_app_name = None
+                    for app_name in self.apps.keys():
+                        if target_agent in app_name.lower():
+                            found_app_name = app_name
+                            break
+                    
+                    if found_app_name:
+                        script_path = self.apps[found_app_name]["path"]
+                        # Startet den Prozess über den ProcessManager!
+                        res = self.pm.start_agent(found_app_name, script_path)
+                        if res == "SUCCESS":
+                            self.chat_history.insert("end", f"🤖 AEGIS: [{found_app_name}] wurde erfolgreich gestartet!\n\n")
+                        else:
+                            self.chat_history.insert("end", f"🤖 AEGIS: Startfehler -> {res}\n\n")
+                    else:
+                        self.chat_history.insert("end", f"🤖 AEGIS: Agent '{target_agent}' wurde in der registry.json nicht gefunden.\n\n")
+                else:
+                    # Normaler Dialog falls kein Startbefehl
+                    reply = self.dialog_engine.process_command(text)
+                    self.chat_history.insert("end", f"🤖 AEGIS: {reply}\n\n")
+                
                 self.chat_history.see("end")
                 entry_cmd.delete(0, "end")
 

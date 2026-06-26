@@ -35,10 +35,10 @@ from doctor_core.auto_fix_engine import AutoFixEngine
 
 # PRO-Version FixSuggestionEngine & SystemStructure
 from core.SystemStructureManager import SystemStructureManager
-try:
-    from modules.engines.engine_fix_suggestions import FixSuggestionEngine
-except ImportError:
-    from modules.module_fix_suggestions import FixSuggestionEngine  # Fallback-Pfad falls benötigt
+
+# JETZT MIT DEM EXAKTEN PFAD AUS DEINEM EXPLORER:
+print("[BOOT] Lade FixSuggestionEngine aus modules/engines/...")
+from modules.engines.engine_fix_suggestions import FixSuggestionEngine
 
 # Pfadkonfigurationen absichern
 CONFIG_DIR = BASE_DIR / "config"
@@ -53,8 +53,10 @@ SYSTEM_MAP_FILE = CONFIG_DIR / "system_map.json"
 
 
 class AgentDoctorApp:
-    def __init__(self):
-        print("[BOOT] Initialisiere AgentDoctorApp Klassen-Struktur...")
+    def __init__(self, headless=False):
+        print(f"[BOOT] Initialisiere AgentDoctorApp Klassen-Struktur (Headless={headless})...")
+        self.headless = headless
+        self.is_monitoring = False
         
         # Abgesicherter Start des SQLite-Langzeitgedächtnisses
         try:
@@ -66,13 +68,13 @@ class AgentDoctorApp:
             print("[CRITICAL] Bitte prüfen, ob die DB-Datei von einem anderen Prozess blockiert wird.\n")
             self.state = None
         
-        # 2. Globalen Engine-Manager aufbauen und initialen State registrieren
+        # Globalen Engine-Manager aufbauen und initialen State registrieren
         print("[BOOT] Baue EngineManager auf...")
         self.engines = EngineManager()
         if self.state:
             self.engines.register("state", self.state)
 
-        # 3. Struktur-Checker anbinden
+        # Struktur-Checker anbinden
         self.structure_manager = SystemStructureManager(self.engines)
         self.engines.register("structure", self.structure_manager)
 
@@ -101,8 +103,16 @@ class AgentDoctorApp:
         else:
             self.fix_suggestion_engine = None
 
+        # UI-Logik weichenstellen
+        if not self.headless:
+            self._build_ui()
+        else:
+            self.root = None
+            print("[BOOT] Starte asynchrone Hintergrund-Dienste im Dashboard-Modus...")
+            threading.Thread(target=self._async_system_boot, daemon=True).start()
+
+    def _build_ui(self):
         print("[BOOT] Erstelle GUI-Fenster...")
-        # --- UI-SETUP (Tkinter Dark Mode) ---
         self.root = tk.Tk()
         self.root.title("Agent_Doctor // System Engineer (PRO)")
         self.root.configure(bg="#111111")
@@ -164,8 +174,7 @@ class AgentDoctorApp:
         self.log_box.pack(fill="both", expand=True)
 
         print("[BOOT] Starte asynchrone Hintergrund-Dienste...")
-        threading.Thread(target=self._async_system_boot, daemon=True).start()
-
+        threading.Thread(target=self._async_system_boot, daemon=True).start()          
     def _async_system_boot(self):
         """Führt blockierende Start-Aufgaben im Hintergrund aus."""
         try:
@@ -180,8 +189,9 @@ class AgentDoctorApp:
             self.voice.startup_greeting()
             print("[BOOT-THREAD] Sprachausgabe bereit.")
 
-            self.root.after(0, lambda: self.set_status("Status: Online – Engines geladen."))
-            self.root.after(0, lambda: self._log_ui("Agent_Doctor PRO: Alle Hintergrund-Dienste etabliert."))
+            if self.root:
+                self.root.after(0, lambda: self.set_status("Status: Online – Engines geladen."))
+                self.root.after(0, lambda: self._log_ui("Agent_Doctor PRO: Alle Hintergrund-Dienste etabliert."))
         except Exception as e:
             print(f"[BOOT-THREAD] FEHLER beim asynchronen Booten: {e}")
 
@@ -200,11 +210,14 @@ class AgentDoctorApp:
             time.sleep(30)
 
     def _log_ui(self, msg: str):
-        self.log_box.insert("end", msg + "\n")
-        self.log_box.see("end")
+        if self.root:
+            self.log_box.insert("end", msg + "\n")
+            self.log_box.see("end")
+        print(f"[DOCTOR LOG]: {msg}")
 
     def set_status(self, text: str):
-        self.status_label.config(text=text)
+        if self.root:
+            self.status_label.config(text=text)
 
     def say(self, text: str):
         threading.Thread(target=lambda: self.voice.speak(text), daemon=True).start()
@@ -228,7 +241,8 @@ class AgentDoctorApp:
         self.set_status("Status: Loganalyse abgeschlossen.")
 
     def _open_module_builder_window(self):
-        win = tk.Toplevel(self.root)
+        parent = self.root if self.root else tk.Tk()
+        win = tk.Toplevel(parent)
         win.title("Modul bauen")
         win.configure(bg="#111111")
         frame = ttk.Frame(win, padding=10)
@@ -244,7 +258,8 @@ class AgentDoctorApp:
         ttk.Button(frame, text="Erstellen", command=create).pack(anchor="e", pady=5)
 
     def _open_module_extender_window(self):
-        win = tk.Toplevel(self.root)
+        parent = self.root if self.root else tk.Tk()
+        win = tk.Toplevel(parent)
         win.title("Modul erweitern")
         win.configure(bg="#111111")
         frame = ttk.Frame(win, padding=10)
@@ -315,16 +330,11 @@ class AgentDoctorApp:
         hint = s.get("hint", "Kein Hinweis extrahiert")
         source_file = s.get("source_file", "core/Agent_Worker.py")
 
-        # Liest das echte Worker-Log für die detaillierte Injektion aus
         log_file_path = LOGS_DIR / "worker.log"
         traceback_content = ""
-        
         if log_file_path.is_file():
             traceback_content = log_file_path.read_text(encoding="utf-8", errors="ignore")
 
-        # --- ERZRUNGENER CRASH-TRIGGER (Struktur bleibt intakt) ---
-        # Wenn der Fehler im Log steht ODER der Standard-Hinweis ("Allgemeiner Fehler") aktiv ist,
-        # füttern wir die Engine mit einem synthetischen, aber syntaktisch korrekten Traceback.
         if "FabrikEngine" in traceback_content or "State-Manager" in traceback_content or "Allgemeiner Fehler" in hint:
             hint = "RuntimeError: FabrikEngine benötigt einen registrierten State-Manager im EngineManager!"
             traceback_content = (
@@ -336,10 +346,7 @@ class AgentDoctorApp:
                 "RuntimeError: FabrikEngine benötigt einen registrierten State-Manager im EngineManager!"
             )
 
-        # UI öffnen
         win = self._open_auto_fix_window(prefill_path=source_file)
-        
-        # Automatisch befüllen lassen durch die Engine mit den korrigierten Texten
         self.fix_suggestion_engine.analyze_and_autofill(
             ui_instance=win, 
             traceback_text=traceback_content, 
@@ -349,7 +356,8 @@ class AgentDoctorApp:
         self.set_status("Status: Vorschlag geladen.")
 
     def _open_auto_fix_window(self, prefill_path: str = "", prefill_code: str = ""):
-        win = tk.Toplevel(self.root)
+        parent = self.root if self.root else tk.Tk()
+        win = tk.Toplevel(parent)
         win.title("Auto‑Fix anwenden (mit Backup)")
         win.configure(bg="#111111")
         frame = ttk.Frame(win, padding=10)
@@ -384,7 +392,8 @@ class AgentDoctorApp:
         return win
 
     def _open_rollback_window(self):
-        win = tk.Toplevel(self.root)
+        parent = self.root if self.root else tk.Tk()
+        win = tk.Toplevel(parent)
         win.title("Letztes Backup wiederherstellen")
         win.configure(bg="#111111")
         frame = ttk.Frame(win, padding=10)
@@ -406,17 +415,28 @@ class AgentDoctorApp:
         ttk.Button(frame, text="Wiederherstellen", command=do_rollback).pack(anchor="e", pady=5)
 
     def run(self):
-        try:
-            print("[BOOT] Starte Haupt-UI-Schleife (mainloop)...")
-            self.root.mainloop()
-        finally:
-            self.is_monitoring = False
+        if self.root:
+            try:
+                print("[BOOT] Starte Haupt-UI-Schleife (mainloop)...")
+                self.root.mainloop()
+            finally:
+                self.is_monitoring = False
+        else:
+            self.is_monitoring = True
+            print("[HEADLESS] Agent_Doctor läuft aktiv im Hintergrund...")
+            try:
+                while self.is_monitoring:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                self.is_monitoring = False
 
 
 def main():
-    app = AgentDoctorApp()
+    # Erkennen, ob der Aufruf aus dem Dashboard (per --headless oder Argument) erfolgt
+    headless_mode = "--headless" in sys.argv or "-m" in sys.argv
+    app = AgentDoctorApp(headless=headless_mode)
     app.run()
 
 
 if __name__ == "__main__":
-    main()
+    main()    

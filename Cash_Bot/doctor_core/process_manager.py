@@ -21,9 +21,9 @@ class AgentProcessManager:
             return f"[ERROR] {script_path} existiert nicht."
 
         try:
-            # Startet das Skript komplett unabhängig im Hintergrund
+            # Hier nutzen wir "py", um genau deine installierte Python-Version anzusteuern
             proc = subprocess.Popen(
-                [sys.executable, str(full_path)],
+                ["py", str(full_path)],
                 cwd=str(BASE_DIR),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL

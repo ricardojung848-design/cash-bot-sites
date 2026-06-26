@@ -1,0 +1,26 @@
+{
+    "Agent Worker": {
+        "path": "core/Agent_Worker.py",
+        "type": "agent"
+    },
+    "Agent Doctor": {
+        "path": "modules/Agent_Doctor.py",
+        "type": "agent"
+    },
+    "Agent Scout": {
+        "path": "modules/Agent_Scout.py",
+        "type": "agent"
+    },
+    "Agent Wallet": {
+        "path": "modules/Agent_Wallet.py",
+        "type": "agent"
+    },
+    "AI Voice Chat": {
+        "path": "doctor_core/dialog_engine.py",
+        "type": "system"
+    },
+    "Task Manager": {
+        "path": "doctor_core/aegis_storage.py",
+        "type": "system"
+    }
+}

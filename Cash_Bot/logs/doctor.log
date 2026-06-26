@@ -5645,3 +5645,14 @@
 [2026-06-26 16:33:34] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: https://www.bundesweit-kreativ.de/feeder/rss/rss.xml
 [2026-06-26 16:33:34] [DOCTOR] [SCOUT ENGINE] ⚠️ Lokale Datei fehlt unter: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\https:\www.bundesweit-kreativ.de\feeder\rss\rss.xml
 [2026-06-26 16:33:34] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.
+[2026-06-26 16:37:29] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-26 16:37:29] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-26 16:37:38] [DOCTOR] 
+========================================
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: fallback).
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: crypto-rss.xml
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] ⚠️ Lokale Datei fehlt unter: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules\crypto-rss.xml
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: https://www.bundesweit-kreativ.de/feeder/rss/rss.xml
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain 'www.bundesweit-kreativ.de' nicht erreichbar.
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] ❌ DNS-Fehler: Domain 'www.bundesweit-kreativ.de' konnte nicht aufgelöst werden.
+[2026-06-26 16:37:38] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.

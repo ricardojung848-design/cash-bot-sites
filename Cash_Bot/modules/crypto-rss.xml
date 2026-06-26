@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+    <title>Test Ausschreibungen für DETO</title>
+    <link>http://localhost</link>
+    <description>Lokale Testdaten für die Scout Engine</description>
+    
+    <item>
+        <title>Künstler für Live-Art Event gesucht</title>
+        <link>http://localhost/job1</link>
+        <description>Wir suchen dringend einen kreativen Gestalter für ein Live-Art und Airbrush-Event direkt in Aachen Mitte. Das Setup soll ein modernes Raumkonzept umfassen.</description>
+    </item>
+
+    <item>
+        <title>Büro-Renovierung in Berlin</title>
+        <link>http://localhost/job2</link>
+        <description>Standard Malerarbeiten für ein Großraumbüro in Berlin Wedding gesucht. Weiße Wände, keine Spezialeffekte.</description>
+    </item>
+</channel>
+</rss>

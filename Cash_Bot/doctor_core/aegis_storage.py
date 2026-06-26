@@ -7,8 +7,8 @@ DB_PATH = BASE_DIR / "core" / "aegis_storage.db"
 
 class AegisStorage:
     def __init__(self):
-        # Korrigiert: os.makedirs erstellt den übergeordneten Ordner sicher, falls er fehlt
-        os.makedirs(str(DB_PATH.parent), exist_ok=True)
+        # Korrigiert: Path.mkdir erstellt den übergeordneten Ordner sicher, falls er fehlt
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
     def _get_connection(self):

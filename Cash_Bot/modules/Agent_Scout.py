@@ -30,10 +30,9 @@ OLLAMA_DEEP = "llama3"
 
 KI_STRATEGIE = "fallback"
 
-# Pfade relativ zum Scout-Modul (robust gegen Arbeitsverzeichnis-Verschiebungen)
+# Pfade absolut und robust auflösen (Verhindert Verrutschen im GUI-Modus)
 SCOUT_DIR = Path(__file__).resolve().parent
-LOCAL_XML = SCOUT_DIR / "crypto-rss.xml"
-RSS_PFAD = LOCAL_XML
+LOCAL_XML = (SCOUT_DIR / "crypto-rss.xml").resolve()
 
 # Versuche, 'requests' zu verwenden, wenn installiert (besseres Browser-Simulating)
 try:
@@ -41,6 +40,7 @@ try:
 except Exception:
     requests = None
 
+# Quellen als Strings für die Abruf-Logik bereitstellen
 ZIEL_QUELLEN = [
     str(LOCAL_XML),
     "https://www.bundesweit-kreativ.de/feeder/rss/rss.xml",
@@ -73,7 +73,6 @@ class AgentScout:
         clean = re.compile('<.*?>|&([a-z0-9]+|#[0-9]+|#x[0-9a-f]+);')
         text = re.sub(clean, ' ', html_text)
         return " ".join(text.split())
-
     def _seite_abrufen(self, url: str) -> str:
         """Lädt den Inhalt einer lokalen Datei oder einer Webseite absolut stabil."""
         from pathlib import Path as _Path
@@ -81,49 +80,52 @@ class AgentScout:
         import urllib.error as _urlerr
         import socket as _socket
 
-        # 1. Fall: Lokale Datei behandeln
         if not url or not url.strip():
-            self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Leere URL/Quelldaten erhalten.")
+            self._log_to_ui("[SCOUT ENGINE] ⚠️ Leere URL/Quelldaten erhalten.")
             return ""
 
-        if not url.startswith("http"):
+        # 1. Fall: Lokale Datei behandeln (Wenn kein http am Anfang steht oder Windows-Pfad-Struktur)
+        if not url.startswith("http") or ":" in url.split("/")[0]:
             try:
-                lokaler_pfad = _Path(url).resolve()
+                bereinigter_pfad = url.replace("file:///", "").replace("file://", "")
+                lokaler_pfad = _Path(bereinigter_pfad).resolve()
+                
                 if lokaler_pfad.exists():
                     return lokaler_pfad.read_text(encoding="utf-8", errors="ignore")
+                
+                # Fallback: Falls relativ vom Scout-Modul-Ordner gesucht wird
+                alternativ_pfad = (Path(__file__).resolve().parent / _Path(url).name).resolve()
+                if alternativ_pfad.exists():
+                    return alternativ_pfad.read_text(encoding="utf-8", errors="ignore")
+                    
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Lokale Datei fehlt unter: {lokaler_pfad}")
                 return ""
             except Exception as e:
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Lokaler Lese-Fehler: {e}")
                 return ""
 
-        # 2. Fall: Externer Web-Abruf
+        # 2. Fall: Externer Web-Abruf mit robustem User-Agent
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36"
         }
 
         domain = url.split('/')[2] if len(url.split('/')) >= 3 else url
-        timeout_seconds = 10
+        timeout_seconds = 15  # Erhöht gegen langsame Windows-DNS-Auflösungen
 
-        # Bevorzugte Methode mit 'requests'
         if requests is not None:
             try:
-                response = requests.get(url, headers=headers, timeout=timeout_seconds)
+                response = requests.get(url, headers=headers, timeout=timeout_seconds, verify=False)
                 if response.status_code == 200:
                     return response.text
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Server meldet HTTP {response.status_code} für {url}")
-                return ""
             except requests.exceptions.ConnectionError:
-                self._log_to_ui(f"[SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain '{domain}' nicht erreichbar (DNS/Offline).")
-                return ""
+                self._log_to_ui(f"[SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain '{domain}' nicht erreichbar.")
             except requests.exceptions.Timeout:
-                self._log_to_ui(f"[SCOUT ENGINE] ❌ Timeout beim Abruf von {url} nach {timeout_seconds} Sekunden.")
-                return ""
+                self._log_to_ui(f"[SCOUT ENGINE] ❌ Timeout beim Abruf von {url}.")
             except requests.exceptions.RequestException as e:
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Fehler: {e}")
-                return ""
 
-        # Robuster nativer Fallback über urllib
+        # Nativer Ausfallschutz über urllib
         try:
             req = _ur.Request(url, headers=headers)
             with _ur.urlopen(req, timeout=timeout_seconds) as response:
@@ -131,10 +133,8 @@ class AgentScout:
         except _urlerr.URLError as e:
             if isinstance(e.reason, _socket.gaierror):
                 self._log_to_ui(f"[SCOUT ENGINE] ❌ DNS-Fehler: Domain '{domain}' konnte nicht aufgelöst werden.")
-            elif isinstance(e.reason, _socket.timeout):
-                self._log_to_ui(f"[SCOUT ENGINE] ❌ Timeout beim Abruf von {url} nach {timeout_seconds} Sekunden.")
             else:
-                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Fallback-Netzwerkfehler für {url}: {e.reason}")
+                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Netzwerkfehler für {url}: {e.reason}")
             return ""
         except Exception as e:
             self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Fallback-Fehler beim Abruf von {url}: {e}")
@@ -217,14 +217,12 @@ class AgentScout:
 
         text_laenge = len(text_auszug)
         
-        # Smart Choice für extrem kurze Textschnipsel
         if text_laenge < 400:
             try:
                 return self._analysiere_mit_ollama(prompt, OLLAMA_FAST)
             except Exception:
                 pass
 
-        # Reguläre Strategie-Abarbeitung
         if KI_STRATEGIE == "lm-studio":
             try: return self._analysiere_mit_lm_studio(prompt)
             except Exception: return {"passt_profil": False}
@@ -251,16 +249,16 @@ class AgentScout:
         self._log_to_ui("\n" + "="*40)
         self._log_to_ui(f"[SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: {KI_STRATEGIE}).")
         
-        # Zustände aus der SQLite-Datenbank laden
         scout_data = self.state.get_state("scout_engine", {"bekannte_links": [], "treffer": []})
         bekannte_links = set(scout_data.get("bekannte_links", []))
         gefundene_treffer = []
 
         for url in ZIEL_QUELLEN:
-            self._log_to_ui(f"[SCOUT ENGINE] Scanne Quelle: {url}")
+            anzeige_url = url.split("\\")[-1] if "\\" in url else url
+            self._log_to_ui(f"[SCOUT ENGINE] Scanne Quelle: {anzeige_url}")
+            
             roh_inhalt = self._seite_abrufen(url)
             if not roh_inhalt:
-                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.")
                 continue
                 
             eintraege = re.findall(r"<item>(.*?)</item>", roh_inhalt, re.DOTALL)
@@ -271,7 +269,6 @@ class AgentScout:
                 link_match = re.search(r"<link>(.*?)</link>", block)
                 link = link_match.group(1) if link_match else url
                 
-                # Duplikate filtern
                 if link in bekannte_links and link != url:
                     continue 
                     
@@ -285,7 +282,7 @@ class AgentScout:
                 if analyse.get("passt_profil") is True:
                     analyse["link"] = link
                     analyse["zeitstempel"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    analyse["telegram_gesendet"] = False  # Bereitstellung für den Telegram-Bot
+                    analyse["telegram_gesendet"] = False
                     
                     gefundene_treffer.append(analyse)
                     scout_data["treffer"].append(analyse)
@@ -296,7 +293,6 @@ class AgentScout:
                 if link != url:
                     bekannte_links.add(link)
 
-        # Datensatz zurück in die DB schreiben
         scout_data["bekannte_links"] = list(bekannte_links)
         self.state.set_state("scout_engine", scout_data)
         

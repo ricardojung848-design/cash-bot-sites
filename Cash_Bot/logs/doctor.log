@@ -5623,3 +5623,15 @@
 [2026-06-26 16:19:37] [DOCTOR] [SCOUT ENGINE] ⚠️ Netzwerk-Timeout/Fehler bei Web-Quelle: HTTPSConnectionPool(host='www.bundesweit-kreativ.de', port=443): Max retries exceeded with url: /feeder/rss/rss.xml (Caused by NameResolutionError("HTTPSConnection(host='www.bundesweit-kreativ.de', port=443): Failed to resolve 'www.bundesweit-kreativ.de' ([Errno 11001] getaddrinfo failed)"))
 [2026-06-26 16:19:37] [DOCTOR] [SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.
 [2026-06-26 16:19:37] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.
+[2026-06-26 16:26:57] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-26 16:26:57] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-26 16:27:03] [DOCTOR] 
+========================================
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: fallback).
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules\crypto-rss.xml
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] ⚠️ Lokale Datei fehlt unter: C:\Users\ricoj\Desktop\Deto_Art_Agenten\Cash_Bot\modules\crypto-rss.xml
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: https://www.bundesweit-kreativ.de/feeder/rss/rss.xml
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain 'www.bundesweit-kreativ.de' nicht erreichbar (DNS/Offline).
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] ⚠️ Konnte Daten von Quelle nicht abrufen.
+[2026-06-26 16:27:03] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf beendet. 0 neue Matches gesichert.

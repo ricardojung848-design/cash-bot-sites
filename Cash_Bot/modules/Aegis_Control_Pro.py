@@ -5,7 +5,9 @@ import sys
 os.environ["PYTHONUTF8"] = "1"
 
 import json
+import urllib.request
 import threading
+from datetime import datetime
 import tkinter as tk
 import tkinter.ttk as ttk
 from pathlib import Path
@@ -70,6 +72,9 @@ class AegisOSDashboard(ctk.CTk):
         
         # Status-Schleife für Live-LEDs starten
         self._update_loop()
+
+        # Automatischen Hintergrund-Updater für Finanzen & Systemzustände starten
+        self.after(5000, self._start_global_auto_updater)
 
     def _load_apps_registry(self):
         """Lädt die Liste aller installierten Apps/Agenten basierend auf deiner Struktur"""
@@ -224,6 +229,10 @@ class AegisOSDashboard(ctk.CTk):
             self._build_voice_app_view()
         elif app_name == "Task Manager":
             self._build_task_app_view()
+        elif app_name == "Agent Wallet":
+            self._build_wallet_app_view()
+        elif app_name == "Agent Worker":
+            self._build_worker_app_view()
         else:
             self._build_agent_app_view(app_name)
 
@@ -333,6 +342,93 @@ class AegisOSDashboard(ctk.CTk):
         # Daten beim Öffnen direkt laden
         self._refresh_task_tabelle()
 
+    def _fetch_wallet_prices_background(self):
+        """Holt die CoinGecko-Daten unabhängig von der aktiven GUI-Ansicht im Hintergrund"""
+        my_btc = 0.021
+        my_eth = 0.45
+        my_fiat_cash = 250.00
+
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        log_entry = f"[{timestamp}] 🔄 Hintergrund-Abruf über CoinGecko API...\n"
+
+        try:
+            url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=eur"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
+            with urllib.request.urlopen(req, timeout=5) as response:
+                daten = json.loads(response.read().decode("utf-8"))
+
+                btc_preis_eur = daten["bitcoin"]["eur"]
+                eth_preis_eur = daten["ethereum"]["eur"]
+
+                wert_von_btc = my_btc * btc_preis_eur
+                wert_von_eth = my_eth * eth_preis_eur
+                self.wallet_gesamt_wert = my_fiat_cash + wert_von_btc + wert_von_eth
+
+                log_entry += f"[INFO] BTC: {btc_preis_eur:,} EUR // ETH: {eth_preis_eur:,} EUR\n"
+                log_entry += f"[SUCCESS] Kontostand aktualisiert: {self.wallet_gesamt_wert:,.2f} EUR\n\n"
+
+        except Exception as e:
+            log_entry += f"[❌ FEHLER] Hintergrund-API fehlgeschlagen: {e}\n\n"
+            if not hasattr(self, "wallet_gesamt_wert"):
+                self.wallet_gesamt_wert = 0.00
+
+        if hasattr(self, "wallet_ledger") and self.wallet_ledger.winfo_exists():
+            self.wallet_ledger.insert("end", log_entry)
+            self.wallet_ledger.see("end")
+
+            formatted_val = f"{self.wallet_gesamt_wert:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", ".")
+            self.lbl_tot_val.configure(text=formatted_val)
+
+    def _start_global_auto_updater(self):
+        """Aktualisiert zyklisch alle 5 Minuten die Core-Daten im Hintergrund"""
+        self._fetch_wallet_prices_background()
+        self.after(300000, self._start_global_auto_updater)
+
+    def _build_wallet_app_view(self):
+        """Erstellt die Krypto-Übersicht und zeigt die im Hintergrund geladenen Daten an"""
+        container = ctk.CTkFrame(self.right_screen, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=20, pady=5)
+
+        cards_frame = ctk.CTkFrame(container, fg_color="transparent")
+        cards_frame.pack(fill="x", pady=(0, 15))
+
+        card_total = ctk.CTkFrame(cards_frame, fg_color="#111116", border_width=1, border_color="#22222b", width=200, height=80)
+        card_total.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        card_total.pack_propagate(False)
+
+        lbl_tot_title = ctk.CTkLabel(card_total, text="TOTAL FIAT & CRYPTO VALUE (EST.)", font=("Consolas", 10), text_color="#7777aa")
+        lbl_tot_title.pack(anchor="w", padx=10, pady=(5, 0))
+
+        start_wert = getattr(self, "wallet_gesamt_wert", 0.00)
+        formatted_start = f"{start_wert:,.2f} EUR".replace(",", "X").replace(".", ",").replace("X", ".")
+        self.lbl_tot_val = ctk.CTkLabel(card_total, text=formatted_start, font=("Consolas", 16, "bold"), text_color="#00ffaa")
+        self.lbl_tot_val.pack(anchor="w", padx=10)
+
+        card_crypto = ctk.CTkFrame(cards_frame, fg_color="#111116", border_width=1, border_color="#22222b", width=200, height=80)
+        card_crypto.pack(side="left", fill="both", expand=True)
+        card_crypto.pack_propagate(False)
+
+        lbl_cry_title = ctk.CTkLabel(card_crypto, text="CRYPTO ASSETS HOLDINGS", font=("Consolas", 10), text_color="#7777aa")
+        lbl_cry_title.pack(anchor="w", padx=10, pady=(5, 0))
+        self.lbl_cry_val = ctk.CTkLabel(card_crypto, text="0.021 BTC // 0.45 ETH", font=("Consolas", 12, "bold"), text_color="#88aaee")
+        self.lbl_cry_val.pack(anchor="w", padx=10, pady=(2, 0))
+
+        lbl_trans = ctk.CTkLabel(container, text="LETZTE TRANSAKTIONEN / LEDGER LÄUFE:", font=("Consolas", 11, "bold"), text_color="#7777aa")
+        lbl_trans.pack(anchor="w", pady=(10, 2))
+
+        self.wallet_ledger = tk.Text(container, bg="#0d0d11", fg="#ffffff", font=("Consolas", 10), bd=0, highlightthickness=0)
+        self.wallet_ledger.pack(fill="both", expand=True, pady=(0, 15))
+
+        self.wallet_ledger.insert("end", f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] [SYSTEM] Wallet Engine geladen.\n")
+        self.wallet_ledger.insert("end", "[INFO] Zeige im Hintergrund gepufferte Daten.\n\n")
+
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        btn_refresh = ctk.CTkButton(btn_frame, text="WALLEDGER MANUELL AKTUALISIEREN 🔄", fg_color="#152535", hover_color="#203545", command=self._fetch_wallet_prices_background)
+        btn_refresh.pack(fill="x")
+
     def _refresh_task_tabelle(self):
         """Liest die Aufgaben frisch aus der SQLite-Datenbank und rendert sie neu"""
         if not hasattr(self, "task_tabelle") or not self.task_tabelle.winfo_exists():
@@ -417,6 +513,60 @@ class AegisOSDashboard(ctk.CTk):
                                       command=lambda: self.pm.stop_agent(app_name))
             btn_stop.pack(fill="x", padx=20, pady=10)
 
+    def _build_worker_app_view(self):
+        """Erstellt die Kontrolloberfläche für den Haupt-Agent-Worker"""
+        container = ctk.CTkFrame(self.right_screen, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=20, pady=5)
+
+        # Status-Anzeige-Box
+        status_frame = ctk.CTkFrame(container, fg_color="#111116", border_width=1, border_color="#22222b")
+        status_frame.pack(fill="x", pady=(0, 15), ipady=10)
+
+        lbl_title = ctk.CTkLabel(status_frame, text="⚡ CORE WORKER STATUS", font=("Consolas", 14, "bold"), text_color="#00ffaa")
+        lbl_title.pack(anchor="w", padx=15, pady=(10, 5))
+
+        # Dynamisches Status-Label
+        self.worker_status_lbl = ctk.CTkLabel(status_frame, text="STATUS: 🔴 INAKTIV", font=("Consolas", 12))
+        self.worker_status_lbl.pack(anchor="w", padx=15)
+
+        # Log-Ausgabe für den Worker
+        lbl_logs = ctk.CTkLabel(container, text="LIVE WORKER DEPLOYMENT LOGS:", font=("Consolas", 11, "bold"), text_color="#7777aa")
+        lbl_logs.pack(anchor="w", pady=(10, 2))
+
+        self.worker_logs = tk.Text(container, bg="#0d0d11", fg="#ffffff", font=("Consolas", 10), bd=0, highlightthickness=0)
+        self.worker_logs.pack(fill="both", expand=True, pady=(0, 15))
+        self.worker_logs.insert("end", "[SYSTEM] Warte auf Worker-Startbefehl...\n")
+
+        # Aktions-Buttons unten
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
+        btn_frame.pack(fill="x")
+
+        def start_worker_action():
+            if "Agent Worker" in self.apps:
+                path = self.apps["Agent Worker"]["path"]
+                res = self.pm.start_agent("Agent Worker", path)
+                if res == "SUCCESS":
+                    self.worker_status_lbl.configure(text="STATUS: 🟢 AKTIV (RUNNING)", text_color="#00ffaa")
+                    self.worker_logs.insert("end", f"[OK] Agent Worker erfolgreich initialisiert.\n")
+                    if "Agent Worker" in self.tiles:
+                        self.tiles["Agent Worker"]["led"].configure(text_color="#00ffaa")
+                else:
+                    self.worker_logs.insert("end", f"[FEHLER] Start fehlgeschlagen: {res}\n")
+
+        def stop_worker_action():
+            if "Agent Worker" in self.apps:
+                self.pm.stop_agent("Agent Worker")
+                self.worker_status_lbl.configure(text="STATUS: 🔴 INAKTIV", text_color="#ff5555")
+                self.worker_logs.insert("end", "[STOP] Agent Worker wurde manuell beendet.\n")
+                if "Agent Worker" in self.tiles:
+                    self.tiles["Agent Worker"]["led"].configure(text_color="#ff5555")
+
+        btn_start = ctk.CTkButton(btn_frame, text="WORKER STARTEN ▶", fg_color="#103510", hover_color="#154515", command=start_worker_action)
+        btn_start.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+        btn_stop = ctk.CTkButton(btn_frame, text="WORKER STOPPEN 🛑", fg_color="#351010", hover_color="#451515", command=stop_worker_action)
+        btn_stop.pack(side="right", fill="x", expand=True)
+
     def _erzeuge_scout_treffer_ui(self, parent_layout):
         """Erstellt eine saubere Tabelle im Dashboard für die gefundenen DETO-Ausschreibungen."""
         
@@ -476,17 +626,18 @@ class AegisOSDashboard(ctk.CTk):
                 # 🛠️ MANUELLE KORREKTUR: Ermittelt den Scout-Status über das krisensichere interne Tracking-Flag
                 if app_name == "Agent Scout" and self.scout_active_flag:
                     status = "RUNNING"
-                
-                # LED-Farbe basierend auf dem gefundenen Status setzen
-                if status == "RUNNING":
+
+                status_lower = str(status).strip().lower()
+                if status_lower in ("running", "active", "ok", "started"):
                     self.tiles[app_name]["led"].configure(text_color="#00ffaa")  # Hellgrün
-                elif status == "CRASHED":
+                elif status_lower in ("crashed", "failed", "error", "stopped", "shutdown"):
                     self.tiles[app_name]["led"].configure(text_color="#ffaa00")  # Orange
                 else:
-                    self.tiles[app_name]["led"].configure(text_color="#ff4444")  # Rot
+                    self.tiles[app_name]["led"].configure(text_color="#ff5555")  # Rot
                     
         self.after(1000, self._update_loop)
 
+
 if __name__ == "__main__":
     app = AegisOSDashboard()
-    app.mainloop()    
+    app.mainloop()

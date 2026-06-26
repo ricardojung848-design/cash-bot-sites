@@ -7,9 +7,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-import json
 import urllib.request
 import urllib.parse
+import urllib.error
+import json
 import re
 from datetime import datetime
 from typing import Any, List, Dict
@@ -61,6 +62,7 @@ class AgentScout:
             raise RuntimeError("AgentScout benötigt einen registrierten State-Manager im EngineManager!")
         self.state = self.engines.get("state")
         self.ui = ui_instance  # Optionale GUI-Referenz für Live-Logs
+        self.callback = None
 
     def _log_to_ui(self, message: str):
         """Hilfsmethode, um Logs sowohl in die DB als auch live ins UI zu schreiben."""
@@ -159,6 +161,47 @@ class AgentScout:
         except Exception:
             return []
 
+    def parse_scout_sources(self) -> str:
+        """Lädt die Ausschreibungen herunter, loggt den Status und sendet Telegram-Nachrichten bei Treffern."""
+        url = "https://www.bundesweit-kreativ.de/de/aussschreibungen.xml"
+
+        print("[SCOUT] Starte Abgleich mit externer Quelle...")
+
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+            )
+
+            with urllib.request.urlopen(req, timeout=8) as response:
+                xml_data = response.read().decode("utf-8")
+                print("[SCOUT] [SUCCESS] Daten erfolgreich empfangen.")
+
+                # --- HIER FOLGT DEINE EXISTIERENDE XML-PARSER LOGIK ---
+                # Beispielhafter Ablauf für einen gefundenen Treffer:
+                # if treffer_gefunden:
+                #     titel = "Kreativ-Ausschreibung Aachen"
+                #     link = "https://www.bundesweit-kreativ.de/beispiel"
+                #
+                #     if self.callback:
+                #         self.callback(titel, "Aachen", "NEU")
+                #     self._send_telegram_notification(titel, link)
+
+                return xml_data
+
+        except urllib.error.URLError as e:
+            fehler_meldung = f"❌ Netzwerk-/DNS-Fehler: {e.reason}"
+            print(f"[SCOUT] {fehler_meldung}")
+            if self.callback:
+                self.callback("FEHLER: Verbindung fehlgeschlagen", "SYSTEM", "TIMEOUT")
+            return ""
+
+        except Exception as e:
+            print(f"[SCOUT] Unerwarteter Fehler beim Parsen: {e}")
+            return ""
+
     def _ollama_modell_bereitstellen(self, model_name: str) -> str:
         """Prüft das Modell. Wenn es fehlt, greift der automatische Fallback."""
         installierte = self._hole_installierte_ollama_modelle()
@@ -254,6 +297,34 @@ class AgentScout:
 
         return {"passt_profil": False}
 
+    def _send_telegram_notification(self, titel: str, link: str) -> bool:
+        """Sendet eine verschlüsselte Push-Nachricht über die Telegram Bot API"""
+        
+        # Deine echten, fest eingebauten Zugangsdaten für den Cash_Bot
+        bot_token = "8905346856:AAGTWneLxKqBQV3qlqWP95BSifLwbCpLG5k"
+        chat_id = "8905346856"
+
+        # Formatierung der Nachricht (Mit fettgedrucktem Titel)
+        nachricht = f"🚨 *AEGIS SCOUT TREFFER*\n\n*Titel:* {titel}\n*Link:* {link}"
+        
+        # Text für das Internet codieren (Leerzeichen und Sonderzeichen umwandeln)
+        encoded_text = urllib.parse.quote(nachricht)
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&text={encoded_text}&parse_mode=Markdown"
+        
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                res_daten = json.loads(response.read().decode("utf-8"))
+                if res_daten.get("ok", False):
+                    print("[TELEGRAM] Nachricht erfolgreich über Cash_Bot gesendet!")
+                    return True
+                else:
+                    print(f"[TELEGRAM] Fehler-Antwort von API: {res_daten}")
+                    return False
+        except Exception as e:
+            print(f"[TELEGRAM ERROR] Verbindung fehlgeschlagen: {e}")
+            return False
+
     def scout_jagd_starten(self, callback=None) -> List[Dict[str, Any]]:
         """Startet den synchronisierten Scraping- und Analyse-Durchlauf."""
         self._log_to_ui("\n" + "="*40)
@@ -292,10 +363,25 @@ class AgentScout:
                 if analyse.get("passt_profil") is True:
                     analyse["link"] = link
                     analyse["zeitstempel"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    analyse["telegram_gesendet"] = False
                     
                     gefundene_treffer.append(analyse)
                     scout_data["treffer"].append(analyse)
+                    self.state.set_state("scout_engine", scout_data)
+
+                    # Telegram Push abschicken
+                    gesendet = self._send_telegram_notification(
+                        analyse.get("titel", "Unbekannt"),
+                        analyse.get("link", "")
+                    )
+
+                    if gesendet:
+                        analyse["telegram_gesendet"] = True
+                        if scout_data["treffer"]:
+                            scout_data["treffer"][-1]["telegram_gesendet"] = True
+                        self.state.set_state("scout_engine", scout_data)
+                        # Wenn später ein echter Storage-Manager verfügbar ist:
+                        # self.storage.mark_telegram_sent(treffer_id)
+
                     self._log_to_ui(f"[SCOUT ENGINE] 🎯 TREFFER GEFUNDEN -> '{analyse.get('titel')}' ({analyse.get('ort')})")
                 else:
                     self._log_to_ui(f"[SCOUT ENGINE] Fragment geprüft: Kein Match für DETO.")

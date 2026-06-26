@@ -1,4 +1,5 @@
 import sqlite3
+import os  # os nutzen wir als sichere Alternative für die Ordner-Erstellung
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -6,7 +7,8 @@ DB_PATH = BASE_DIR / "core" / "aegis_storage.db"
 
 class AegisStorage:
     def __init__(self):
-        DB_PATH.parent.makedirs(exist_ok=True)
+        # Korrigiert: os.makedirs erstellt den übergeordneten Ordner sicher, falls er fehlt
+        os.makedirs(str(DB_PATH.parent), exist_ok=True)
         self._init_db()
 
     def _get_connection(self):

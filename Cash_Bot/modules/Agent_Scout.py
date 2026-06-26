@@ -105,6 +105,7 @@ class AgentScout:
         domain = url.split('/')[2] if len(url.split('/')) >= 3 else url
         timeout_seconds = 10
 
+        # Bevorzugte Methode mit 'requests'
         if requests is not None:
             try:
                 response = requests.get(url, headers=headers, timeout=timeout_seconds)
@@ -122,6 +123,7 @@ class AgentScout:
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Fehler: {e}")
                 return ""
 
+        # Robuster nativer Fallback über urllib
         try:
             req = _ur.Request(url, headers=headers)
             with _ur.urlopen(req, timeout=timeout_seconds) as response:

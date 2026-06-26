@@ -33,7 +33,9 @@ class AgentProcessManager:
                     ["py", "-3.13-64", str(full_path)],
                     cwd=str(BASE_DIR),
                     stdout=subprocess.DEVNULL,
-                    stderr=log_file
+                    stderr=log_file,
+                    encoding='utf-8',
+                    errors='ignore'
                 )
             
             # ⏱️ DIAGNOSE-FENSTER: Wir warten kurz, ob das Skript sofort crasht

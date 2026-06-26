@@ -13,7 +13,7 @@ class AgentProcessManager:
         os.makedirs(str(LOG_DIR), exist_ok=True)
 
     def start_agent(self, agent_name, script_path):
-        """Startet einen Agenten und schreibt Fehler bei Misserfolg in ein Logfile"""
+        """Startet einen Agenten parallel und liefert im Crash-Fall eine präzise Diagnose"""
         clean_name = agent_name.replace(" ", "_")
 
         if clean_name in self.running_processes:
@@ -22,33 +22,37 @@ class AgentProcessManager:
 
         full_path = (BASE_DIR / script_path).resolve()
         if not full_path.exists():
-            return f"[ERROR] Datei existiert nicht unter: {full_path}"
+            return f"[ERROR] Datei existiert nicht: {script_path}"
 
-        # Logdatei für diesen spezifischen Agenten definieren
         log_file_path = LOG_DIR / f"{clean_name}_error.log"
 
         try:
-            # Wir fangen stderr (Fehler) in einer echten Datei ab!
+            # Fehlerstrom (stderr) direkt in Logdatei umleiten
             with open(log_file_path, "w", encoding="utf-8") as log_file:
                 proc = subprocess.Popen(
                     ["py", "-3.13-64", str(full_path)],
                     cwd=str(BASE_DIR),
                     stdout=subprocess.DEVNULL,
-                    stderr=log_file  # Fehler werden hier reingeschrieben
+                    stderr=log_file
                 )
             
-            # Kurzer Check, ob der Prozess die Startphase überlebt
+            # ⏱️ DIAGNOSE-FENSTER: Wir warten kurz, ob das Skript sofort crasht
             try:
-                proc.wait(timeout=0.5)
+                proc.wait(timeout=0.6)
                 exit_code = proc.poll()
                 if exit_code is not None and exit_code != 0:
-                    # Lies den Fehler direkt aus dem Log aus
+                    # Diagnose-Auswertung starten
                     err_msg = "Unbekannter Fehler"
                     if log_file_path.exists():
-                        err_msg = log_file_path.read_text(encoding="utf-8").strip() or f"Exit-Code {exit_code}"
-                    return f"[CRASH] {agent_name} abgebrochen: {err_msg}"
+                        raw_error = log_file_path.read_text(encoding="utf-8").strip()
+                        if raw_error:
+                            # Filtert die letzte Zeile für eine kompakte Ansage heraus
+                            lines = [line.strip() for line in raw_error.split("\n") if line.strip()]
+                            err_msg = lines[-1] if lines else raw_error
+
+                    return f"[CRASH] {agent_name} abgebrochen -> {err_msg}"
             except subprocess.TimeoutExpired:
-                # Prozess läuft stabil im Hintergrund!
+                # Prozess läuft stabil über die kritische Startphase hinaus
                 pass
 
             self.running_processes[clean_name] = proc
@@ -58,6 +62,7 @@ class AgentProcessManager:
             return f"[ERROR] Windows-Startfehler für {agent_name}: {e}"
 
     def stop_agent(self, agent_name):
+        """Stoppt einen spezifischen Agenten sauber"""
         clean_name = agent_name.replace(" ", "_")
         if clean_name in self.running_processes:
             proc = self.running_processes[clean_name]
@@ -72,11 +77,13 @@ class AgentProcessManager:
         return f"[INFO] {agent_name} ist bereits offline."
 
     def stop_all(self):
+        """Zentraler Notschalter (Kill-Switch) für alle Agenten"""
         for name in list(self.running_processes.keys()):
             self.stop_agent(name)
         return "ALL PROCESSES TERMINATED"
 
     def get_statuses(self):
+        """Liefert den Live-Status für die Kacheln"""
         status_dict = {}
         for name, proc in list(self.running_processes.items()):
             exit_code = proc.poll()

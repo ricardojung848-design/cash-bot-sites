@@ -228,24 +228,33 @@ class AegisOSDashboard(ctk.CTk):
             self._build_agent_app_view(app_name)
 
     def _build_voice_app_view(self):
-        """Die Chat-Oberfläche für deine KI-Unterhaltungen"""
+        """Die Chat-Oberfläche für deine KI-Unterhaltungen mit farblicher Trennung"""
         container = ctk.CTkFrame(self.right_screen, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=5)
 
-        self.chat_history = tk.Text(container, bg="#0d0d11", fg="#00ffaa", font=("Consolas", 11), bd=0, highlightthickness=0)
+        # Chat-Historie als Text-Widget
+        self.chat_history = tk.Text(container, bg="#0d0d11", fg="#ffffff", font=("Consolas", 11), bd=0, highlightthickness=0)
         self.chat_history.pack(fill="both", expand=True, pady=(0, 10))
-        self.chat_history.insert("end", "Aegis OS Dialogue System bereit. Sprechen oder schreiben Sie einen Befehl...\n\n")
+        
+        # Farb-Tags für die Historie definieren
+        self.chat_history.tag_config("user_tag", foreground="#88aaee", font=("Consolas", 11, "bold"))
+        self.chat_history.tag_config("aegis_tag", foreground="#00ffaa", font=("Consolas", 11, "bold"))
+        self.chat_history.tag_config("system_tag", foreground="#7777aa", font=("Consolas", 10, "italic"))
+
+        self.chat_history.insert("end", "Aegis OS Dialogue System bereit. Sprechen oder schreiben Sie einen Befehl...\n\n", "system_tag")
 
         input_frame = ctk.CTkFrame(container, fg_color="transparent")
         input_frame.pack(fill="x")
 
-        entry_cmd = ctk.CTkEntry(input_frame, placeholder_text="Z.B.: 'starte Worker' oder 'erstelle Aufgabe Kaffee kochen'...", font=("Consolas", 12))
+        entry_cmd = ctk.CTkEntry(input_frame, placeholder_text="Z.B.: 'starte Worker'...", font=("Consolas", 12))
         entry_cmd.pack(side="left", fill="x", expand=True, padx=(0, 10))
         
         def send_voice_cmd():
             text = entry_cmd.get().strip()
             if text:
-                self.chat_history.insert("end", f"👤 DU: {text}\n")
+                # Benutzereingabe farbig einfügen
+                self.chat_history.insert("end", "👤 DU: ", "user_tag")
+                self.chat_history.insert("end", f"{text}\n")
                 
                 if text.lower().startswith("starte "):
                     target_agent = text[7:].strip().lower()
@@ -259,14 +268,16 @@ class AegisOSDashboard(ctk.CTk):
                         script_path = self.apps[found_app_name]["path"]
                         res = self.pm.start_agent(found_app_name, script_path)
                         if res == "SUCCESS":
-                            self.chat_history.insert("end", f"🤖 AEGIS: [{found_app_name}] wurde erfolgreich gestartet!\n\n")
+                            self.chat_history.insert("end", f"🤖 AEGIS: [{found_app_name}] wurde erfolgreich gestartet!\n\n", "aegis_tag")
                         else:
-                            self.chat_history.insert("end", f"🤖 AEGIS: Startfehler -> {res}\n\n")
+                            self.chat_history.insert("end", f"🤖 AEGIS: Startfehler -> {res}\n\n", "system_tag")
                     else:
-                        self.chat_history.insert("end", f"🤖 AEGIS: Agent '{target_agent}' wurde in der registry.json nicht gefunden.\n\n")
+                        self.chat_history.insert("end", f"🤖 AEGIS: Agent '{target_agent}' wurde nicht gefunden.\n\n", "system_tag")
                 else:
                     reply = self.dialog_engine.process_command(text)
-                    self.chat_history.insert("end", f"🤖 AEGIS: {reply}\n\n")
+                    # Aegis-Antwort farbig einfügen
+                    self.chat_history.insert("end", "🤖 AEGIS: ", "aegis_tag")
+                    self.chat_history.insert("end", f"{reply}\n\n")
                 
                 self.chat_history.see("end")
                 entry_cmd.delete(0, "end")

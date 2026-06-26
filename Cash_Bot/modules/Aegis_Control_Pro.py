@@ -276,20 +276,97 @@ class AegisOSDashboard(ctk.CTk):
         entry_cmd.bind("<Return>", lambda e: send_voice_cmd())
 
     def _build_task_app_view(self):
-        """Zeigt deine Erledigungen aus der SQLite-Datenbank"""
+        """Erstellt eine interaktive, voll funktionsfähige Task-Verwaltung im Aegis-Look"""
         container = ctk.CTkFrame(self.right_screen, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=5)
 
-        txt_tasks = tk.Text(container, bg="#0d0d11", fg="#ffffff", font=("Consolas", 12), bd=0, highlightthickness=0)
-        txt_tasks.pack(fill="both", expand=True, pady=10)
+        # 1. Tabelle für die Aufgaben initialisieren
+        self.task_tabelle = ttk.Treeview(container, columns=("id", "aufgabe", "status"), show="headings", height=12)
+        self.task_tabelle.heading("id", text="ID")
+        self.task_tabelle.heading("aufgabe", text="Aufgabe / Anweisung")
+        self.task_tabelle.heading("status", text="Status")
+        
+        self.task_tabelle.column("id", anchor="center", width=50)
+        self.task_tabelle.column("aufgabe", anchor="w", width=450)
+        self.task_tabelle.column("status", anchor="center", width=120)
+
+        # Style anwenden (Nutzt das bestehende Scout-Design)
+        style = ttk.Style()
+        style.configure("Scout.TaskTreeview", background="#181820", foreground="#ffffff", fieldbackground="#181820", bordercolor="#2d2d3d", borderwidth=1, rowheight=28)
+        style.configure("Scout.TaskTreeview.Heading", background="#22222e", foreground="#00ffcc", relief="flat", font=("Consolas", 11, "bold"))
+        style.map("Scout.TaskTreeview", background=[("selected", "#154515")], foreground=[("selected", "#ffffff")])
+        self.task_tabelle.configure(style="Scout.TaskTreeview")
+        self.task_tabelle.pack(fill="both", expand=True, pady=(0, 10))
+
+        # Zeilen-Styling für Status und Aegis-Dark-Look
+        self.task_tabelle.tag_configure("open", background="#181820", foreground="#ffffff")
+        self.task_tabelle.tag_configure("done", background="#101216", foreground="#9fd4b1")
+
+        # --- KONTROLLZENTRUM UNTEN ---
+        action_frame = ctk.CTkFrame(container, fg_color="transparent")
+        action_frame.pack(fill="x", pady=5)
+
+        # Feld für neue Aufgaben
+        self.entry_new_task = ctk.CTkEntry(action_frame, placeholder_text="Neue Aufgabe eingeben...", font=("Consolas", 12))
+        self.entry_new_task.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.entry_new_task.bind("<Return>", lambda e: self._add_task_event())
+
+        # Button: Hinzufügen
+        btn_add = ctk.CTkButton(action_frame, text="Hinzufügen ➕", width=100, fg_color="#152535", hover_color="#203545", command=self._add_task_event)
+        btn_add.pack(side="left", padx=5)
+
+        # Button: Als erledigt markieren
+        btn_done = ctk.CTkButton(action_frame, text="Erledigt ✔️", width=100, fg_color="#103510", hover_color="#154515", command=self._mark_task_done_event)
+        btn_done.pack(side="right", padx=5)
+
+        # Daten beim Öffnen direkt laden
+        self._refresh_task_tabelle()
+
+    def _refresh_task_tabelle(self):
+        """Liest die Aufgaben frisch aus der SQLite-Datenbank und rendert sie neu"""
+        if not hasattr(self, "task_tabelle") or not self.task_tabelle.winfo_exists():
+            return
+            
+        for item in self.task_tabelle.get_children():
+            self.task_tabelle.delete(item)
 
         tasks = self.storage.get_all_tasks()
-        if not tasks:
-            txt_tasks.insert("end", "Keine offenen Aufgaben registriert.")
-        else:
+        if tasks:
             for t in tasks:
-                status_icon = "[OFFEN]" if t[2] == "OPEN" else "[ERLEDIGT]"
-                txt_tasks.insert("end", f"{status_icon} ID #{t[0]}: {t[1]}\n")
+                # t[0] = ID, t[1] = Beschreibung, t[2] = Status
+                status_text = "🟢 OPEN" if t[2] == "OPEN" else "⚪ DONE"
+                tag = "open" if t[2] == "OPEN" else "done"
+                self.task_tabelle.insert("", "end", values=(t[0], t[1], status_text), tags=(tag,))
+
+    def _add_task_event(self):
+        """Fügt eine neue Aufgabe über die Storage-Engine hinzu"""
+        task_text = self.entry_new_task.get().strip()
+        if task_text:
+            # Nutzt deine AegisStorage Engine
+            if hasattr(self.storage, "add_task"):
+                self.storage.add_task(task_text)
+            elif hasattr(self.storage, "create_task"):
+                self.storage.create_task(task_text)
+                
+            self.entry_new_task.delete(0, "end")
+            self._refresh_task_tabelle()
+
+    def _mark_task_done_event(self):
+        """Markiert das in der Tabelle ausgewählte Element als ERLEDIGT"""
+        selected = self.task_tabelle.selection()
+        if not selected:
+            return
+            
+        item_data = self.task_tabelle.item(selected[0], "values")
+        task_id = item_data[0]
+
+        # Versuche die Update-Methode deiner Storage-Engine zu triggern
+        if hasattr(self.storage, "complete_task"):
+            self.storage.complete_task(task_id)
+        elif hasattr(self.storage, "update_task_status"):
+            self.storage.update_task_status(task_id, "DONE")
+            
+        self._refresh_task_tabelle()
 
     def _log_ui(self, message: str):
         """Schreibt Logs absolut Thread-sicher über die .after() Methode der UI Engine"""

@@ -341,7 +341,7 @@ class AegisOSDashboard(ctk.CTk):
         self.lbl_global_status.configure(text="ALLE AGENTEN GESTOPPT", text_color="#ff3333")
 
     def _update_loop(self):
-        """Fragt sekündlich den Prozessmanager ab und schaltet die LEDs krisensicher"""
+        """Fragt den ProcessManager ab und prüft manuelle Threads/Fenster"""
         statuses = self.pm.get_statuses()
         
         # Wir vereinheitlichen die Keys der Live-Prozesse für den Vergleich
@@ -349,21 +349,34 @@ class AegisOSDashboard(ctk.CTk):
         
         for app_name in self.apps.keys():
             if app_name in self.tiles:
-                # Sucht den Status, egal ob "Agent Scout", "agent scout" oder "Scout"
+                # Sucht den Status im ProcessManager
                 app_key_lower = app_name.strip().lower()
                 status = "OFFLINE"
                 
-                # Prüfen, ob der Name im Status-Dictionary matcht
                 for stat_key, stat_val in normalized_statuses.items():
                     if stat_key in app_key_lower or app_key_lower in stat_key:
                         status = stat_val
                         break
                 
+                # 🛠️ ERWEITERUNG: Manuelle Überprüfung für den Agent Scout
+                if app_name == "Agent Scout":
+                    # Wenn die Log-Box existiert und Text drin steht, erzwinge RUNNING
+                    if hasattr(self, "scout_log_box") and self.scout_log_box.winfo_exists():
+                        log_content = self.scout_log_box.get("1.0", "end")
+                        if "Aufklärungsflug" in log_content or "Matches gesichtet" in log_content:
+                            status = "RUNNING"
+                
+                # 🛠️ ERWEITERUNG: Manuelle Überprüfung für den Agent Doctor
+                if app_name == "Agent Doctor":
+                    # Falls dein Doctor ein offenes UI-Fenster hat, das nicht im PM läuft
+                    # Kannst du hier den Status auf "RUNNING" setzen, sobald das Fenster geladen ist
+                    pass
+
                 # LED-Farbe basierend auf dem gefundenen Status setzen
                 if status == "RUNNING":
                     self.tiles[app_name]["led"].configure(text_color="#00ffaa")  # Hellgrün
                 elif status == "CRASHED":
-                    self.tiles[app_name]["led"].configure(text_color="#ffaa00")  # Orange (Doctor aktiv)
+                    self.tiles[app_name]["led"].configure(text_color="#ffaa00")  # Orange
                 else:
                     self.tiles[app_name]["led"].configure(text_color="#ff4444")  # Rot
                     

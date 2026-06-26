@@ -84,18 +84,58 @@ class AgentScout:
             self._log_to_ui("[SCOUT ENGINE] ⚠️ Leere URL/Quelldaten erhalten.")
             return ""
 
-        # 1. Fall: Lokale Datei behandeln (Wenn kein http am Anfang steht oder Windows-Pfad-Struktur)
-        if not url.startswith("http") or ":" in url.split("/")[0]:
+        # String säubern, falls Whitespaces mitgerutscht sind
+        url_clean = url.strip()
+
+        # 1. Fall: Echte HTTP/HTTPS Web-Adresse
+        if url_clean.lower().startswith("http://") or url_clean.lower().startswith("https://"):
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36"
+            }
+
+            domain = url_clean.split('/')[2] if len(url_clean.split('/')) >= 3 else url_clean
+            timeout_seconds = 15
+
+            if requests is not None:
+                try:
+                    response = requests.get(url_clean, headers=headers, timeout=timeout_seconds, verify=False)
+                    if response.status_code == 200:
+                        return response.text
+                    self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Server meldet HTTP {response.status_code} für {url_clean}")
+                except requests.exceptions.ConnectionError:
+                    self._log_to_ui(f"[SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain '{domain}' nicht erreichbar.")
+                except requests.exceptions.Timeout:
+                    self._log_to_ui(f"[SCOUT ENGINE] ❌ Timeout beim Abruf von {url_clean}.")
+                except requests.exceptions.RequestException as e:
+                    self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Fehler: {e}")
+
+            # Nativer Ausfallschutz über urllib für Web-URLs
             try:
-                bereinigter_pfad = url.replace("file:///", "").replace("file://", "")
+                req = _ur.Request(url_clean, headers=headers)
+                with _ur.urlopen(req, timeout=timeout_seconds) as response:
+                    return response.read().decode('utf-8', errors='ignore')
+            except _urlerr.URLError as e:
+                if isinstance(e.reason, _socket.gaierror):
+                    self._log_to_ui(f"[SCOUT ENGINE] ❌ DNS-Fehler: Domain '{domain}' konnte nicht aufgelöst werden.")
+                else:
+                    self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Netzwerkfehler für {url_clean}: {e.reason}")
+                return ""
+            except Exception as e:
+                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Fallback-Fehler beim Abruf von {url_clean}: {e}")
+                return ""
+
+        # 2. Fall: Lokale Datei behandeln (alles, was kein http/https ist)
+        else:
+            try:
+                bereinigter_pfad = url_clean.replace("file:///", "").replace("file://", "")
                 lokaler_pfad = _Path(bereinigter_pfad).resolve()
                 
-                if lokaler_pfad.exists():
+                if lokaler_pfad.exists() and lokaler_pfad.is_file():
                     return lokaler_pfad.read_text(encoding="utf-8", errors="ignore")
                 
-                # Fallback: Falls relativ vom Scout-Modul-Ordner gesucht wird
-                alternativ_pfad = (Path(__file__).resolve().parent / _Path(url).name).resolve()
-                if alternativ_pfad.exists():
+                # Alternativ-Fallback im modul-eigenen Ordner suchen
+                alternativ_pfad = (Path(__file__).resolve().parent / _Path(url_clean).name).resolve()
+                if alternativ_pfad.exists() and alternativ_pfad.is_file():
                     return alternativ_pfad.read_text(encoding="utf-8", errors="ignore")
                     
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Lokale Datei fehlt unter: {lokaler_pfad}")
@@ -104,40 +144,6 @@ class AgentScout:
                 self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Lokaler Lese-Fehler: {e}")
                 return ""
 
-        # 2. Fall: Externer Web-Abruf mit robustem User-Agent
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36"
-        }
-
-        domain = url.split('/')[2] if len(url.split('/')) >= 3 else url
-        timeout_seconds = 15  # Erhöht gegen langsame Windows-DNS-Auflösungen
-
-        if requests is not None:
-            try:
-                response = requests.get(url, headers=headers, timeout=timeout_seconds, verify=False)
-                if response.status_code == 200:
-                    return response.text
-                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Server meldet HTTP {response.status_code} für {url}")
-            except requests.exceptions.ConnectionError:
-                self._log_to_ui(f"[SCOUT ENGINE] ❌ Netzwerk-Fehler: Domain '{domain}' nicht erreichbar.")
-            except requests.exceptions.Timeout:
-                self._log_to_ui(f"[SCOUT ENGINE] ❌ Timeout beim Abruf von {url}.")
-            except requests.exceptions.RequestException as e:
-                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Web-Fehler: {e}")
-
-        # Nativer Ausfallschutz über urllib
-        try:
-            req = _ur.Request(url, headers=headers)
-            with _ur.urlopen(req, timeout=timeout_seconds) as response:
-                return response.read().decode('utf-8', errors='ignore')
-        except _urlerr.URLError as e:
-            if isinstance(e.reason, _socket.gaierror):
-                self._log_to_ui(f"[SCOUT ENGINE] ❌ DNS-Fehler: Domain '{domain}' konnte nicht aufgelöst werden.")
-            else:
-                self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Netzwerkfehler für {url}: {e.reason}")
-            return ""
-        except Exception as e:
-            self._log_to_ui(f"[SCOUT ENGINE] ⚠️ Fallback-Fehler beim Abruf von {url}: {e}")
             return ""
 
     def _hole_installierte_ollama_modelle(self) -> List[str]:

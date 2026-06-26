@@ -61,21 +61,36 @@ class AegisOSDashboard(ctk.CTk):
         self._update_loop()
 
     def _load_apps_registry(self):
-        """Lädt die Liste aller installierten Apps/Agenten"""
-        # Falls registry.json fehlt, legen wir sie als Backup an
+        """Lädt die Liste aller installierten Apps/Agenten basierend auf deiner Struktur"""
+        default_registry = {
+            "Agent Worker": {"path": "core/Agent_Worker.py", "type": "agent"},
+            "Agent Doctor": {"path": "modules/Agent_Doctor.py", "type": "agent"},
+            "Agent Scout": {"path": "modules/Agent_Scout.py", "type": "agent"},
+            "Agent Wallet": {"path": "modules/Agent_Wallet.py", "type": "agent"},
+            "AI Voice Chat": {"path": "doctor_core/dialog_engine.py", "type": "system"},
+            "Task Manager": {"path": "doctor_core/aegis_storage.py", "type": "system"}
+        }
+
         if not REGISTRY_FILE.exists():
             os.makedirs(REGISTRY_FILE.parent, exist_ok=True)
-            default_registry = {
-                "Agent Worker": {"path": "core/Agent_Worker.py", "type": "agent"},
-                "AI Voice Chat": {"path": "doctor_core/dialog_engine.py", "type": "system"},
-                "Task Manager": {"path": "doctor_core/aegis_storage.py", "type": "system"},
-                "System Clock": {"path": "", "type": "system"}
-            }
             with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
                 json.dump(default_registry, f, indent=4)
-        
+            return default_registry
+
         with open(REGISTRY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            registry = json.load(f)
+
+        updated = False
+        for app_name, app_data in default_registry.items():
+            if app_name not in registry:
+                registry[app_name] = app_data
+                updated = True
+
+        if updated:
+            with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
+                json.dump(registry, f, indent=4)
+
+        return registry
 
     def _load_layout(self):
         """Lädt oder generiert die Grid-Anordnung der Kacheln"""

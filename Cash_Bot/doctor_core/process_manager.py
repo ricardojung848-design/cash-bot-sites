@@ -11,27 +11,40 @@ class AgentProcessManager:
         self.running_processes = {}  # Struktur: { "Agenten_Name": subprocess.Popen }
 
     def start_agent(self, agent_name, script_path):
-        """Startet einen Agenten parallel im Hintergrund"""
+        """Startet einen Agenten parallel im Hintergrund mit der korrekten Python-Version"""
         if agent_name in self.running_processes:
             if self.running_processes[agent_name].poll() is None:
                 return f"[INFO] {agent_name} läuft bereits aktiv."
 
         full_path = BASE_DIR / script_path
         if not full_path.exists():
-            return f"[ERROR] {script_path} existiert nicht."
+            return f"[ERROR] Datei existiert nicht unter: {script_path}"
 
         try:
-            # Hier nutzen wir "py", um genau deine installierte Python-Version anzusteuern
+            # ERZ athleticism: Wir nutzen exakt deine funktionierende System-Umgebung!
+            # Unter Windows trennen wir Argumente sauber in der Liste auf.
             proc = subprocess.Popen(
-                ["py", str(full_path)],
+                ["py", "-3.13-64", "-m", script_path.replace("/", ".").replace(".py", "")],
                 cwd=str(BASE_DIR),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
+            
+            # Sicherheits-Check: Kurz warten, ob das Skript sofort wegen Fehlern abstürzt
+            try:
+                proc.wait(timeout=0.3)
+                exit_code = proc.poll()
+                if exit_code is not None and exit_code != 0:
+                    return f"[CRASH] Agent startete, brach aber sofort ab (Code {exit_code})."
+            except subprocess.TimeoutExpired:
+                # Alles super, der Prozess läuft über die Wartezeit hinaus!
+                pass
+
             self.running_processes[agent_name] = proc
             return "SUCCESS"
+            
         except Exception as e:
-            return f"[ERROR] Konnte {agent_name} nicht starten: {e}"
+            return f"[ERROR] Windows-Startfehler für {agent_name}: {e}"
 
     def stop_agent(self, agent_name):
         """Stoppt einen spezifischen Agenten sauber"""

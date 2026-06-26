@@ -336,19 +336,32 @@ class AegisOSDashboard(ctk.CTk):
         self.lbl_global_status.configure(text="ALLE AGENTEN GESTOPPT", text_color="#ff3333")
 
     def _update_loop(self):
-        """Fragt sekündlich den Prozessmanager ab und schaltet die LEDs"""
+        """Fragt sekündlich den Prozessmanager ab und schaltet die LEDs krisensicher"""
         statuses = self.pm.get_statuses()
+        
+        # Wir vereinheitlichen die Keys der Live-Prozesse für den Vergleich
+        normalized_statuses = {str(k).strip().lower(): v for k, v in statuses.items()}
         
         for app_name in self.apps.keys():
             if app_name in self.tiles:
-                status = statuses.get(app_name, "OFFLINE")
+                # Sucht den Status, egal ob "Agent Scout", "agent scout" oder "Scout"
+                app_key_lower = app_name.strip().lower()
+                status = "OFFLINE"
+                
+                # Prüfen, ob der Name im Status-Dictionary matcht
+                for stat_key, stat_val in normalized_statuses.items():
+                    if stat_key in app_key_lower or app_key_lower in stat_key:
+                        status = stat_val
+                        break
+                
+                # LED-Farbe basierend auf dem gefundenen Status setzen
                 if status == "RUNNING":
-                    self.tiles[app_name]["led"].configure(text_color="#00ffaa")  # Grün
+                    self.tiles[app_name]["led"].configure(text_color="#00ffaa")  # Hellgrün
                 elif status == "CRASHED":
                     self.tiles[app_name]["led"].configure(text_color="#ffaa00")  # Orange (Doctor aktiv)
                 else:
                     self.tiles[app_name]["led"].configure(text_color="#ff4444")  # Rot
-
+                    
         self.after(1000, self._update_loop)
 
 if __name__ == "__main__":

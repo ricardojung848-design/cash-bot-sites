@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import random
 import subprocess
 from datetime import datetime, timedelta
 from openai import OpenAI
@@ -225,6 +226,14 @@ ENGAGEMENT-ZIELE:
 - conversions: Click-Through & Sales (Urgency, Value, CTA)
 - brand_awareness: Marken-Präsenz (Authentizität, Community-Building)
 
+MENSCHLICHE VARIATION (WICHTIG):
+- Nicht überperfekt schreiben, sondern natürlich
+- Satzlängen sichtbar mischen (kurz/mittel/lang)
+- Emoji-Verwendung variieren (Menge + Position)
+- Stil pro Variante leicht verändern (direkt, story, erklärend)
+- Caption-Längen nicht immer gleich
+- Hashtag-Empfehlungen nicht maximal/perfekt ausoptimieren
+
 ANTWORT-FORMAT (JSON):
 {{
     "high_engagement": "Caption variant that drives comments & shares",
@@ -259,11 +268,239 @@ ANTWORT-FORMAT (JSON):
                 captions = json.loads(json_match.group())
             else:
                 captions = json.loads(response_text)
-            
-            return captions
+
+            return self._apply_human_variability(captions, platform)
         except Exception as e:
             print(f"[-] Fehler bei Caption-Generierung: {e}")
             return None
+
+    def _apply_human_variability(self, captions, platform):
+        """
+        Bricht KI-Perfektion leicht auf:
+        - variiert Caption-Längen
+        - mischt Satzstrukturen
+        - verteilt Emojis ungleichmäßig
+        - erzeugt selten kleine natürliche Vertipper
+        - reduziert Hashtag-Perfektion
+        """
+        if not isinstance(captions, dict):
+            return captions
+
+        emoji_pool = captions.get("emoji_suggestions", ["🚀", "✨", "💡", "🔥", "🤝", "📈"])
+        text_keys = ["high_engagement", "viral_hook", "sales_focused", "community_building", "trending_angle"]
+
+        for key in text_keys:
+            if isinstance(captions.get(key), str):
+                captions[key] = self._humanize_caption_text(captions[key], platform, emoji_pool)
+
+        all_variants = captions.get("all_variants", [])
+        if isinstance(all_variants, list):
+            for idx, variant in enumerate(all_variants):
+                if isinstance(variant, dict) and isinstance(variant.get("text"), str):
+                    variant["text"] = self._humanize_caption_text(variant["text"], platform, emoji_pool)
+                    variant["length_profile"] = self._pick_length_profile(platform, idx)
+
+        hashtags = captions.get("hashtag_recommendations")
+        if isinstance(hashtags, dict):
+            for group_name, values in hashtags.items():
+                if isinstance(values, list):
+                    random.shuffle(values)
+                    keep = max(1, int(len(values) * random.uniform(0.55, 0.9)))
+                    hashtags[group_name] = values[:keep]
+
+        captions["humanization_notes"] = {
+            "orthografie": "leichte natürliche Variation aktiv",
+            "emoji_variation": "Menge und Position variieren pro Variante",
+            "stil_rotation": "direkt / story / erklärend",
+            "hashtag_perfection_break": True
+        }
+        return captions
+
+    def _pick_length_profile(self, platform, salt=0):
+        if platform == "tiktok":
+            options = ["kurz", "kurz", "mittel"]
+        elif platform == "pinterest":
+            options = ["kurz", "mittel"]
+        else:
+            options = ["kurz", "mittel", "lang"]
+        return options[salt % len(options)]
+
+    def _humanize_caption_text(self, text, platform, emoji_pool):
+        profile = random.choice(["kurz", "mittel", "lang"] if platform != "tiktok" else ["kurz", "mittel"])
+        output = self._vary_sentence_flow(text)
+        output = self._adjust_caption_length(output, profile)
+        output = self._add_emoji_variation(output, emoji_pool, profile)
+        output = self._inject_minor_typo(output)
+        return output.strip()
+
+    def _vary_sentence_flow(self, text):
+        parts = [p.strip() for p in re.split(r'(?<=[.!?])\s+', text) if p.strip()]
+        if len(parts) < 2:
+            return text
+
+        if random.random() < 0.45:
+            random.shuffle(parts)
+        if random.random() < 0.35:
+            parts.insert(0, random.choice(["Ehrlich gesagt.", "Kurzer Realtalk.", "Ganz simpel:"]))
+        return " ".join(parts)
+
+    def _adjust_caption_length(self, text, profile):
+        targets = {
+            "kurz": (80, 150),
+            "mittel": (170, 320),
+            "lang": (350, 560)
+        }
+        min_len, max_len = targets[profile]
+
+        if len(text) > max_len:
+            cut = text[:max_len]
+            last_stop = max(cut.rfind("."), cut.rfind("!"), cut.rfind("?"))
+            if last_stop > int(min_len * 0.7):
+                cut = cut[:last_stop + 1]
+            text = cut.rstrip()
+
+        if len(text) < min_len:
+            fillers = [
+                "Wenn du magst, zeig ich im nächsten Post ein konkretes Beispiel.",
+                "Schreib mir kurz, ob du dazu einen Deep-Dive willst.",
+                "Ich teste das gerade live im Alltag und teile die Ergebnisse."
+            ]
+            while len(text) < min_len and fillers:
+                text = f"{text} {fillers.pop(0)}".strip()
+
+        return text
+
+    def _add_emoji_variation(self, text, emoji_pool, profile):
+        if not emoji_pool:
+            return text
+
+        emoji_limits = {"kurz": (0, 2), "mittel": (1, 3), "lang": (1, 4)}
+        low, high = emoji_limits[profile]
+        count = random.randint(low, high)
+        if count == 0:
+            return text
+
+        emojis = random.sample(emoji_pool, min(count, len(emoji_pool)))
+        placement = random.choice(["end", "start", "mixed"])
+
+        if placement == "start":
+            return f"{' '.join(emojis)} {text}"
+        if placement == "end":
+            return f"{text} {' '.join(emojis)}"
+
+        chunks = text.split(" ")
+        if len(chunks) > 6:
+            pos = random.randint(3, len(chunks) - 2)
+            chunks.insert(pos, random.choice(emojis))
+            return " ".join(chunks) + f" {random.choice(emojis)}"
+        return f"{text} {' '.join(emojis)}"
+
+    def _inject_minor_typo(self, text):
+        # Nur selten, damit es natürlich bleibt
+        if random.random() > 0.22:
+            return text
+
+        words = text.split()
+        candidates = [i for i, w in enumerate(words) if len(w) > 5 and w.isalpha()]
+        if not candidates:
+            return text
+
+        idx = random.choice(candidates)
+        word = words[idx]
+        if len(word) < 6:
+            return text
+
+        typo_mode = random.choice(["drop", "swap"])
+        pos = random.randint(1, len(word) - 2)
+
+        if typo_mode == "drop":
+            broken = word[:pos] + word[pos + 1:]
+        else:
+            chars = list(word)
+            chars[pos], chars[pos - 1] = chars[pos - 1], chars[pos]
+            broken = "".join(chars)
+
+        words[idx] = broken
+        return " ".join(words)
+
+    def _choose_video_duration(self, platform, requested_duration):
+        """
+        Wählt pro Generierung eine leicht andere Videolänge.
+        """
+        presets = {
+            "tiktok": [15, 22, 28, 35, 42, 55],
+            "instagram_reels": [18, 24, 30, 38, 46, 58],
+            "youtube_shorts": [20, 28, 35, 45, 52, 60]
+        }
+        options = presets.get(platform, [requested_duration, 24, 30, 40, 50])
+        if requested_duration not in options:
+            options.append(requested_duration)
+        return random.choice(options)
+
+    def _pick_video_variation_profile(self, platform):
+        """
+        Liefert zufällige Variations-Profile für Musik, Schnitt, Filter, Thumbnail und Hook-Struktur.
+        """
+        music_styles = ["Lo-Fi Minimal", "Trend-Pop Cut", "Cinematic Bass", "Acoustic Warm", "Tech Pulse"]
+        edit_styles = ["Schnell mit Jump-Cuts", "Rhythmisch mit Beat-Cuts", "Clean mit Hard-Cuts", "Punch-In Zoom-Mix", "Story mit ruhigen Übergängen"]
+        filters = ["Kontrast Neon", "Warm & Soft", "Clean Natural", "Film Grain Light", "High Clarity Cool"]
+        thumbnails = ["Close-Up mit Bold-Text", "Before/After Split", "Minimal mit Key-Keyword", "Emotion-Face + 2-Wort-Hook", "Dark-Contrast mit Neon-Accent"]
+        hook_structures = [
+            "Problem -> überraschende Lösung",
+            "Mythos -> Reality Check",
+            "Bold Statement -> Beweis",
+            "Mini-Story -> Erkenntnis",
+            "Frage -> schnelle Antwort"
+        ]
+
+        return {
+            "platform": platform,
+            "music_style": random.choice(music_styles),
+            "editing_style": random.choice(edit_styles),
+            "filter_style": random.choice(filters),
+            "thumbnail_style": random.choice(thumbnails),
+            "hook_structure": random.choice(hook_structures)
+        }
+
+    def _apply_video_variability(self, concept, profile, chosen_duration):
+        """
+        Ergänzt/normalisiert Video-Konzept um menschlich wirkende Produktions-Variabilität.
+        """
+        if not isinstance(concept, dict):
+            concept = {}
+
+        concept["duration_seconds"] = chosen_duration
+        concept["hook_structure"] = profile["hook_structure"]
+        concept["editing_style"] = profile["editing_style"]
+        concept["filter_style"] = profile["filter_style"]
+        concept["thumbnail_style"] = profile["thumbnail_style"]
+
+        music = concept.get("music", {})
+        if not isinstance(music, dict):
+            music = {}
+        music.setdefault("mood", profile["music_style"])
+        music.setdefault("notes", f"Variation aktiv: {profile['music_style']} für abwechslungsreichen Feed-Mix.")
+        concept["music"] = music
+
+        tips = concept.get("editing_tips", "")
+        if not isinstance(tips, str):
+            tips = ""
+        extra_tips = (
+            f"Primärer Schnittstil: {profile['editing_style']}. "
+            f"Filter: {profile['filter_style']}. "
+            f"Thumbnail: {profile['thumbnail_style']}."
+        )
+        concept["editing_tips"] = f"{tips} {extra_tips}".strip()
+
+        concept["variation_profile"] = {
+            "music": profile["music_style"],
+            "schnitt": profile["editing_style"],
+            "filter": profile["filter_style"],
+            "thumbnail": profile["thumbnail_style"],
+            "hook": profile["hook_structure"],
+            "duration_seconds": chosen_duration
+        }
+        return concept
     
     def generate_hashtag_bundle(self, topic, niche="general", platforms=None):
         """
@@ -371,7 +608,9 @@ ANTWORT-FORMAT (JSON):
         Returns:
             Dict mit vollständigem Video-Konzept
         """
-        print(f"[*] Generiere Video-Konzept für {platform} - {duration}s...")
+        chosen_duration = self._choose_video_duration(platform, duration)
+        profile = self._pick_video_variation_profile(platform)
+        print(f"[*] Generiere Video-Konzept für {platform} - {chosen_duration}s...")
         
         prompt = f"""
 Du bist ein erfahrener Videoproduktions-Direktor für Viral-Content.
@@ -379,9 +618,14 @@ Erstelle ein vollständiges, professionelles Video-Konzept.
 
 SPEZIFIKATIONEN:
 - Plattform: {platform}
-- Dauer: {duration} Sekunden
+- Dauer: {chosen_duration} Sekunden
 - Thema: {topic}
 - Zielgruppe: Social-Media-Nutzer (14-35 Jahre)
+- Hook-Struktur (verwenden): {profile['hook_structure']}
+- Bevorzugter Musikcharakter: {profile['music_style']}
+- Bevorzugter Schnittstil: {profile['editing_style']}
+- Filter-Look: {profile['filter_style']}
+- Thumbnail-Stil: {profile['thumbnail_style']}
 
 KONZEPT-STRUKTUR:
 1. Hook/Opening (erste 2 Sekunden)
@@ -448,8 +692,8 @@ ANTWORT-FORMAT (JSON):
                 concept = json.loads(json_match.group())
             else:
                 concept = json.loads(response_text)
-            
-            return concept
+
+            return self._apply_video_variability(concept, profile, chosen_duration)
         except Exception as e:
             print(f"[-] Fehler bei Video-Konzept-Generierung: {e}")
             return None

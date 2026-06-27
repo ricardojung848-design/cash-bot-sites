@@ -1,0 +1,22 @@
+{
+  "research_sheet": "CashBot_Trends",
+  "content_sheet": "CashBot_Content",
+  "platforms": [
+    "instagram",
+    "tiktok",
+    "youtube_shorts",
+    "pinterest"
+  ],
+  "auto_publish": false,
+  "batch_size": null,
+  "delay_between_items": 2,
+  "delay_between_posts": 300,
+  "schedule_posts": true,
+  "generate_variants": false,
+  "variant_count": 3,
+  "enable_monitoring": true,
+  "autoscheduler_enabled": true,
+  "autoscheduler_loop_seconds": 300,
+  "event_bus_file": "..\\Cash_Bot\\config\\event_bus.json",
+  "memory_file": "orchestration_logs\\memory_store.json"
+}

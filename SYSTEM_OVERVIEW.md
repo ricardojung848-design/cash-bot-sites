@@ -160,6 +160,115 @@ Pipeline 2:
 ✓ Dashboard shows all metrics in real-time
 ```
 
+## 4. Infrastruktur: Event Bus, Task Queue, Memory
+
+### Event Bus / Task Queue
+
+- **Technologie (implementierungsneutral):** Event-Streaming/Queue-Backbone (z. B. Redis Streams oder Kafka).
+- **Zweck:** Asynchrone Kommunikation zwischen Orchestrator, Agenten, Approval-Flow und Audit-Service.
+- **Betriebsprinzipien:** At-least-once Zustellung, idempotente Consumer, Retry mit Backoff, Dead-Letter-Queue für dauerhafte Fehler.
+
+**Standard-Events**
+- `idea.created`
+- `task.assigned`
+- `task.completed`
+- `task.failed`
+- `audit.logged`
+- `approval.requested`
+- `approval.granted`
+
+**Kanonisches Event-Schema**
+```json
+{
+  "event_type": "",
+  "timestamp": "",
+  "payload": {},
+  "trace_id": ""
+}
+```
+
+### Memory-Layer
+
+- **Kurzzeit-Memory:** Task-Logs, Laufzeitmetriken und Traces (Time-Series) für Monitoring, Debugging und Live-Entscheidungen.
+- **Langzeit-Memory (Vektor-DB):** Chroma-/Qdrant-ähnlicher Speicher für Embeddings aus:
+  - Ideen
+  - Research Reports
+  - User-Feedback
+  - Reflexionseinträgen
+- **Metadaten pro Eintrag:** `trace_id`, `task_id`, `agent_id`, `timestamp`, `source`.
+
+**Memory-APIs**
+- `memory.store(item)`
+- `memory.search(query, top_k)`
+- `memory.append_episode(task_id, note)`
+
+### Audit Log
+
+- **Unveränderlich:** Append-only, revisionssicher.
+- **Signiert (HMAC):** Integritätsschutz pro Eintrag (oder Block).
+- **Mindestfelder:** `trace_id`, `user_id`, `action`, `timestamp`.
+- **Sicherheitsanforderung:** Strikte Zugriffskontrolle und getrennte Aufbewahrung von operativen Logs.
+
+---
+
+## 5. Metriken, Monitoring, Self-Repair und Lernschleifen
+
+### Wichtige Metriken (KPIs)
+
+- **Revenue per Idea (EUR):** Umsatzbeitrag je Idee über den gesamten Task-Lebenszyklus.
+- **Cost per Task:** Kosten pro Task (API-, Token- und Infrastrukturkosten).
+- **Approval Rate:** `approved / submitted`.
+- **Task Success Rate:** `completed / started`.
+- **Hallucination Rate:** Anteil manuell getaggter Halluzinationsfälle.
+- **Time to Completion:** Zeit von `task.assigned` bis `task.completed`.
+
+### Self-Repair-Loop
+
+- **Fehlererkennung:** Foreman- und Reflexionslogik erkennt wiederkehrende Fehlerbilder und erstellt ein Issue im Ordner `Reparatur`.
+- **Automatische Fix-Vorschläge:** Repair Agent erzeugt Patch-Vorschlag plus Testplan.
+- **Human Gate:** Patch wird in einer Sandbox getestet; Ergebnis wird in die Inbox zurückgespielt; Deployment erfolgt nur nach Freigabe.
+- **Lernschleife:** Nach Deployment schreibt der Reflexion Agent Erkenntnisse ins Memory; der Foreman aktualisiert Task-Templates.
+
+### A/B-Experimente
+
+- Jede Monetarisierungsstrategie wird als Experiment mit **Kontrollgruppe** und **Variante** modelliert.
+- KPI-Erfassung läuft automatisch pro Variante, inklusive Vergleich gegen die Kontrollgruppe.
+- Gewinnerstrategien werden in Templates und Playbooks übernommen; Verlierer werden dokumentiert und archiviert.
+
+---
+
+## 6. Implementierungs-Prioritäten (konkret, in Reihenfolge)
+
+1. **Inbox + One-Click API + Themenordner (MVP)** — sofort implementieren.
+2. **Event Bus + Orchestrator (Foreman MVP)** — einfache Task-Routing-Regeln.
+3. **Local Memory (Vektor-DB) + Reflexion Agent** — ermöglicht Personalisierung.
+4. **Policy Engine + Sandbox + Kill-Switch** — Sicherheit vor Autonomie.
+5. **Monetizer Agent + Cost Tracking** — ROI messen, Budgetalarme.
+6. **Auto-Researcher Scheduler + Self-Repair** — langfristige Autonomie.
+
+---
+
+## 7. Übergabeformat für die andere KI (konkrete To-Do-Liste)
+
+1. **Erzeuge DB-Schema** für Idea Folders (siehe Item-Schema).
+2. **Implementiere REST API** für Inbox (Endpoints wie spezifiziert).
+3. **Setze Event Bus** auf; implementiere Events und Trace-IDs.
+4. **Baue Foreman**: einfache Regeln, Task-Dispatch an Researcher/Writer/Monetizer.
+5. **Integriere Vektor-DB**: `store/search` API; initiale Embedding-Pipeline.
+6. **Erstelle Policy Engine** mit 3 Beispielregeln; implementiere Sandbox-Toggle.
+7. **Implementiere Audit Log** (append-only, HMAC-signiert).
+8. **Baue Reflexion Agent**: nach jedem Task Self-Audit + Memory-Update.
+9. **Implementiere UI-Prototyp**: Inbox-Liste, Detail-Card, Approve/Reject-Buttons, Kill-Switch, Metrics-Panel.
+10. **Setze Tests**: Unit für APIs, Integration für Foreman-Flows, E2E für Approval → Execution.
+
+---
+
+## 8. Abschluss: Tonalität, Sprache, Verhalten der KI
+
+- **Sprache:** Immer Deutsch. Der System-Prompt der Agenten ist zwingend auf Deutsch zu setzen.
+- **Ton:** CEO-professionell, präzise, kurz. Bei Rückfragen keine automatische Ausführung, stattdessen Inbox-Eintrag.
+- **Transparenz:** Jede Entscheidung muss `why` (Begründung) und `evidence` (Quellen/Research) liefern.
+
 ---
 
 ## 📈 Estimated Monthly Revenue

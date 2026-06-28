@@ -3,162 +3,1023 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Business Automation Hub | Smarte Software-Lösungen</title>
-    <meta name="description" content="Entdecke die besten Tools für deine Business-Automation. Effiziente Workflow-Lösungen, um Zeit zu sparen und produktiver zu arbeiten.">
-    <meta name="keywords" content="Automation, Business Software, Workflow-Optimierung, Produktivität, Tools">
-    <meta name="author" content="Business Automation Hub">
-    
-    <meta property="og:title" content="Business Automation Hub">
-    <meta property="og:description" content="Smarte Lösungen für dein Business-Workflow.">
+    <title>CashBot OS - Rico Edition | Command Center</title>
+    <meta name="description" content="CashBot OS - Rico Edition mit klarer Informationsarchitektur, Seitenbaum und deutscher Navigation für alle Kernbereiche.">
+    <meta name="author" content="CashBot OS">
+    <meta property="og:title" content="CashBot OS - Rico Edition">
+    <meta property="og:description" content="Strukturierte Steuerzentrale mit Hauptnavigation, Panels und Untersektionen auf Deutsch.">
     <meta property="og:type" content="website">
 
     <style>
-        /* Modernes Design-System */
-        :root { 
-            --bg-color: #030712; 
-            --card-bg: #111827; 
-            --text-main: #f8fafc; 
-            --text-muted: #94a3b8;
-            --accent: #38bdf8; 
-            --cta-bg: #0ea5e9; 
-            --cta-hover: #0284c7;
-            --border: #1e293b;
+        :root {
+            --bg: #000000;
+            --bg-soft: #0f0f0f;
+            --panel: rgba(15, 15, 15, 0.65);
+            --panel-soft: rgba(18, 18, 18, 0.56);
+            --text: #ffffff;
+            --muted: #c8d1dc;
+            --line: rgba(255, 255, 255, 0.12);
+            --accent: #00e0ff;
+            --accent-secondary: #9d4bff;
+            --success: #22c55e;
+            --glow-cyan: 0 0 0 1px rgba(0, 224, 255, 0.28), 0 0 22px rgba(0, 224, 255, 0.16);
+            --glow-violet: 0 0 0 1px rgba(157, 75, 255, 0.3), 0 0 22px rgba(157, 75, 255, 0.16);
         }
 
-        * { box-sizing: border-box; }
-
-        body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-main); 
-            line-height: 1.6;
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh;
-            padding: 40px 20px;
+        * {
+            box-sizing: border-box;
         }
 
-        .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            width: 100%;
-        }
-
-        h1 { 
-            font-size: 2.5rem;
-            text-align: center; 
-            color: var(--text-main); 
-            margin-bottom: 3rem; 
-            letter-spacing: -0.05em;
-        }
-
-        .card { 
-            background: var(--card-bg); 
-            border-radius: 16px; 
-            padding: 30px; 
-            margin-bottom: 25px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-        }
-
-        h2, h3 { margin-top: 0; color: var(--accent); }
-
-        /* Projekt- & Artikelliste Styling */
-        ul.links-list {
-            list-style: none;
-            padding: 0;
+        body {
             margin: 0;
-        }
-        ul.links-list li {
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        ul.links-list li:last-child { 
-            border-bottom: none; 
-        }
-        ul.links-list a {
-            color: var(--text-main);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-        ul.links-list a:hover { 
-            color: var(--accent); 
+            font-family: Inter, system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top right, rgba(0, 224, 255, 0.1) 0%, var(--bg-soft) 36%, var(--bg) 72%);
+            color: var(--text);
+            min-height: 100vh;
         }
 
-        .btn-cta {
-            display: inline-block;
-            background-color: var(--cta-bg);
-            color: white;
-            padding: 14px 28px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 20px;
-            text-align: center;
+        .app {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            border-right: 1px solid var(--line);
+            background: rgba(10, 10, 10, 0.62);
+            padding: 24px 18px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            backdrop-filter: blur(14px);
+        }
+
+        .brand {
+            margin: 0 0 22px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .brand span {
+            color: var(--accent-secondary);
+            text-shadow: 0 0 14px rgba(157, 75, 255, 0.4);
+        }
+
+        .nav-title {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-item {
+            color: var(--text);
+            text-align: left;
             width: 100%;
-            transition: all 0.2s ease;
+            cursor: pointer;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            font: inherit;
         }
-        .btn-cta:hover { 
-            background-color: var(--cta-hover);
+
+        .nav-item:hover,
+        .nav-item:focus-visible {
+            border-color: rgba(0, 224, 255, 0.35);
+            background: rgba(0, 224, 255, 0.08);
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .nav-item.active {
+            border-color: rgba(0, 224, 255, 0.45);
+            background: linear-gradient(135deg, rgba(0, 224, 255, 0.15), rgba(157, 75, 255, 0.14));
+            box-shadow: var(--glow-cyan);
+        }
+
+        .content {
+            padding: 36px 40px 28px;
+            max-width: 1500px;
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: 2.1rem;
+            letter-spacing: -0.03em;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .status {
+            font-size: 0.9rem;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .status strong {
+            color: var(--success);
+        }
+
+        .main-panel {
+            display: none;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+            padding: 20px;
+            backdrop-filter: blur(16px);
+        }
+
+        .main-panel.active {
+            display: block;
+            animation: panel-fade-in 0.35s ease;
+        }
+
+        .panel-title {
+            margin: 0 0 6px;
+            font-size: 1.22rem;
+            letter-spacing: -0.01em;
+        }
+
+        .panel-intro {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .subsection-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .subsection {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            animation: card-fade-in 0.45s ease both;
+        }
+
+        .subsection:hover {
+            border-color: rgba(157, 75, 255, 0.35);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+            box-shadow: var(--glow-violet);
         }
-        
-        footer { 
-            text-align: center; 
-            padding: 60px 0 20px; 
-            color: var(--text-muted); 
-            font-size: 0.85rem;
+
+        .subsection h3 {
+            margin: 0;
+            font-size: 0.96rem;
         }
-        footer a { color: var(--text-muted); text-decoration: none; margin: 0 10px; }
-        footer a:hover { color: var(--text-main); }
+
+        .subsection p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.45;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.45);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.83rem;
+            padding: 7px 11px;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .btn:hover,
+        .btn:focus-visible {
+            background: rgba(0, 224, 255, 0.16);
+            border-color: rgba(0, 224, 255, 0.45);
+            box-shadow: 0 0 14px rgba(0, 224, 255, 0.2);
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .btn.btn-primaer {
+            background: linear-gradient(135deg, rgba(0, 224, 255, 0.2), rgba(157, 75, 255, 0.16));
+            border-color: rgba(157, 75, 255, 0.5);
+            box-shadow: var(--glow-violet);
+        }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1.8fr 0.9fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .kpi {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            padding: 14px;
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            animation: card-fade-in 0.5s ease both;
+        }
+
+        .kpi:hover {
+            border-color: rgba(0, 224, 255, 0.45);
+            transform: translateY(-2px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .kpi-title {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.84rem;
+        }
+
+        .kpi-value {
+            margin: 8px 0 6px;
+            font-size: 1.46rem;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-split {
+            margin: 8px 0 6px;
+            display: grid;
+            gap: 4px;
+            font-size: 0.9rem;
+        }
+
+        .kpi-split span {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
+            padding-bottom: 3px;
+        }
+
+        .kpi-split span:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .kpi-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .kpi-trend.steigend {
+            color: #93f5c2;
+        }
+
+        .kpi-trend.fallend {
+            color: #fca5a5;
+        }
+
+        .event-stream {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            padding: 14px;
+            backdrop-filter: blur(12px);
+            animation: card-fade-in 0.5s ease both;
+        }
+
+        .event-stream h3 {
+            margin: 0 0 10px;
+            font-size: 0.95rem;
+        }
+
+        .event-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .event-list li {
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            padding: 9px 10px;
+            background: rgba(0, 0, 0, 0.45);
+            font-size: 0.82rem;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .event-list li:hover {
+            border-color: rgba(157, 75, 255, 0.38);
+            transform: translateY(-1px);
+        }
+
+        .event-list code {
+            color: #8ff3ff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.8rem;
+        }
+
+        .event-time {
+            display: block;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .inbox-kontrolltext {
+            margin: 0 0 14px;
+            font-size: 0.95rem;
+            color: #dbeafe;
+        }
+
+        .inbox-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            backdrop-filter: blur(12px);
+        }
+
+        .feld {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 180px;
+        }
+
+        .feld label {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .eingabe {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.84rem;
+            padding: 7px 9px;
+        }
+
+        .eingabe:focus-visible {
+            outline: none;
+            border-color: rgba(0, 224, 255, 0.45);
+            box-shadow: 0 0 12px rgba(0, 224, 255, 0.15);
+        }
+
+        .inbox-liste {
+            display: grid;
+            gap: 10px;
+        }
+
+        .inbox-karte {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            padding: 14px;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            animation: card-fade-in 0.5s ease both;
+        }
+
+        .inbox-karte:hover {
+            border-color: rgba(0, 224, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 0 18px rgba(0, 224, 255, 0.12);
+        }
+
+        .inbox-kopf {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .inbox-titel {
+            margin: 0;
+            font-size: 0.97rem;
+        }
+
+        .inbox-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 0 0 9px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.76rem;
+            color: var(--muted);
+            background: rgba(0, 0, 0, 0.42);
+        }
+
+        .inbox-status {
+            color: #d8c1ff;
+            border-color: rgba(157, 75, 255, 0.48);
+        }
+
+        .inbox-beschreibung {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.5;
+        }
+
+        .inbox-leer {
+            border: 1px dashed var(--line);
+            border-radius: 10px;
+            padding: 14px;
+            color: var(--muted);
+            font-size: 0.86rem;
+            display: none;
+        }
+
+        .hint {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .component-karte,
+        .component-kachel {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel-soft);
+            backdrop-filter: blur(12px);
+        }
+
+        .component-tabelle {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--panel-soft);
+        }
+
+        .component-tabelle th,
+        .component-tabelle td {
+            border-bottom: 1px solid var(--line);
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 0.84rem;
+        }
+
+        .component-tabelle tr:last-child td {
+            border-bottom: none;
+        }
+
+        .component-badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid rgba(157, 75, 255, 0.42);
+            border-radius: 999px;
+            padding: 2px 8px;
+            color: #e7d8ff;
+            background: rgba(157, 75, 255, 0.15);
+            font-size: 0.76rem;
+        }
+
+        .component-modal {
+            border: 1px solid rgba(157, 75, 255, 0.38);
+            border-radius: 14px;
+            background: rgba(10, 10, 10, 0.72);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--glow-violet);
+            padding: 18px;
+        }
+
+        @keyframes panel-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes card-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.995);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .footer {
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 1280px) {
+            .subsection-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .subsection-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .inbox-kopf {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--line);
+                padding: 18px 18px 14px;
+            }
+
+            .content {
+                padding: 22px 18px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="app">
+        <aside class="sidebar">
+            <h2 class="brand">CashBot OS <span>Rico Edition</span></h2>
+            <p class="nav-title">Navigation</p>
+            <nav class="nav" aria-label="Hauptnavigation">
+                <button class="nav-item active" data-panel="dashboard" title="Öffnet die Startseite nach dem Login">Dashboard</button>
+                <button class="nav-item" data-panel="inbox" title="Zeigt Freigaben und offene Rückmeldungen">Inbox &amp; Freigaben</button>
+                <button class="nav-item" data-panel="ideen" title="Sammelt und priorisiert neue Ideen">Ideen-Ordner</button>
+                <button class="nav-item" data-panel="research" title="Analysiert Markt, Themen und Chancen">Research Engine</button>
+                <button class="nav-item" data-panel="factory" title="Steuert die Produktion von Inhalten">Content Factory</button>
+                <button class="nav-item" data-panel="publisher" title="Plant und veröffentlicht Inhalte">Publisher</button>
+                <button class="nav-item" data-panel="monetarisierung" title="Verwaltet Monetarisierungspipelines 1 und 2">Monetarisierung</button>
+                <button class="nav-item" data-panel="revenue" title="Überwacht Umsatzdaten und Trends">Revenue Tracker</button>
+                <button class="nav-item" data-panel="eventmonitor" title="Überwacht zeitkritische Signale und Auslöser">Event-Monitor</button>
+                <button class="nav-item" data-panel="audit" title="Zeigt nachvollziehbare Systemereignisse">Audit Log</button>
+                <button class="nav-item" data-panel="memory" title="Zeigt Wissen, Learnings und Reflexionen">Memory &amp; Reflexion</button>
+                <button class="nav-item" data-panel="doktor" title="Diagnose, Reparatur und Systemgesundheit">System-Doktor</button>
+                <button class="nav-item" data-panel="einstellungen" title="Konfiguration, Sandbox und Kill-Switch">Einstellungen / Sandbox / Kill-Switch</button>
+            </nav>
+        </aside>
 
-<div class="container">
-    <h1>Business Automation Hub</h1>
-    
-    <div class="card">
-        <h3>Haga Software</h3>
-        <p style="color: var(--text-muted);">Erreiche mehr durch smarte Automatisierung. Unsere Empfehlung für effizientes Workflow-Management.</p>
-        <a href="#" class="btn-cta" data-link="haga">Jetzt zum Tool</a>
+        <main class="content">
+            <header class="header">
+                <div>
+                    <h1 id="greeting">Hallo Rico.</h1>
+                    <p id="panel-beschreibung">Hier ist dein aktueller Systemstatus.</p>
+                </div>
+                <p class="status">Systemstatus: <strong>Stabil</strong> · Fokusmodus aktiv</p>
+            </header>
+
+            <section class="main-panel active" id="panel-dashboard" data-beschreibung="Hier ist dein aktueller Systemstatus.">
+                <h2 class="panel-title">Dashboard</h2>
+                <p class="panel-intro">Hier ist dein aktueller Systemstatus.</p>
+                <div class="dashboard-layout">
+                    <div class="kpi-grid">
+                        <article class="kpi">
+                            <p class="kpi-title">Umsatz heute / Woche / Monat</p>
+                            <div class="kpi-split">
+                                <span><strong>Heute</strong><strong>3.420 EUR</strong></span>
+                                <span><strong>Woche</strong><strong>19.870 EUR</strong></span>
+                                <span><strong>Monat</strong><strong>87.400 EUR</strong></span>
+                            </div>
+                            <span class="kpi-trend steigend" title="Gesamttrend im Vergleich zum vorherigen Zeitraum">↑ +9,8 %</span>
+                        </article>
+                        <article class="kpi">
+                            <p class="kpi-title">Revenue per Idea</p>
+                            <p class="kpi-value">1.240 EUR</p>
+                            <span class="kpi-trend steigend" title="Trend der Ideenrentabilität">↑ +6,8 %</span>
+                        </article>
+                        <article class="kpi">
+                            <p class="kpi-title">Cost per Task</p>
+                            <p class="kpi-value">42 EUR</p>
+                            <span class="kpi-trend fallend" title="Niedriger ist besser">↓ -4,2 %</span>
+                        </article>
+                        <article class="kpi">
+                            <p class="kpi-title">Approval Rate</p>
+                            <p class="kpi-value">91,2 %</p>
+                            <span class="kpi-trend steigend" title="Freigabequote im Verlauf">↑ +2,7 %</span>
+                        </article>
+                        <article class="kpi">
+                            <p class="kpi-title">Task Success Rate</p>
+                            <p class="kpi-value">96,5 %</p>
+                            <span class="kpi-trend steigend" title="Erfolgsquote abgeschlossener Aufgaben">↑ +1,9 %</span>
+                        </article>
+                        <article class="kpi">
+                            <p class="kpi-title">Hallucination Rate</p>
+                            <p class="kpi-value">1,8 %</p>
+                            <span class="kpi-trend fallend" title="Niedriger ist besser">↓ -0,6 %</span>
+                        </article>
+                        <article class="kpi">
+                            <p class="kpi-title">Time to Completion</p>
+                            <p class="kpi-value">2h 14m</p>
+                            <span class="kpi-trend fallend" title="Niedriger ist besser">↓ -7,3 %</span>
+                        </article>
+                    </div>
+                    <aside class="event-stream">
+                        <h3>Live-Event-Stream</h3>
+                        <ul class="event-list">
+                            <li><code>idea.created</code><span class="event-time">vor 2 Min.</span></li>
+                            <li><code>task.assigned</code><span class="event-time">vor 5 Min.</span></li>
+                            <li><code>task.completed</code><span class="event-time">vor 9 Min.</span></li>
+                            <li><code>audit.logged</code><span class="event-time">vor 14 Min.</span></li>
+                        </ul>
+                    </aside>
+                </div>
+                <div class="hint">Fokus: klare KPIs, klare Trends, klare Prioritäten.</div>
+            </section>
+
+            <section class="main-panel" id="panel-inbox" data-beschreibung="Freigaben, Rückfragen und Entscheidungen in einer priorisierten Arbeitsansicht.">
+                <h2 class="panel-title">Inbox &amp; Freigaben</h2>
+                <p class="inbox-kontrolltext">Rico, diese Aktionen warten auf deine Entscheidung.</p>
+                <div class="inbox-filter" aria-label="Filter für Entscheidungen">
+                    <div class="feld">
+                        <label for="filter-typ">Typ</label>
+                        <select class="eingabe" id="filter-typ" title="Filtert nach Aktionstyp">
+                            <option value="alle">Alle Typen</option>
+                            <option value="Idee">Idee</option>
+                            <option value="Research">Research</option>
+                            <option value="Content">Content</option>
+                            <option value="Monetization">Monetization</option>
+                            <option value="Repair">Repair</option>
+                        </select>
+                    </div>
+                    <div class="feld">
+                        <label for="filter-status">Status</label>
+                        <select class="eingabe" id="filter-status" title="Filtert nach aktuellem Status">
+                            <option value="alle">Alle Status</option>
+                            <option value="Wartend">Wartend</option>
+                            <option value="In Prüfung">In Prüfung</option>
+                            <option value="Kritisch">Kritisch</option>
+                        </select>
+                    </div>
+                    <div class="feld">
+                        <label for="filter-datum">Datum ab</label>
+                        <input class="eingabe" id="filter-datum" type="date" title="Zeigt Einträge ab gewähltem Datum">
+                    </div>
+                    <div class="feld" style="justify-content: flex-end;">
+                        <label>&nbsp;</label>
+                        <button class="btn" id="filter-zuruecksetzen" title="Setzt alle Filter zurück">Filter zurücksetzen</button>
+                    </div>
+                </div>
+                <div class="inbox-liste" id="inbox-liste">
+                    <article class="inbox-karte" data-typ="Idee" data-status="Wartend" data-datum="2026-06-28">
+                        <div class="inbox-kopf">
+                            <h3 class="inbox-titel">Neue Hook-Idee für LinkedIn-Serie</h3>
+                            <span class="chip">idea.created</span>
+                        </div>
+                        <p class="inbox-meta">
+                            <span class="chip">Typ: Idee</span>
+                            <span class="chip inbox-status">Status: Wartend</span>
+                            <span class="chip">Zeitstempel: 28.06.2026 · 00:34</span>
+                        </p>
+                        <p class="inbox-beschreibung">Kurzformat-Idee mit hoher Relevanz für CEO-Zielgruppe und direktem CTA zur Terminbuchung.</p>
+                        <div class="button-row">
+                            <button class="btn btn-primaer" title="Gibt diese Aktion frei">Freigeben</button>
+                            <button class="btn" title="Lehnt diese Aktion ab">Ablehnen</button>
+                            <button class="btn" title="Führt diese Aktion in der Sandbox aus">In Sandbox testen</button>
+                            <button class="btn" title="Öffnet zusätzliche Kontextdetails">Details anzeigen</button>
+                        </div>
+                    </article>
+
+                    <article class="inbox-karte" data-typ="Research" data-status="In Prüfung" data-datum="2026-06-27">
+                        <div class="inbox-kopf">
+                            <h3 class="inbox-titel">Cluster-Analyse: KI-Automation DACH</h3>
+                            <span class="chip">research.result</span>
+                        </div>
+                        <p class="inbox-meta">
+                            <span class="chip">Typ: Research</span>
+                            <span class="chip inbox-status">Status: In Prüfung</span>
+                            <span class="chip">Zeitstempel: 27.06.2026 · 22:10</span>
+                        </p>
+                        <p class="inbox-beschreibung">Research-Ergebnis mit drei priorisierten Chancenclustern und vorgeschlagener Veröffentlichungsreihenfolge.</p>
+                        <div class="button-row">
+                            <button class="btn btn-primaer" title="Gibt diese Aktion frei">Freigeben</button>
+                            <button class="btn" title="Lehnt diese Aktion ab">Ablehnen</button>
+                            <button class="btn" title="Führt diese Aktion in der Sandbox aus">In Sandbox testen</button>
+                            <button class="btn" title="Öffnet zusätzliche Kontextdetails">Details anzeigen</button>
+                        </div>
+                    </article>
+
+                    <article class="inbox-karte" data-typ="Content" data-status="Wartend" data-datum="2026-06-27">
+                        <div class="inbox-kopf">
+                            <h3 class="inbox-titel">Landingpage-Entwurf: Angebot Pipeline 1</h3>
+                            <span class="chip">content.draft</span>
+                        </div>
+                        <p class="inbox-meta">
+                            <span class="chip">Typ: Content</span>
+                            <span class="chip inbox-status">Status: Wartend</span>
+                            <span class="chip">Zeitstempel: 27.06.2026 · 20:42</span>
+                        </p>
+                        <p class="inbox-beschreibung">Content-Entwurf mit Value Proposition, CTA-Struktur und geprüftem Ton in CEO-Ansprache.</p>
+                        <div class="button-row">
+                            <button class="btn btn-primaer" title="Gibt diese Aktion frei">Freigeben</button>
+                            <button class="btn" title="Lehnt diese Aktion ab">Ablehnen</button>
+                            <button class="btn" title="Führt diese Aktion in der Sandbox aus">In Sandbox testen</button>
+                            <button class="btn" title="Öffnet zusätzliche Kontextdetails">Details anzeigen</button>
+                        </div>
+                    </article>
+
+                    <article class="inbox-karte" data-typ="Monetization" data-status="Kritisch" data-datum="2026-06-26">
+                        <div class="inbox-kopf">
+                            <h3 class="inbox-titel">Monetarisierungs-Vorschlag für Upsell-Stufe</h3>
+                            <span class="chip">monetization.suggestion</span>
+                        </div>
+                        <p class="inbox-meta">
+                            <span class="chip">Typ: Monetization</span>
+                            <span class="chip inbox-status">Status: Kritisch</span>
+                            <span class="chip">Zeitstempel: 26.06.2026 · 18:25</span>
+                        </p>
+                        <p class="inbox-beschreibung">Vorschlag zur Preisstruktur-Anpassung mit hoher Auswirkung auf Conversion und Durchschnittsumsatz.</p>
+                        <div class="button-row">
+                            <button class="btn btn-primaer" title="Gibt diese Aktion frei">Freigeben</button>
+                            <button class="btn" title="Lehnt diese Aktion ab">Ablehnen</button>
+                            <button class="btn" title="Führt diese Aktion in der Sandbox aus">In Sandbox testen</button>
+                            <button class="btn" title="Öffnet zusätzliche Kontextdetails">Details anzeigen</button>
+                        </div>
+                    </article>
+
+                    <article class="inbox-karte" data-typ="Repair" data-status="In Prüfung" data-datum="2026-06-28">
+                        <div class="inbox-kopf">
+                            <h3 class="inbox-titel">Self-Repair-Patch für Publisher-Queue</h3>
+                            <span class="chip">repair.patch</span>
+                        </div>
+                        <p class="inbox-meta">
+                            <span class="chip">Typ: Repair</span>
+                            <span class="chip inbox-status">Status: In Prüfung</span>
+                            <span class="chip">Zeitstempel: 28.06.2026 · 00:12</span>
+                        </p>
+                        <p class="inbox-beschreibung">Automatisch generierter Patch zur Stabilisierung der Queue-Reihenfolge bei hoher Last im Publisher.</p>
+                        <div class="button-row">
+                            <button class="btn btn-primaer" title="Gibt diese Aktion frei">Freigeben</button>
+                            <button class="btn" title="Lehnt diese Aktion ab">Ablehnen</button>
+                            <button class="btn" title="Führt diese Aktion in der Sandbox aus">In Sandbox testen</button>
+                            <button class="btn" title="Öffnet zusätzliche Kontextdetails">Details anzeigen</button>
+                        </div>
+                    </article>
+                </div>
+                <p class="inbox-leer" id="inbox-leer">Keine Einträge für die gewählten Filter gefunden.</p>
+            </section>
+
+            <section class="main-panel" id="panel-ideen" data-beschreibung="Ideensammlung mit Bewertung nach Wirkung, Aufwand und Umsetzbarkeit.">
+                <h2 class="panel-title">Ideen-Ordner</h2>
+                <p class="panel-intro">Kuratiert neue Chancen und überführt sie in priorisierte Umsetzungspläne.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Ideenpool</h3><p>Zentrale Sammlung aller Rohideen.</p><div class="button-row"><button class="btn btn-primaer" title="Legt eine neue Idee an">Idee erfassen</button></div></article>
+                    <article class="subsection"><h3>Scoring</h3><p>Bewertung nach Umsatzpotenzial, Reichweite und Geschwindigkeit.</p><div class="button-row"><button class="btn" title="Startet das Prioritäts-Scoring">Scoring starten</button></div></article>
+                    <article class="subsection"><h3>Roadmap-Übergabe</h3><p>Freigegebene Ideen direkt in Planung und Produktion überführen.</p><div class="button-row"><button class="btn" title="Übernimmt Top-Ideen in die Roadmap">In Roadmap übernehmen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-research" data-beschreibung="Marktintelligenz, Themencluster und Signale für nächste Inhalte und Angebote.">
+                <h2 class="panel-title">Research Engine</h2>
+                <p class="panel-intro">Strukturiert Erkenntnisse für schnelle, datenbasierte Priorisierung.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Trend-Signale</h3><p>Relevante Marktbewegungen und Suchimpulse.</p><div class="button-row"><button class="btn btn-primaer" title="Aktualisiert alle Trenddaten">Trends aktualisieren</button></div></article>
+                    <article class="subsection"><h3>Wettbewerbsradar</h3><p>Beobachtung von Positionierung, Angeboten und Taktiken.</p><div class="button-row"><button class="btn" title="Öffnet die Wettbewerbsanalyse">Radar öffnen</button></div></article>
+                    <article class="subsection"><h3>Themencluster</h3><p>Priorisierte Themen für Content Factory und Publisher.</p><div class="button-row"><button class="btn" title="Erstellt neue Cluster">Cluster erzeugen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-factory" data-beschreibung="Produktionssteuerung für Inhalte mit Workflow von Entwurf bis Freigabe.">
+                <h2 class="panel-title">Content Factory</h2>
+                <p class="panel-intro">Operative Produktionszentrale für Formate, Qualität und Durchsatz.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Produktionsboard</h3><p>Status von Entwurf, Review und Freigabe in Echtzeit.</p><div class="button-row"><button class="btn btn-primaer" title="Öffnet das Produktionsboard">Board öffnen</button></div></article>
+                    <article class="subsection"><h3>Format-Stacks</h3><p>Vorlagen für Langform, Kurzform und Landingpages.</p><div class="button-row"><button class="btn" title="Zeigt alle Formatvorlagen">Stacks anzeigen</button></div></article>
+                    <article class="subsection"><h3>Qualitätscheck</h3><p>Prüfung auf Tonalität, Konsistenz und Conversion-Fokus.</p><div class="button-row"><button class="btn" title="Startet den Qualitätscheck">Check starten</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-publisher" data-beschreibung="Veröffentlichungskontrolle inklusive Kanäle, Taktung und Kampagnenfenster.">
+                <h2 class="panel-title">Publisher</h2>
+                <p class="panel-intro">Steuert Ausspielung, Timing und Sichtbarkeit über alle Kanäle.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Publikationskalender</h3><p>Alle Slots, Deadlines und Veröffentlichungsfenster.</p><div class="button-row"><button class="btn btn-primaer" title="Öffnet den Kalender">Kalender öffnen</button></div></article>
+                    <article class="subsection"><h3>Kanalsteuerung</h3><p>Zuweisung pro Plattform und Zielgruppe.</p><div class="button-row"><button class="btn" title="Bearbeitet die Kanalzuordnung">Kanäle steuern</button></div></article>
+                    <article class="subsection"><h3>Freigabe-Queue</h3><p>Finale Inhalte kurz vor Veröffentlichung.</p><div class="button-row"><button class="btn" title="Zeigt wartende Veröffentlichungen">Queue anzeigen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-monetarisierung" data-beschreibung="Monetarisierungspipelines 1 und 2 mit Performance, Engpässen und Maßnahmen.">
+                <h2 class="panel-title">Monetarisierung</h2>
+                <p class="panel-intro">Transparenz über Pipeline 1 und Pipeline 2 mit klaren Handlungshebeln.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Pipeline 1</h3><p>Leadfluss, Abschlussquote und Engpassanalyse.</p><div class="button-row"><button class="btn btn-primaer" title="Öffnet Kennzahlen zu Pipeline 1">Pipeline 1 öffnen</button></div></article>
+                    <article class="subsection"><h3>Pipeline 2</h3><p>Skalierungshebel für zweite Umsatzlinie.</p><div class="button-row"><button class="btn" title="Öffnet Kennzahlen zu Pipeline 2">Pipeline 2 öffnen</button></div></article>
+                    <article class="subsection"><h3>Maßnahmenplan</h3><p>Priorisierte Maßnahmen nach Wirkung und Zeitbedarf.</p><div class="button-row"><button class="btn" title="Erstellt den nächsten Maßnahmenplan">Plan erstellen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-revenue" data-beschreibung="Umsatztracking mit Abweichungsanalyse und Forecast für nächste Entscheidungen.">
+                <h2 class="panel-title">Revenue Tracker</h2>
+                <p class="panel-intro">Finanzielle Lage auf einen Blick mit Verlauf, Abweichungen und Prognosen.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Umsatzverlauf</h3><p>Tag, Woche, Monat im direkten Vergleich.</p><div class="button-row"><button class="btn btn-primaer" title="Zeigt den Umsatzverlauf">Verlauf ansehen</button></div></article>
+                    <article class="subsection"><h3>Forecast</h3><p>Prognose für den laufenden und nächsten Zyklus.</p><div class="button-row"><button class="btn" title="Berechnet eine neue Prognose">Forecast berechnen</button></div></article>
+                    <article class="subsection"><h3>Abweichungen</h3><p>Erkenntnisse zu positiven und negativen Abweichungen.</p><div class="button-row"><button class="btn" title="Öffnet die Abweichungsanalyse">Analyse öffnen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-eventmonitor" data-beschreibung="Ereignisüberwachung für Trigger, Warnungen und automatische Reaktionen.">
+                <h2 class="panel-title">Event-Monitor</h2>
+                <p class="panel-intro">Überwacht kritische Ereignisse und priorisiert Reaktionen in Echtzeit.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Live-Trigger</h3><p>Aktive Events mit Dringlichkeit und Auswirkung.</p><div class="button-row"><button class="btn btn-primaer" title="Zeigt aktive Trigger">Live ansehen</button></div></article>
+                    <article class="subsection"><h3>Warnstufen</h3><p>Frühwarnungen nach Risiko- und Impact-Level.</p><div class="button-row"><button class="btn" title="Öffnet alle Warnstufen">Warnstufen öffnen</button></div></article>
+                    <article class="subsection"><h3>Automatische Reaktionen</h3><p>Hinterlegte Aktionen bei definierten Ereignissen.</p><div class="button-row"><button class="btn" title="Verwaltet automatische Reaktionen">Reaktionen verwalten</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-audit" data-beschreibung="Nachvollziehbare Historie aller Entscheidungen, Änderungen und Systemaktionen.">
+                <h2 class="panel-title">Audit Log</h2>
+                <p class="panel-intro">Volle Nachvollziehbarkeit für Compliance, Qualität und Sicherheit.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Systemereignisse</h3><p>Chronologische Liste aller wichtigen Aktionen.</p><div class="button-row"><button class="btn btn-primaer" title="Öffnet die Systemhistorie">Historie öffnen</button></div></article>
+                    <article class="subsection"><h3>Freigabeverlauf</h3><p>Wer hat was wann freigegeben oder abgelehnt.</p><div class="button-row"><button class="btn" title="Zeigt den Freigabeverlauf">Verlauf anzeigen</button></div></article>
+                    <article class="subsection"><h3>Änderungsprotokoll</h3><p>Konfigurationsänderungen mit Zeitstempel und Quelle.</p><div class="button-row"><button class="btn" title="Öffnet alle Konfigurationsänderungen">Protokoll öffnen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-memory" data-beschreibung="Langzeitwissen, Learnings und Reflexionen für bessere Folgeentscheidungen.">
+                <h2 class="panel-title">Memory &amp; Reflexion</h2>
+                <p class="panel-intro">Sichert Wissen und bewertet Entscheidungen rückblickend für kontinuierliche Verbesserung.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Wissensspeicher</h3><p>Zentrale Erkenntnisse aus Projekten und Tests.</p><div class="button-row"><button class="btn btn-primaer" title="Öffnet den Wissensspeicher">Speicher öffnen</button></div></article>
+                    <article class="subsection"><h3>Reflexionsprotokolle</h3><p>Bewertung vergangener Entscheidungen mit Lessons Learned.</p><div class="button-row"><button class="btn" title="Zeigt Reflexionsprotokolle">Protokolle anzeigen</button></div></article>
+                    <article class="subsection"><h3>Wissensübergabe</h3><p>Überführung von Learnings in Standards und Regeln.</p><div class="button-row"><button class="btn" title="Startet die Wissensübergabe">Übergabe starten</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-doktor" data-beschreibung="Systemdiagnose, automatische Korrektur und technische Gesundheitsprüfung.">
+                <h2 class="panel-title">System-Doktor</h2>
+                <p class="panel-intro">Technische Stabilität sichern, Fehler früh erkennen und schnell beheben.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Diagnosecenter</h3><p>Gesamtstatus der Kernmodule und Abhängigkeiten.</p><div class="button-row"><button class="btn btn-primaer" title="Startet den Gesamtsystem-Check">Systemcheck starten</button></div></article>
+                    <article class="subsection"><h3>Auto-Fix</h3><p>Erkannte Fehler automatisch gemäß Regeln beheben.</p><div class="button-row"><button class="btn" title="Startet den Auto-Fix-Lauf">Auto-Fix ausführen</button></div></article>
+                    <article class="subsection"><h3>Gesundheitsverlauf</h3><p>Trendentwicklung der Systemstabilität über Zeit.</p><div class="button-row"><button class="btn" title="Zeigt die Systemgesundheit im Verlauf">Verlauf anzeigen</button></div></article>
+                </div>
+            </section>
+
+            <section class="main-panel" id="panel-einstellungen" data-beschreibung="Konfiguration, Testumgebung und Not-Aus mit klaren Sicherheitsgrenzen.">
+                <h2 class="panel-title">Einstellungen / Sandbox / Kill-Switch</h2>
+                <p class="panel-intro">Konfiguriert das System kontrolliert und schützt den Betrieb mit klaren Sicherungsmechanismen.</p>
+                <div class="subsection-grid">
+                    <article class="subsection"><h3>Einstellungen</h3><p>Systemparameter, Rollen und Integrationen verwalten.</p><div class="button-row"><button class="btn btn-primaer" title="Öffnet die Systemeinstellungen">Einstellungen öffnen</button></div></article>
+                    <article class="subsection"><h3>Sandbox</h3><p>Neue Abläufe sicher testen, ohne Livebetrieb zu beeinflussen.</p><div class="button-row"><button class="btn" title="Wechselt in die sichere Testumgebung">Sandbox starten</button></div></article>
+                    <article class="subsection"><h3>Kill-Switch</h3><p>Not-Aus für kritische Automationen mit Protokollierung.</p><div class="button-row"><button class="btn" title="Aktiviert den kontrollierten Not-Aus">Kill-Switch auslösen</button></div></article>
+                </div>
+            </section>
+
+            <p class="footer">&copy; 2026 CashBot OS · Rico Edition</p>
+        </main>
     </div>
 
-    <div class="card">
-        <h2>Exklusive Experten-Ratgeber</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Tiefgehende Analysen und Praxis-Tests aus unserer Redaktion:</p>
-        
-        <ul id="project-list" class="links-list">
-        </ul>
-    </div>
-</div>
+    <script>
+        const greetingElement = document.getElementById("greeting");
+        const panelBeschreibung = document.getElementById("panel-beschreibung");
+        const navItems = document.querySelectorAll(".nav-item");
+        const panels = document.querySelectorAll(".main-panel");
+        const inboxKarten = document.querySelectorAll(".inbox-karte");
+        const filterTyp = document.getElementById("filter-typ");
+        const filterStatus = document.getElementById("filter-status");
+        const filterDatum = document.getElementById("filter-datum");
+        const filterZuruecksetzen = document.getElementById("filter-zuruecksetzen");
+        const inboxLeer = document.getElementById("inbox-leer");
+        const hour = new Date().getHours();
 
-<footer>
-    <p>&copy; 2026 Business Automation Hub</p>
-    <div>
-        <a href="impressum.html">Impressum</a> | 
-        <a href="datenschutz.html">Datenschutz</a>
-    </div>
-</footer>
+        greetingElement.textContent = hour >= 18 || hour < 5 ? "Guten Abend, Rico." : "Hallo Rico.";
 
-<script>
-    // Affiliate-Links zentral verwalten
-    const affiliateLinks = {
-        "haga": "https://DEIN-AFFILIATE-LINK-HIER.de"
-    };
+        navItems.forEach((item) => {
+            item.addEventListener("click", () => {
+                const panelId = `panel-${item.dataset.panel}`;
+                const activePanel = document.getElementById(panelId);
+                if (!activePanel) {
+                    return;
+                }
 
-    // Automatisches Zuweisen der Links
-    document.querySelectorAll('.btn-cta').forEach(button => {
-        const linkKey = button.getAttribute('data-link');
-        if (affiliateLinks[linkKey]) {
-            button.href = affiliateLinks[linkKey];
+                navItems.forEach((entry) => entry.classList.remove("active"));
+                panels.forEach((panel) => panel.classList.remove("active"));
+
+                item.classList.add("active");
+                activePanel.classList.add("active");
+                panelBeschreibung.textContent = activePanel.dataset.beschreibung || "Übersicht aktiv.";
+            });
+        });
+
+        const filterInbox = () => {
+            if (!filterTyp || !filterStatus || !filterDatum || !inboxLeer) {
+                return;
+            }
+
+            let sichtbar = 0;
+            const typWert = filterTyp.value;
+            const statusWert = filterStatus.value;
+            const datumWert = filterDatum.value;
+
+            inboxKarten.forEach((karte) => {
+                const typPassend = typWert === "alle" || karte.dataset.typ === typWert;
+                const statusPassend = statusWert === "alle" || karte.dataset.status === statusWert;
+                const datumPassend = !datumWert || karte.dataset.datum >= datumWert;
+                const anzeigen = typPassend && statusPassend && datumPassend;
+
+                karte.style.display = anzeigen ? "block" : "none";
+                if (anzeigen) {
+                    sichtbar += 1;
+                }
+            });
+
+            inboxLeer.style.display = sichtbar === 0 ? "block" : "none";
+        };
+
+        if (filterTyp && filterStatus && filterDatum && filterZuruecksetzen) {
+            filterTyp.addEventListener("change", filterInbox);
+            filterStatus.addEventListener("change", filterInbox);
+            filterDatum.addEventListener("change", filterInbox);
+            filterZuruecksetzen.addEventListener("click", () => {
+                filterTyp.value = "alle";
+                filterStatus.value = "alle";
+                filterDatum.value = "";
+                filterInbox();
+            });
+            filterInbox();
         }
-    });
-</script>
-
+    </script>
 </body>
 </html>

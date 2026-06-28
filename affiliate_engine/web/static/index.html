@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate & SEO Engine - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .status-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .status-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            text-align: center;
+        }
+        
+        .status-item .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .status-item .label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-icon {
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #38a169;
+        }
+        
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .list {
+            list-style: none;
+        }
+        
+        .list li {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .list li:last-child {
+            border-bottom: none;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge-warning {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .badge-info {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+        
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #f56565;
+        }
+        
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border-left: 4px solid #3182ce;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .network-status {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .network-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .network-item.active {
+            background: #c6f6d5;
+            border-left: 3px solid #48bb78;
+        }
+        
+        .network-item.inactive {
+            background: #fed7d7;
+            border-left: 3px solid #f56565;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Affiliate & SEO Engine</h1>
+            <p>Automatische Landing Page Generierung mit Affiliate-Links</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="number" id="stat-pages">0</div>
+                <div class="label">Landing Pages</div>
+            </div>
+            <div class="status-item">
+                <div class="number" id="stat-links">0</div>
+                <div class="label">Tracking Links</div>
+            </div>
+            <div class="status-item">
+                <div class="number" id="stat-clicks">0</div>
+                <div class="label">Gesamt Clicks</div>
+            </div>
+            <div class="status-item">
+                <div class="number" id="stat-conversions">0</div>
+                <div class="label">Conversions</div>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <!-- GENERATOR CARD -->
+            <div class="card">
+                <h2><span class="card-icon">✍️</span> Content Generator</h2>
+                <div id="generator-alert"></div>
+                <div class="form-group">
+                    <label>Thema</label>
+                    <input type="text" id="topic" placeholder="z.B. Business Automation mit Zapier" value="Business Automation mit Zapier">
+                </div>
+                <div class="form-group">
+                    <label>Haupt-Keyword</label>
+                    <input type="text" id="main-keyword" placeholder="z.B. Zapier Automation" value="Zapier Automation">
+                </div>
+                <div class="form-group">
+                    <label>Keywords (komma-getrennt)</label>
+                    <textarea id="keywords" placeholder="automation, workflow, integration">automation, workflow, integration, make.com</textarea>
+                </div>
+                <div class="loading" id="generator-loading">
+                    <div class="spinner"></div>
+                    <p>Generiere Content...</p>
+                </div>
+                <button class="btn btn-primary" onclick="generateLandingPage()">🎯 LP Generieren</button>
+            </div>
+            
+            <!-- SCHEDULER CARD -->
+            <div class="card">
+                <h2><span class="card-icon">⏰</span> Scheduler</h2>
+                <div id="scheduler-status"></div>
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Automatische tägl. Generierung um 02:00</p>
+                    <button class="btn btn-success btn-small" onclick="startScheduler()">▶️ Starten</button>
+                    <button class="btn btn-danger btn-small" onclick="stopScheduler()">⏹️ Stoppen</button>
+                    <button class="btn btn-primary btn-small" onclick="testGeneration()">🧪 Test</button>
+                </div>
+                <div id="scheduler-loading" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            
+            <!-- NETWORKS CARD -->
+            <div class="card">
+                <h2><span class="card-icon">🌐</span> Affiliate Netzwerke</h2>
+                <div class="network-status" id="networks-list"></div>
+                <p style="color: #999; font-size: 0.85rem; margin-top: 15px;">
+                    💡 Credentials werden aktiviert sobald Sie gegeben werden
+                </p>
+            </div>
+            
+            <!-- LANDING PAGES CARD -->
+            <div class="card">
+                <h2><span class="card-icon">📄</span> Landing Pages</h2>
+                <ul class="list" id="landing-pages-list">
+                    <li style="text-align: center; color: #999;">Lädt...</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Affiliate & SEO Engine v1.0.0 | © 2024</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">API Status: <span id="api-status">Verbindung wird geprüft...</span></p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        // ====================================================================
+        // INIT
+        // ====================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAPIStatus();
+            loadNetworks();
+            loadLandingPages();
+            loadSchedulerStatus();
+            loadAnalytics();
+            setInterval(loadAnalytics, 30000); // Refresh alle 30s
+        });
+
+        // ====================================================================
+        // API CALLS
+        // ====================================================================
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (data) options.body = JSON.stringify(data);
+                
+                const response = await fetch(API_BASE + endpoint, options);
+                return await response.json();
+            } catch (e) {
+                console.error('API Error:', e);
+                return { error: e.message };
+            }
+        }
+
+        async function checkAPIStatus() {
+            const data = await apiCall('/health');
+            if (data.status === 'running') {
+                document.getElementById('api-status').textContent = '✅ Aktiv';
+                document.getElementById('api-status').style.color = '#48bb78';
+            } else {
+                document.getElementById('api-status').textContent = '❌ Offline';
+                document.getElementById('api-status').style.color = '#f56565';
+            }
+        }
+
+        // ====================================================================
+        // GENERATOR
+        // ====================================================================
+
+        async function generateLandingPage() {
+            const topic = document.getElementById('topic').value;
+            const mainKeyword = document.getElementById('main-keyword').value;
+            const keywords = document.getElementById('keywords').value.split(',').map(k => k.trim());
+
+            if (!topic) {
+                showAlert('generator-alert', 'Bitte Thema eingeben', 'error');
+                return;
+            }
+
+            showLoading('generator-loading', true);
+            showAlert('generator-alert', '', '');
+
+            const result = await apiCall('/generate/landing-page', 'POST', {
+                topic: topic,
+                main_keyword: mainKeyword,
+                keywords: keywords
+            });
+
+            showLoading('generator-loading', false);
+
+            if (result.status === 'success') {
+                showAlert('generator-alert', `✅ LP erfolgreich erstellt! (${result.word_count} Wörter)`, 'success');
+                setTimeout(() => loadLandingPages(), 1000);
+            } else {
+                showAlert('generator-alert', `❌ Fehler: ${result.error || result.message}`, 'error');
+            }
+        }
+
+        // ====================================================================
+        // SCHEDULER
+        // ====================================================================
+
+        async function loadSchedulerStatus() {
+            const data = await apiCall('/scheduler/status');
+            let html = '<div style="margin-bottom: 10px;">';
+            
+            if (data.scheduler_running) {
+                html += '<span class="badge badge-success">✅ Läuft</span>';
+            } else {
+                html += '<span class="badge badge-warning">⏹️ Gestoppt</span>';
+            }
+            
+            html += `<br><small style="color: #666;">Jobs: ${data.total_jobs || 0}</small>`;
+            html += '</div>';
+            
+            document.getElementById('scheduler-status').innerHTML = html;
+        }
+
+        async function startScheduler() {
+            showLoading('scheduler-loading', true);
+            await apiCall('/scheduler/start', 'POST');
+            setTimeout(() => {
+                loadSchedulerStatus();
+                showLoading('scheduler-loading', false);
+            }, 1000);
+        }
+
+        async function stopScheduler() {
+            showLoading('scheduler-loading', true);
+            await apiCall('/scheduler/stop', 'POST');
+            setTimeout(() => {
+                loadSchedulerStatus();
+                showLoading('scheduler-loading', false);
+            }, 1000);
+        }
+
+        async function testGeneration() {
+            showLoading('scheduler-loading', true);
+            showAlert('generator-alert', 'Test-Generierung gestartet...', 'info');
+            await apiCall('/scheduler/test-generation', 'POST');
+            setTimeout(() => {
+                loadSchedulerStatus();
+                showLoading('scheduler-loading', false);
+                loadLandingPages();
+            }, 2000);
+        }
+
+        // ====================================================================
+        // NETWORKS
+        // ====================================================================
+
+        async function loadNetworks() {
+            const data = await apiCall('/programs/available');
+            let html = '';
+
+            for (const [network, status] of Object.entries(data)) {
+                const className = status.configured ? 'active' : 'inactive';
+                const icon = status.configured ? '✅' : '⏳';
+                html += `
+                    <div class="network-item ${className}">
+                        ${icon} ${network}
+                    </div>
+                `;
+            }
+
+            document.getElementById('networks-list').innerHTML = html;
+        }
+
+        // ====================================================================
+        // LANDING PAGES
+        // ====================================================================
+
+        async function loadLandingPages() {
+            const data = await apiCall('/landing-pages');
+            let html = '';
+
+            if (data.pages && data.pages.length > 0) {
+                data.pages.slice(0, 5).forEach(page => {
+                    html += `
+                        <li>
+                            <strong>${page.title}</strong>
+                            <span class="badge badge-info">${page.status}</span>
+                        </li>
+                    `;
+                });
+            } else {
+                html = '<li style="text-align: center; color: #999;">Noch keine Landing Pages</li>';
+            }
+
+            document.getElementById('landing-pages-list').innerHTML = html;
+        }
+
+        // ====================================================================
+        // ANALYTICS
+        // ====================================================================
+
+        async function loadAnalytics() {
+            const data = await apiCall('/analytics?days=30');
+            
+            if (data.total_clicks !== undefined) {
+                document.getElementById('stat-pages').textContent = data.active_pages || 0;
+                document.getElementById('stat-links').textContent = '~' + (Math.floor(data.active_pages * 3) || 0);
+                document.getElementById('stat-clicks').textContent = data.total_clicks || 0;
+                document.getElementById('stat-conversions').textContent = data.total_conversions || 0;
+            }
+        }
+
+        // ====================================================================
+        // HELPERS
+        // ====================================================================
+
+        function showAlert(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            if (!message) {
+                el.innerHTML = '';
+                return;
+            }
+            el.className = `alert alert-${type}`;
+            el.innerHTML = message;
+        }
+
+        function showLoading(elementId, show) {
+            const el = document.getElementById(elementId);
+            if (show) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

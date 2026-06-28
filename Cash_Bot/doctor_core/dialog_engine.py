@@ -22,7 +22,7 @@ class AegisDialogEngine:
                 res = self.pm.start_agent("Agent_Worker", "core/Agent_Worker.py")
                 return "Haupt-Worker-Agent wird im Hintergrund hochgefahren, Sir." if res == "SUCCESS" else f"Fehler: {res}"
             elif "telegram" in cmd or "bot" in cmd:
-                res = self.pm.start_agent("Telegram_Bot", "modules/telegram_bot.py")
+                res = self.pm.start_agent("Telegram_Bot", "core/Agent_Telegram.py")
                 return "Telegram-Bot-Schnittstelle wird gestartet." if res == "SUCCESS" else f"Fehler: {res}"
             
         if "stoppe" in cmd or "beende" in cmd or "kill" in cmd:

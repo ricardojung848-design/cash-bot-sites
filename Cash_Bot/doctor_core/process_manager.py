@@ -41,7 +41,7 @@ class AgentProcessManager:
             log_file = open(log_file_path, "w", encoding="utf-8", errors="ignore")
 
             proc = subprocess.Popen(
-                ["py", "-3.13-64", str(full_path)],
+                [sys.executable, str(full_path)],
                 cwd=str(BASE_DIR),
                 env=env,  # Injiziert die stabilen Umgebungsvariablen
                 stdout=subprocess.DEVNULL,
@@ -111,12 +111,10 @@ class AgentProcessManager:
         status_dict = {}
         for name, proc in list(self.running_processes.items()):
             exit_code = proc.poll()
-            display_name = name.replace("_", " ")
-            
             if exit_code is None:
-                status_dict[display_name] = "RUNNING"
+                status_dict[name] = "RUNNING"
             else:
-                status_dict[display_name] = "CRASHED" if exit_code != 0 else "OFFLINE"
+                status_dict[name] = "CRASHED" if exit_code != 0 else "OFFLINE"
                 
                 # Cleanup des Datei-Handlers bei beendetem Prozess
                 if hasattr(proc, 'stderr') and proc.stderr:
@@ -128,7 +126,7 @@ class AgentProcessManager:
                 del self.running_processes[name]
                 
                 if exit_code != 0:
-                    self._alert_doctor(display_name, exit_code)
+                    self._alert_doctor(name, exit_code)
         return status_dict
 
     def _alert_doctor(self, agent_name, exit_code):

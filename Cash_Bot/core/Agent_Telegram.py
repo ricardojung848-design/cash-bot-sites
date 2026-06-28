@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import importlib.util
 
 # Sicherstellen, dass das Projekt-Hauptverzeichnis im Systempfad liegt.
 # Dies verhindert Import-Fehler, wenn der Bot aus dem 'core'-Ordner heraus gestartet wird.
@@ -11,10 +12,14 @@ if str(base_dir) not in sys.path:
 from doctor_core.logging import log_doctor
 
 # Importiert die Hauptfunktion des eigentlichen Telegram-Bots
+if importlib.util.find_spec("telegram") is None:
+    log_doctor("Agent_Telegram-Kritisch: Abhängigkeit 'python-telegram-bot' fehlt. Bitte installiere sie mit 'pip install python-telegram-bot'.")
+    sys.exit(1)
+
 try:
     from telegram_bot import main
 except ImportError as e:
-    log_doctor(f"Agent_Telegram-Kritisch: Konnte 'telegram_bot.py' im Hauptverzeichnis nicht finden: {e}")
+    log_doctor(f"Agent_Telegram-Kritisch: Konnte 'telegram_bot.py' im Hauptverzeichnis nicht importieren: {e}")
     sys.exit(1)
 
 

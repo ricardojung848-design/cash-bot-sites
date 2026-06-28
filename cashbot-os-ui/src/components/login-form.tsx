@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 
 export function LoginForm() {
   const router = useRouter();
-  const [username, setUsername] = useState("rico");
-  const [password, setPassword] = useState("cashbot-rico-2026");
+  const [startCode, setStartCode] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -18,18 +17,18 @@ export function LoginForm() {
       const response = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ startCode }),
       });
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        throw new Error(body.error || "Login fehlgeschlagen.");
+        throw new Error(body.error || "Start-Code ungültig.");
       }
 
       router.push("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : "Start-Code ungültig.");
     } finally {
       setPending(false);
     }
@@ -37,38 +36,25 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="cb-panel cb-card-enter w-full max-w-md p-6 space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Willkommen, Rico.</h1>
-      <p className="text-sm text-[var(--muted)]">Bitte einloggen, um das CashBot Command Center zu öffnen.</p>
+      <h1 className="text-2xl font-semibold tracking-tight">Bitte Start-Code eingeben.</h1>
       <div className="space-y-2">
-        <label className="text-sm text-[var(--muted)]" htmlFor="username">
-          Benutzername
+        <label className="text-sm text-[var(--muted)]" htmlFor="start-code">
+          Start-Code
         </label>
         <input
-          id="username"
-          className="w-full rounded-md border border-[var(--line)] bg-black/35 px-3 py-2 outline-none focus:border-cyan-300"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm text-[var(--muted)]" htmlFor="password">
-          Passwort
-        </label>
-        <input
-          id="password"
+          id="start-code"
           type="password"
+          inputMode="numeric"
           className="w-full rounded-md border border-[var(--line)] bg-black/35 px-3 py-2 outline-none focus:border-cyan-300"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={startCode}
+          onChange={(e) => setStartCode(e.target.value)}
+          autoComplete="off"
         />
       </div>
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
       <button disabled={pending} className="cb-btn cb-btn-primary w-full disabled:opacity-60">
-        {pending ? "Login läuft..." : "Einloggen"}
+        {pending ? "System startet..." : "System starten"}
       </button>
-      <p className="text-xs text-[var(--muted)]">
-        Hinweis: Für Testzwecke sind die Rico-Credentials im Frontend vordefiniert.
-      </p>
     </form>
   );
 }

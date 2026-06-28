@@ -17,10 +17,11 @@ npm run dev
 
 Anwendung läuft auf `http://localhost:3000`.
 
-## Login (Test)
+## Start-Code-Schutz
 
-- Benutzername: `rico`
-- Passwort: `cashbot-rico-2026`
+- Beim Start ist das System standardmäßig im Zustand `LOCKED`.
+- Die UI zeigt zunächst nur den Start-Code-Eingang.
+- Der Start-Code wird serverseitig ausschließlich als SHA-256-Hash geprüft.
 
 ## API-Übersicht
 

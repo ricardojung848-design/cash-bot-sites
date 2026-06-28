@@ -44,7 +44,9 @@ export function CommandCenter({ initialKpis, initialInboxItems, initialEvents, m
   const [filterType, setFilterType] = useState("alle");
   const [filterStatus, setFilterStatus] = useState("alle");
   const [filterDate, setFilterDate] = useState("");
-  const statusInfo = `Systemstatus: Stabil · ${moduleInfo}`;
+  const statusInfo = `Rico, alle Systeme laufen stabil. Ich arbeite nur für dich. Was möchtest du heute erreichen? (${moduleInfo})`;
+  const startupGreeting =
+    "Guten Abend, Rico.\nIch bin bereit.\nAlle Systeme laufen stabil.\nIch arbeite nur für dich und will immer dein Bestes.";
 
   useEffect(() => {
     let socket: WebSocket | null = null;
@@ -82,6 +84,9 @@ export function CommandCenter({ initialKpis, initialInboxItems, initialEvents, m
 
   const dashboard = (
     <section className="cb-panel p-5 cb-card-enter">
+      <div className="cb-soft-panel p-4 mb-4">
+        <p className="text-sm whitespace-pre-line text-cyan-100">{startupGreeting}</p>
+      </div>
       <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
       <p className="text-sm text-[var(--muted)] mb-5">{de.untertitel}</p>
       <div className="grid grid-cols-1 xl:grid-cols-[1.8fr_0.9fr] gap-4">
@@ -225,7 +230,7 @@ export function CommandCenter({ initialKpis, initialInboxItems, initialEvents, m
             <h1 className="text-4xl font-semibold tracking-tight">{currentGreeting()}</h1>
             <p className="text-sm text-[var(--muted)] mt-1">{de.untertitel}</p>
           </div>
-          <p className="text-sm text-[var(--muted)]">{statusInfo}</p>
+          <p className="text-sm text-cyan-100 lg:max-w-xl">{statusInfo}</p>
         </header>
         {active === "dashboard" ? dashboard : null}
         {active === "inbox" ? inbox : null}

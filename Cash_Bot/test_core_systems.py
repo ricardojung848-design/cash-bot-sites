@@ -58,7 +58,9 @@ def run_integration_test():
             statuses = pm.get_statuses()
             print(f"[LIVE STATUS] Erkannte Prozesse: {statuses}")
             
-            if statuses.get("Agent_Worker") == "RUNNING":
+            worker_status = statuses.get("Agent_Worker", statuses.get("Agent Worker"))
+
+            if worker_status == "RUNNING":
                 print("\n[🎉 SUCCESS] MULTITASKING & DATA-CORE STEHEN BOMBENFEST!")
             else:
                 print("\n[⚠️ WARNING] Prozess wurde gestartet, aber der Status ist ungewöhnlich.")

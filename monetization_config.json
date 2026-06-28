@@ -1,0 +1,25 @@
+{
+  "account_name": "cashbot",
+  "niche": "affiliate-marketing",
+  "affiliate_programs": {
+    "pipeline_1": [
+      "Amazon",
+      "ShareASale",
+      "CJ Affiliate",
+      "Awin"
+    ],
+    "pipeline_2": [
+      "Amazon",
+      "CJ Affiliate",
+      "Awin",
+      "ClickBank"
+    ]
+  },
+  "targets": {
+    "pipeline_1_monthly_revenue": 5000,
+    "pipeline_2_monthly_revenue": 10000,
+    "total_monthly_revenue": 15000
+  },
+  "auto_optimize": true,
+  "update_frequency_hours": 6
+}

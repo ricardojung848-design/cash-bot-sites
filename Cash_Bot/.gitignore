@@ -1,1 +1,6 @@
 github_token.txt
+.env
+.env.*
+config/token.txt
+config/telegram_chat_id.json
+config/cashbot_config.json

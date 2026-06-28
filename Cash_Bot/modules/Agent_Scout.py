@@ -299,10 +299,11 @@ class AgentScout:
 
     def _send_telegram_notification(self, titel: str, link: str) -> bool:
         """Sendet eine verschlüsselte Push-Nachricht über die Telegram Bot API"""
-        
-        # Deine echten, fest eingebauten Zugangsdaten für den Cash_Bot
-        bot_token = "8905346856:AAGTWneLxKqBQV3qlqWP95BSifLwbCpLG5k"
-        chat_id = "8905346856"
+        bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+        if not bot_token or not chat_id:
+            self._log_to_ui("[TELEGRAM] ⚠️ TELEGRAM_BOT_TOKEN oder TELEGRAM_CHAT_ID fehlt in der Umgebung.")
+            return False
 
         # Formatierung der Nachricht (Mit fettgedrucktem Titel)
         nachricht = f"🚨 *AEGIS SCOUT TREFFER*\n\n*Titel:* {titel}\n*Link:* {link}"

@@ -9,19 +9,19 @@
     },
 
     "instagram_api": {
-        "access_token": "IGAAVZBQZAImZCfFBZAGI0OVdwRjlQZAjBzZAGcxQS1adzZAWTW02ZAzFpVFpSTjk2ckIyTXUwVUpqbm14UkJXMGR3YjdqbmpSUjFSWm1NZAk5wUjljdnRSZAUI0VWN6OFBFRldRTzNjSUxLUzM3U3dQS0dDczVGc1BqMUx3ZA3NwbUYwRHRUTQZDZD",
-        "ig_user_id": "17841426330067873"
+        "access_token": "USE_ENV_IG_ACCESS_TOKEN",
+        "ig_user_id": "USE_ENV_IG_USER_ID"
     },
 
     "tts": {
-        "api_key": "DEIN_OPENAI_API_KEY"
+        "api_key": "USE_ENV_OPENAI_API_KEY"
     },
 
     "cloudflare_r2": {
-        "account_id": "DEIN_ACCOUNT_ID",
-        "bucket": "DEIN_BUCKET_NAME",
-        "public_base_url": "https://DEIN_PUBLIC_CDN_URL",
-        "access_key_id": "DEIN_R2_ACCESS_KEY",
-        "secret_access_key": "DEIN_R2_SECRET_KEY"
+        "account_id": "USE_ENV_R2_ACCOUNT_ID",
+        "bucket": "USE_ENV_R2_BUCKET",
+        "public_base_url": "USE_ENV_R2_PUBLIC_BASE_URL",
+        "access_key_id": "USE_ENV_R2_ACCESS_KEY_ID",
+        "secret_access_key": "USE_ENV_R2_SECRET_ACCESS_KEY"
     }
 }

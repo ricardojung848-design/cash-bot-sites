@@ -18,7 +18,8 @@ class AutoDocs:
         self.base_dir = Path(__file__).resolve().parent.parent
         self.modules_dir = self.base_dir / "modules"
         self.core_dir = self.base_dir / "doctor_core"
-        self.output_file = self.base_dir / "README_MODULES.md"
+        self.docs_dir = self.base_dir / "docs"
+        self.output_file = self.docs_dir / "README_MODULES.md"
 
     def generate(self) -> bool:
         """Scannt die Verzeichnisse, extrahiert die Metadaten und schreibt die System-Doku."""
@@ -26,6 +27,7 @@ class AutoDocs:
 
         # Verzeichnisse absichern
         self.modules_dir.mkdir(parents=True, exist_ok=True)
+        self.docs_dir.mkdir(parents=True, exist_ok=True)
         
         all_modules_data: Dict[str, List[Dict[str, Any]]] = {
             "Doctor Core (Zentrale)": self._parse_directory(self.core_dir),

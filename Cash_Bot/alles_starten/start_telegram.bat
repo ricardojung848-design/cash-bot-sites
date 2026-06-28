@@ -14,8 +14,14 @@ echo.
 :: Wechselt sicher in das Zielverzeichnis auf dem passenden Laufwerk
 cd /d "%PROJECT_DIR%"
 
-:: Telegram Bot Token als Umgebungsvariable für die Session setzen
-set "TELEGRAM_BOT_TOKEN=8905346856:AAF9x8dA-oYf-ACfheIl-j6QsMQoOlh6qbI"
+:: Erwartet TELEGRAM_BOT_TOKEN aus System-/User-Umgebung oder vorigem Shell-Context
+if "%TELEGRAM_BOT_TOKEN%"=="" (
+    color 0C
+    echo ❌ KRITISCHER FEHLER: Umgebungsvariable TELEGRAM_BOT_TOKEN fehlt.
+    echo Bitte vor dem Start setzen, z.B.:
+    echo setx TELEGRAM_BOT_TOKEN "dein-token"
+    goto end
+)
 
 :: Überprüfung, ob das Ziel-Skript existiert
 if not exist "core\Agent_Telegram.py" (

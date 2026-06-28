@@ -1,5 +1,41 @@
 {
-  "modules": [],
-  "files": [],
-  "relations": []
+  "modules": [
+    "core/Agent_Worker.py",
+    "core/Agent_Telegram.py",
+    "modules/Agent_Doctor.py",
+    "modules/Agent_Scout.py",
+    "modules/Agent_Wallet.py",
+    "doctor_core/auto_docs.py",
+    "doctor_core/tests.py"
+  ],
+  "files": [
+    "config/cashbot_config.json",
+    "config/doctor_credentials.json",
+    "config/doctor_docs.json",
+    "config/system_map.json",
+    "aufgaben.json",
+    "rueckgabe.json"
+  ],
+  "relations": [
+    {
+      "from": "modules/Agent_Doctor.py",
+      "to": "doctor_core/auto_docs.py",
+      "type": "invokes"
+    },
+    {
+      "from": "modules/Agent_Doctor.py",
+      "to": "doctor_core/tests.py",
+      "type": "invokes"
+    },
+    {
+      "from": "core/Agent_Telegram.py",
+      "to": "telegram_bot.py",
+      "type": "delegates"
+    },
+    {
+      "from": "core/Agent_Worker.py",
+      "to": "modules/worker.py",
+      "type": "coordinates"
+    }
+  ]
 }

@@ -1,4 +1,9 @@
 {
-  "modules": {},
-  "summary": ""
+  "modules": {
+    "doctor": "Cash_Bot/modules/Agent_Doctor.py",
+    "scout": "Cash_Bot/modules/Agent_Scout.py",
+    "wallet": "Cash_Bot/modules/Agent_Wallet.py",
+    "autodocs": "Cash_Bot/doctor_core/auto_docs.py"
+  },
+  "summary": "Dokumentations-Basis angelegt. AutoDocs schreibt in Cash_Bot/docs/README_MODULES.md; System-Mapping und Betriebsdoku sind initialisiert."
 }

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CashBot Unified Command Center</title>
+  <link rel="stylesheet" href="/frontend/styles/main.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">⚡ Unified Command Center</div>
+      <button class="nav-btn active" data-tab="home">A) Hauptübersicht</button>
+      <button class="nav-btn" data-tab="modules">B) Module-Center</button>
+      <button class="nav-btn" data-tab="tasks">C) Task-Manager</button>
+      <button class="nav-btn" data-tab="memory">D) Memory-Center</button>
+      <button class="nav-btn" data-tab="monitor">E) System-Monitor</button>
+      <button class="nav-btn" data-tab="settings">F) Einstellungen</button>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1 id="page-title">Hauptübersicht</h1>
+        <div class="badge" id="live-badge">Live: verbunden</div>
+      </div>
+
+      <section id="tab-home">
+        <div class="grid">
+          <div class="card span-3"><h3>Systemstatus</h3><div class="metric" id="home-status">-</div></div>
+          <div class="card span-3"><h3>Aktive Module</h3><div class="metric" id="home-active-count">0</div></div>
+          <div class="card span-3"><h3>Warnungen</h3><div class="metric" id="home-warning-count">0</div></div>
+          <div class="card span-3"><h3>Persönlichkeits-Modus</h3><div class="metric" id="home-personality">-</div></div>
+          <div class="card span-6"><h2>Letzte Aktionen</h2><pre id="home-actions"></pre></div>
+          <div class="card span-6"><h2>Warnungen</h2><pre id="home-warnings"></pre></div>
+          <div class="card span-12">
+            <h2>Schnellzugriffe</h2>
+            <button class="btn" id="btn-start-all">Alle Module starten</button>
+            <button class="btn btn-danger" id="btn-stop-all">Alle Module stoppen</button>
+            <button class="btn" id="btn-refresh-home">Aktualisieren</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-modules" class="hidden">
+        <div class="card">
+          <h2>Module-Liste</h2>
+          <table>
+            <thead><tr><th>Modul</th><th>Typ</th><th>Status</th><th>Aktion</th><th>Logs</th></tr></thead>
+            <tbody id="modules-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-tasks" class="hidden">
+        <div class="grid">
+          <div class="card span-6"><h2>Laufende Aufgaben</h2><pre id="tasks-running"></pre></div>
+          <div class="card span-6"><h2>Geplante Aufgaben</h2><pre id="tasks-scheduled"></pre></div>
+          <div class="card span-6"><h2>Historie</h2><pre id="tasks-history"></pre></div>
+          <div class="card span-6"><h2>Fehlerberichte</h2><pre id="tasks-errors"></pre></div>
+        </div>
+      </section>
+
+      <section id="tab-memory" class="hidden">
+        <div class="grid">
+          <div class="card span-6"><h2>Kurzzeitgedächtnis</h2><pre id="memory-short"></pre></div>
+          <div class="card span-6"><h2>Langzeitgedächtnis</h2><pre id="memory-long"></pre></div>
+          <div class="card span-6"><h2>Dokumente</h2><pre id="memory-docs"></pre></div>
+          <div class="card span-6"><h2>Feedback-Historie</h2><pre id="memory-feedback"></pre></div>
+        </div>
+      </section>
+
+      <section id="tab-monitor" class="hidden">
+        <div class="grid">
+          <div class="card span-3"><h3>CPU</h3><div class="metric" id="mon-cpu">0%</div></div>
+          <div class="card span-3"><h3>RAM</h3><div class="metric" id="mon-ram">0%</div></div>
+          <div class="card span-3"><h3>Netz Sent</h3><div class="metric" id="mon-sent">0 MB</div></div>
+          <div class="card span-3"><h3>Netz Recv</h3><div class="metric" id="mon-recv">0 MB</div></div>
+          <div class="card span-6"><h2>Prozesse</h2><pre id="mon-procs"></pre></div>
+          <div class="card span-6"><h2>Hintergrunddienste</h2><pre id="mon-bg"></pre></div>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="hidden">
+        <div class="card">
+          <h2>Einstellungen</h2>
+          <div class="muted">Themes, Sprache, Sicherheit, Rollen, API-Keys, Berechtigungen</div>
+          <pre id="settings-json"></pre>
+          <button class="btn" id="btn-settings-save">Standardwerte neu speichern</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/frontend/pages/main.js"></script>
+</body>
+</html>

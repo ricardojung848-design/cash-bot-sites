@@ -5705,3 +5705,36 @@
 [2026-06-28 10:54:52] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
 [2026-06-28 10:54:52] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
 [2026-06-28 10:54:52] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-28 11:46:11] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-28 11:46:11] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-28 11:46:11] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-28 11:46:11] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-28 11:46:11] [DOCTOR] EngineManager: Engine 'structure' registriert: SystemStructureManager
+[2026-06-28 11:46:11] [DOCTOR] Memory-Engine (PRO): Gedächtnis-Strukturen verifiziert und erweitert.
+[2026-06-28 11:46:11] [DOCTOR] EngineManager: Engine 'state' registriert: DoctorState
+[2026-06-28 11:46:11] [DOCTOR] 
+========================================
+[2026-06-28 11:46:11] [DOCTOR] [SCOUT ENGINE] Aufklärungslauf gestartet (Strategie: fallback).
+[2026-06-28 11:46:11] [DOCTOR] [SCOUT ENGINE] Scanne Quelle: crypto-rss.xml
+[2026-06-28 11:46:11] [DOCTOR] [SCOUT ENGINE] Sende Textfragment an KI zur Analyse...
+[2026-06-28 11:46:11] [DOCTOR] VoiceEngine: pyttsx3 erfolgreich initialisiert.
+[2026-06-28 11:46:11] [DOCTOR] Event-System: Asynchroner Event-Loop erfolgreich hochgefahren.
+[2026-06-28 11:46:11] [DOCTOR] Test-Runner: Test-Infrastruktur erfolgreich geladen.
+[2026-06-28 11:46:11] [DOCTOR] EngineManager: Engine 'fix' registriert: FixSuggestionEngine
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: 🔍 Starte automatisierte Systemstruktur-Prüfung...
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\core
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\modules
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\config
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\logs
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\scraped_data
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\generated_content
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Ordner OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\social_media
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\config\token.txt
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\config\cashbot_config.json
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\aufgaben.json
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✔ Datei OK: C:\Users\ricoj\Desktop\Deto_Art_Agenten.worktrees\agents-checkliste-erstellen-fehlende-elemente\Cash_Bot\rueckgabe.json
+[2026-06-28 11:46:11] [DOCTOR] SystemStructureManager: ✅ Systemstruktur vollständig geprüft und abgeglichen.
+[2026-06-28 11:46:11] [DOCTOR] BackgroundMonitor: Haupt-Scheduler-Loop erfolgreich gestartet.
+[2026-06-28 11:46:11] [DOCTOR] Agent_Telegram: Starte Telegram-Bot-Schnittstelle...
+[2026-06-28 11:46:11] [DOCTOR] Agent_Telegram-Kritisch: Unerwarteter Absturz des Telegram-Bots: TELEGRAM_BOT_TOKEN fehlt in den Umgebungsvariablen.
+[2026-06-28 11:46:13] [DOCTOR] AgentScout: Modell 'gemma2:2b' fehlt lokal. Verwende Fallback 'llama3'.

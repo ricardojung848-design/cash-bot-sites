@@ -1,0 +1,60 @@
+{
+  "modules": [
+    {
+      "id": "agent_worker",
+      "name": "Agent Worker",
+      "path": "Cash_Bot/core/Agent_Worker.py",
+      "cwd": "Cash_Bot",
+      "type": "service",
+      "internet_required": false
+    },
+    {
+      "id": "agent_doctor",
+      "name": "Agent Doctor",
+      "path": "Cash_Bot/modules/Agent_Doctor.py",
+      "cwd": "Cash_Bot",
+      "type": "service",
+      "internet_required": false
+    },
+    {
+      "id": "agent_scout",
+      "name": "Agent Scout",
+      "path": "Cash_Bot/modules/Agent_Scout.py",
+      "cwd": "Cash_Bot",
+      "type": "service",
+      "internet_required": true
+    },
+    {
+      "id": "agent_wallet",
+      "name": "Agent Wallet",
+      "path": "Cash_Bot/modules/Agent_Wallet.py",
+      "cwd": "Cash_Bot",
+      "type": "service",
+      "internet_required": false
+    },
+    {
+      "id": "agent_telegram",
+      "name": "Agent Telegram",
+      "path": "Cash_Bot/core/Agent_Telegram.py",
+      "cwd": "Cash_Bot",
+      "type": "service",
+      "internet_required": true
+    },
+    {
+      "id": "content_orchestrator",
+      "name": "Content Orchestrator",
+      "path": "module/Modul_MasterOrchestrator.py",
+      "cwd": ".",
+      "type": "job",
+      "internet_required": true
+    },
+    {
+      "id": "monetization_controller",
+      "name": "Monetization Controller",
+      "path": "module/Modul_MonetizationController.py",
+      "cwd": ".",
+      "type": "job",
+      "internet_required": true
+    }
+  ]
+}

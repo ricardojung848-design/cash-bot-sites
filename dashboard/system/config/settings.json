@@ -1,0 +1,20 @@
+{
+  "theme": "dark-neon",
+  "language": "de",
+  "personality_mode": "strategic",
+  "offline_only": true,
+  "security": {
+    "sandbox_enabled": true,
+    "require_admin_for_stop_all": true
+  },
+  "roles": [
+    "admin",
+    "operator",
+    "viewer"
+  ],
+  "api_keys": {
+    "openai": "USE_ENV_OPENAI_API_KEY",
+    "telegram": "USE_ENV_TELEGRAM_BOT_TOKEN",
+    "instagram": "USE_ENV_IG_ACCESS_TOKEN"
+  }
+}

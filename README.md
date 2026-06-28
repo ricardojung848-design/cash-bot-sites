@@ -27,7 +27,7 @@ Dieses Repository bündelt zwei Bereiche:
 
 ```bash
 python -m pip install -r requirements.txt
-python module/Modul_MasterOrchestrator.py
+start-dashboard.bat
 ```
 
 Optional (Monetization):
@@ -35,6 +35,12 @@ Optional (Monetization):
 ```bash
 python module/Modul_MonetizationController.py
 ```
+
+## Einheitliche Steuerung
+
+- **Einziger Einstiegspunkt:** `start-dashboard.bat`
+- **Zentrale Steuerung:** `dashboard/backend/main.py` + `dashboard/frontend/pages/index.html`
+- Alle Kernmodule werden im Dashboard unter **Module-Center** gestartet/gestoppt.
 
 ## Konfiguration
 

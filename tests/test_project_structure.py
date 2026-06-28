@@ -12,9 +12,9 @@ class TestProjectStructure(unittest.TestCase):
             "README.md",
             "requirements.txt",
             "monetization_config.json",
-            "dashboard.html",
-            "revenue_dashboard.html",
-            "biolink_cashbot.html",
+            "start-dashboard.bat",
+            "dashboard/backend/main.py",
+            "dashboard/frontend/pages/index.html",
         ]
         for rel in required:
             self.assertTrue((self.root / rel).exists(), f"Fehlt: {rel}")
